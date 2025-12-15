@@ -1,6 +1,11 @@
 // pages/api/orchestrate-blog.ts
-import Anthropic from "@anthropic-ai/sdk";
 import type { NextApiRequest, NextApiResponse } from "next";
+import {
+  generateContent,
+  formatBlogCode,
+  BlogOutline,
+  GeneratedImage,
+} from "../../lib/ai-gateway";
 
 interface WordPressCredentials {
   siteUrl: string;
@@ -22,6 +27,7 @@ interface OrchestrateRequest {
   metaDescription?: string;
   imageThemes?: string[];
   wordpress?: WordPressCredentials;
+  enableQualityReview?: boolean; // Whether to use Gemini 3 Pro for image quality review
 }
 
 interface SEOData {
@@ -41,13 +47,12 @@ interface OrchestrateResponse {
     images: boolean;
     upload: boolean;
     content: boolean;
+    format: boolean;
   };
 }
 
-const anthropic = new Anthropic();
-
 // Helper to call internal APIs
-async function callInternalApi(endpoint: string, body: any): Promise<any> {
+async function callInternalApi(endpoint: string, body: unknown): Promise<unknown> {
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -69,11 +74,19 @@ export default async function handler(
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
+  if (!process.env.AI_GATEWAY_API_KEY) {
+    return res.status(500).json({
+      success: false,
+      error: "AI_GATEWAY_API_KEY not configured",
+    });
+  }
+
   const steps = {
     outline: false,
     images: false,
     upload: false,
     content: false,
+    format: false,
   };
 
   try {
@@ -87,9 +100,9 @@ export default async function handler(
       });
     }
 
-    // STEP 1: Generate outline with Llama 4 Maverick
-    console.log("Step 1: Generating outline with Llama...");
-    let outline: any;
+    // STEP 1: Generate outline with Llama 4 Maverick (AI Conductor)
+    console.log("Step 1: Generating outline with Llama 4 Maverick (Conductor)...");
+    let outline: BlogOutline;
 
     try {
       const outlineResponse = await callInternalApi("/api/llama-outline", {
@@ -101,7 +114,7 @@ export default async function handler(
         primaryKeyword: request.primaryKeyword,
         secondaryKeywords: request.secondaryKeywords,
         imageThemes: request.imageThemes,
-      });
+      }) as { success: boolean; outline?: BlogOutline; error?: string };
 
       if (outlineResponse.success && outlineResponse.outline) {
         outline = outlineResponse.outline;
@@ -111,7 +124,6 @@ export default async function handler(
       }
     } catch (error) {
       console.error("Outline generation failed, using fallback:", error);
-      // Fallback outline
       outline = createFallbackOutline(request);
       steps.outline = true;
     }
@@ -124,9 +136,9 @@ export default async function handler(
       metaDescription: request.metaDescription || outline.seo?.metaDescription || `Discover the best ${request.topic.toLowerCase()} solutions in ${request.location}.`,
     };
 
-    // STEP 2: Generate images with Gemini using context-aware prompts
-    console.log("Step 2: Generating images with Gemini...");
-    let generatedImages: any[] = [];
+    // STEP 2: Generate images with Gemini 2.5 Flash (with optional Gemini 3 Pro review)
+    console.log("Step 2: Generating images with Gemini 2.5 Flash...");
+    let generatedImages: GeneratedImage[] = [];
 
     try {
       // Build context-aware image prompts
@@ -138,9 +150,17 @@ export default async function handler(
         request.imageThemes
       );
 
+      // Build section contexts for quality review
+      const sectionContexts = [
+        outline.introduction?.hook || `Introduction to ${request.topic}`,
+        ...outline.sections.map((s) => s.title),
+      ];
+
       const imagesResponse = await callInternalApi("/api/generate-images", {
         prompts: imagePrompts,
-      });
+        sectionContexts,
+        enableQualityReview: request.enableQualityReview,
+      }) as { success: boolean; images?: GeneratedImage[] };
 
       if (imagesResponse.success && imagesResponse.images) {
         generatedImages = imagesResponse.images;
@@ -170,10 +190,10 @@ export default async function handler(
             action: "uploadMultiple",
             credentials: request.wordpress,
             images: imagesToUpload,
-          });
+          }) as { success: boolean; images?: Array<{ url: string }> };
 
           if (uploadResponse.success && uploadResponse.images) {
-            imageUrls = uploadResponse.images.map((img: any) => img.url).filter(Boolean);
+            imageUrls = uploadResponse.images.map((img) => img.url).filter(Boolean);
             steps.upload = true;
           }
         }
@@ -195,16 +215,40 @@ export default async function handler(
       });
     }
 
-    // STEP 4: Generate final content with Claude
-    console.log("Step 4: Writing content with Claude...");
+    // STEP 4: Generate content with Claude Sonnet 4.5
+    console.log("Step 4: Writing content with Claude Sonnet 4.5...");
 
-    const htmlContent = await generateContentWithClaude(
+    const rawContent = await generateContent({
       outline,
-      imageUrls,
-      request.tone || "professional yet friendly",
-      seoData
-    );
+      topic: request.topic,
+      location: request.location,
+      tone: request.tone || "professional yet friendly",
+      companyName: request.companyName,
+    });
     steps.content = true;
+
+    // STEP 5: Format final blog HTML with Kimi 2
+    console.log("Step 5: Formatting blog code with Kimi 2...");
+
+    // Prepare images with URLs for Kimi to format
+    const imagesWithUrls = generatedImages.map((img, index) => ({
+      ...img,
+      base64: imageUrls[index] || img.base64,
+    }));
+
+    let htmlContent: string;
+    try {
+      htmlContent = await formatBlogCode({
+        content: rawContent,
+        images: imagesWithUrls,
+        outline,
+      });
+      steps.format = true;
+    } catch (error) {
+      console.error("Kimi formatting failed, using Claude's output:", error);
+      // Fall back to Claude's raw content with simple image insertion
+      htmlContent = insertImagesIntoContent(rawContent, imageUrls);
+    }
 
     return res.status(200).json({
       success: true,
@@ -222,8 +266,21 @@ export default async function handler(
   }
 }
 
+// Simple image insertion fallback
+function insertImagesIntoContent(content: string, imageUrls: string[]): string {
+  let result = content;
+  imageUrls.forEach((url, index) => {
+    const placeholder = `[IMAGE:${index}]`;
+    const imgTag = `<figure style="margin: 2rem 0; text-align: center;">
+      <img src="${url}" alt="Blog image ${index + 1}" style="max-width: 100%; height: auto; border-radius: 8px;" />
+    </figure>`;
+    result = result.replace(placeholder, imgTag);
+  });
+  return result;
+}
+
 function buildContextAwareImagePrompts(
-  outline: any,
+  outline: BlogOutline,
   topic: string,
   location: string,
   blogType: string,
@@ -236,70 +293,26 @@ function buildContextAwareImagePrompts(
     return imageThemes.slice(0, (outline.sections?.length || 5) + 1);
   }
 
-  // Build context-aware prompts based on topic and content
-  const topicLower = topic.toLowerCase();
-  const isLighting = topicLower.includes("lighting") || topicLower.includes("light");
-  const isRoofing = topicLower.includes("roof") || topicLower.includes("roofing");
-  const isLandscape = topicLower.includes("landscape") || topicLower.includes("garden");
-  const isLake = location.toLowerCase().includes("lake");
-
-  // Hero image prompt
-  let heroPrompt = "";
-  if (isLighting) {
-    heroPrompt = `Professional real estate photography of a beautiful luxury home in ${location} at dusk with stunning landscape lighting. Warm pathway lights leading to front entrance, accent lights highlighting architectural features, soft uplighting on trees. Golden hour sky, inviting atmosphere. Shot with professional camera, magazine quality.`;
-  } else if (isRoofing) {
-    heroPrompt = `Aerial drone photography of a beautiful ${location} home with a brand new premium architectural shingle roof. ${isLake ? "Lake visible in background, waterfront property." : "Lush green landscaping surrounding."} Clear sunny day, showing perfect roof installation, clean lines, professional quality.`;
+  // Use outline's image prompts if available
+  if (outline.introduction?.imagePrompt) {
+    prompts.push(outline.introduction.imagePrompt);
   } else {
-    heroPrompt = `Professional photography of a stunning ${location} home showcasing ${topic.toLowerCase()}. High-end residential setting, magazine-quality image, perfect lighting, inviting atmosphere.`;
+    prompts.push(`Professional photography of a stunning ${location} home showcasing ${topic.toLowerCase()}. High-end residential setting, magazine-quality image, perfect lighting, inviting atmosphere.`);
   }
-  prompts.push(heroPrompt);
 
-  // Section-specific prompts based on outline
-  const sections = outline.sections || [];
-  sections.forEach((section: any, index: number) => {
-    const sectionTitle = section.title?.toLowerCase() || "";
-    let sectionPrompt = "";
-
-    if (isLighting) {
-      if (sectionTitle.includes("pathway") || sectionTitle.includes("walkway")) {
-        sectionPrompt = `Close-up professional photography of elegant brass pathway lights illuminating a stone walkway at night in ${location}. Warm LED glow, landscaped garden borders, high-end residential setting.`;
-      } else if (sectionTitle.includes("security") || sectionTitle.includes("safety")) {
-        sectionPrompt = `Professional photo of home security lighting in ${location} - motion-activated floodlights, well-lit driveway, illuminated entry points. Evening shot showing effective coverage.`;
-      } else if (sectionTitle.includes("accent") || sectionTitle.includes("architectural")) {
-        sectionPrompt = `Architectural photography of accent lighting on a ${location} home - uplights on columns, wash lights on textured walls, dramatic shadows. Professional quality, twilight shot.`;
-      } else if (sectionTitle.includes("garden") || sectionTitle.includes("landscape")) {
-        sectionPrompt = `Professional landscape photography of illuminated garden in ${location} - spotlights on specimen trees, underwater pond lights, subtle path lighting through flower beds. Magical evening atmosphere.`;
-      } else if (sectionTitle.includes("outdoor living") || sectionTitle.includes("patio") || sectionTitle.includes("entertainment")) {
-        sectionPrompt = `Professional photo of outdoor living space in ${location} with string lights, recessed deck lighting, illuminated pergola. Evening entertainment setting, warm inviting glow.`;
-      } else if (sectionTitle.includes("before") || sectionTitle.includes("after") || sectionTitle.includes("transform")) {
-        sectionPrompt = `Side-by-side before and after photography showing ${location} home transformation with landscape lighting. Left: dark unlit exterior. Right: beautifully illuminated with professional lighting design.`;
-      } else {
-        sectionPrompt = `Professional photography of ${topic.toLowerCase()} installation in ${location} home - ${section.title || "beautiful lighting design"}. High quality, magazine style, evening shot with warm glow.`;
-      }
-    } else if (isRoofing) {
-      if (sectionTitle.includes("material") || sectionTitle.includes("shingle") || sectionTitle.includes("type")) {
-        sectionPrompt = `Close-up product photography of premium roofing materials - architectural shingles, metal roofing samples, slate tiles. Professional studio quality showing texture and quality.`;
-      } else if (sectionTitle.includes("before") || sectionTitle.includes("after") || sectionTitle.includes("damage")) {
-        sectionPrompt = `Before and after roofing project in ${location} - split image showing damaged old roof vs beautiful new roof installation. Professional documentation style.`;
-      } else if (sectionTitle.includes("installation") || sectionTitle.includes("process")) {
-        sectionPrompt = `Professional roofing crew working on ${location} home - safety equipment, clean worksite, skilled installation in progress. Documentary style photography.`;
-      } else if (sectionTitle.includes("cost") || sectionTitle.includes("investment") || sectionTitle.includes("value")) {
-        sectionPrompt = `Aerial view of ${location} neighborhood showing beautiful homes with well-maintained roofs. ${isLake ? "Lake community, waterfront properties." : "Upscale residential area."} Sunny day, property value concept.`;
-      } else {
-        sectionPrompt = `Professional photography of ${topic.toLowerCase()} project in ${location} - ${section.title || "quality roofing work"}. Clear detail, professional quality.`;
-      }
+  // Section prompts from outline
+  outline.sections.forEach((section) => {
+    if (section.imagePrompt) {
+      prompts.push(section.imagePrompt);
     } else {
-      // Generic topic
-      sectionPrompt = `Professional photography related to ${topic} in ${location} - ${section.title || `aspect ${index + 1}`}. High quality, relevant to home improvement, professional setting.`;
+      prompts.push(`Professional photography related to ${section.title} for ${topic} in ${location}. High quality, professional setting.`);
     }
-
-    prompts.push(sectionPrompt);
   });
 
   return prompts;
 }
 
-function createFallbackOutline(request: OrchestrateRequest): any {
+function createFallbackOutline(request: OrchestrateRequest): BlogOutline {
   const { topic, location, numberOfSections = 5 } = request;
 
   const sections = [];
@@ -322,7 +335,7 @@ function createFallbackOutline(request: OrchestrateRequest): any {
         "Expert recommendations",
       ],
       imagePrompt: `Professional photography showing ${topic.toLowerCase()} in ${location} - section ${i + 1}`,
-      imagePlacement: "after",
+      imagePlacement: "after" as const,
     });
   }
 
@@ -356,93 +369,6 @@ function createFallbackOutline(request: OrchestrateRequest): any {
   };
 }
 
-async function generateContentWithClaude(
-  outline: any,
-  imageUrls: string[],
-  tone: string,
-  seoData: SEOData
-): Promise<string> {
-  const systemPrompt = `You are an expert content writer specializing in home improvement and local services. Write engaging, SEO-optimized blog posts that connect with homeowners emotionally while providing practical value.
-
-WRITING STYLE:
-- Address the reader directly as "you"
-- Use vivid, sensory descriptions
-- Balance practical advice with lifestyle benefits
-- Include local references naturally
-- Write in a ${tone} tone
-- Naturally incorporate the primary keyword "${seoData.primaryKeyword}" 3-5 times
-- Use secondary keywords naturally throughout: ${seoData.secondaryKeywords.join(", ")}
-
-OUTPUT REQUIREMENTS:
-- Generate ONLY valid HTML (no markdown)
-- Use semantic HTML tags (h1, h2, p, strong, etc.)
-- Include the provided image URLs in <img> tags with descriptive alt text
-- Images should have style="max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0;"
-- Make the content substantial (1500-2000 words)
-- Each image should feel connected to the surrounding content`;
-
-  // Build the content structure for Claude
-  const imageUrlList = imageUrls.map((url, i) => `Image ${i + 1}: ${url}`).join("\n");
-
-  const userPrompt = `Write a complete blog post based on this outline. Insert the provided images at appropriate locations, ensuring each image relates to the content around it.
-
-BLOG OUTLINE:
-${JSON.stringify(outline, null, 2)}
-
-SEO DATA TO INCORPORATE:
-- Primary Keyword: ${seoData.primaryKeyword}
-- Secondary Keywords: ${seoData.secondaryKeywords.join(", ")}
-- Meta Title: ${seoData.metaTitle}
-- Meta Description: ${seoData.metaDescription}
-
-IMAGES TO USE (insert in order, matching content context):
-${imageUrlList}
-
-REQUIREMENTS:
-1. Start with an <h1> using the blogTitle
-2. Write 2-3 paragraphs for the introduction based on the hook and keyPoints
-3. Insert the first image after the introduction with relevant alt text
-4. For each section:
-   - Use <h2> for the section title
-   - Write 2-3 substantial paragraphs covering the keyPoints
-   - Insert the corresponding image with alt text that describes what's shown AND relates to the section topic
-   - Use <strong> tags for key concepts and keywords
-5. End with a conclusion section including the callToAction
-6. Make sure image alt text is descriptive and includes relevant keywords
-
-IMPORTANT: Each image's alt text should describe what the image shows while being relevant to the section content. For example:
-- "Elegant pathway lighting illuminating a stone walkway in Charlotte, NC"
-- "Before and after roof replacement showing dramatic transformation"
-
-Generate ONLY the HTML content. No markdown, no code blocks, no explanations.`;
-
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 6000,
-    messages: [{ role: "user", content: userPrompt }],
-    system: systemPrompt,
-  });
-
-  let content = "";
-  if (message.content[0].type === "text") {
-    content = message.content[0].text;
-  }
-
-  // Clean up any markdown formatting that might have slipped through
-  content = content.trim();
-  if (content.startsWith("```html")) {
-    content = content.slice(7);
-  }
-  if (content.startsWith("```")) {
-    content = content.slice(3);
-  }
-  if (content.endsWith("```")) {
-    content = content.slice(0, -3);
-  }
-
-  return content.trim();
-}
-
 export const config = {
   api: {
     bodyParser: {
@@ -450,5 +376,5 @@ export const config = {
     },
     responseLimit: false,
   },
-  maxDuration: 120, // 2 minutes for the full orchestration
+  maxDuration: 180, // 3 minutes for the full orchestration with quality review
 };

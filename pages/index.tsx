@@ -9,6 +9,7 @@ interface FormData {
   numberOfSections: number;
   tone: string;
   useOrchestration: boolean;
+  enableQualityReview: boolean;
   companyName: string;
   companyWebsite: string;
   primaryKeyword: string;
@@ -61,7 +62,7 @@ interface GenerationState {
   seoData: SEOData | null;
   copiedToClipboard: boolean;
   progress: {
-    step: "idle" | "research" | "outline" | "images" | "upload" | "content" | "publishing" | "complete";
+    step: "idle" | "research" | "outline" | "images" | "upload" | "content" | "format" | "publishing" | "complete";
     message: string;
   };
   publishedPost: {
@@ -79,6 +80,7 @@ export default function Home() {
     numberOfSections: 5,
     tone: "professional yet friendly",
     useOrchestration: true,
+    enableQualityReview: false,
     companyName: "",
     companyWebsite: "",
     primaryKeyword: "",
@@ -353,6 +355,7 @@ export default function Home() {
             secondaryKeywords: formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean),
             imageThemes: researchData?.imageThemes || [],
             wordpress: wordpress.isConnected ? wordpress : undefined,
+            enableQualityReview: formData.enableQualityReview,
           }),
         });
 
@@ -633,9 +636,9 @@ export default function Home() {
                 disabled={isResearching || !formData.topic || !formData.location}
                 className={styles.researchButton}
               >
-                {isResearching ? "Researching..." : "Research Keywords & SEO (AI)"}
+                {isResearching ? "Researching..." : "Research Keywords & SEO (Perplexity)"}
               </button>
-              <small>Uses Gemini to analyze competitors and suggest optimal keywords</small>
+              <small>Uses Perplexity Sonar Pro to analyze competitors and suggest optimal keywords</small>
             </div>
 
             {/* SEO Settings Toggle */}
@@ -773,14 +776,31 @@ export default function Home() {
                   checked={formData.useOrchestration}
                   onChange={handleInputChange}
                 />
-                <span>Use AI Orchestration (Llama + Gemini + Claude)</span>
+                <span>Use AI Orchestration (Multi-AI via Vercel AI Gateway)</span>
               </label>
               <small className={styles.hint}>
                 {formData.useOrchestration
-                  ? "Llama creates outline, Gemini generates context-aware images, Claude writes content"
+                  ? "Llama 4 Maverick (conductor) + Imagen 4.0 (images) + Claude 4.5 (content) + Kimi 2 (formatting)"
                   : "Claude-only mode (faster, no image generation)"}
               </small>
             </div>
+
+            {formData.useOrchestration && (
+              <div className={styles.formGroup}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    name="enableQualityReview"
+                    checked={formData.enableQualityReview}
+                    onChange={handleInputChange}
+                  />
+                  <span>Enable Image Quality Review (Kimi 2 + Claude)</span>
+                </label>
+                <small className={styles.hint}>
+                  Kimi 2 and Claude both review images, Gemini 3 Pro remakes any that don't meet quality standards (slower but better results)
+                </small>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -795,21 +815,30 @@ export default function Home() {
           {state.isLoading && (
             <div className={styles.progressSection}>
               <div className={styles.progressSteps}>
-                <div className={`${styles.progressStep} ${["research", "outline", "images", "upload", "content", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["research", "outline", "images", "upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>1</span>
                   <span>Outline</span>
+                  <small>Llama 4</small>
                 </div>
-                <div className={`${styles.progressStep} ${["images", "upload", "content", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["images", "upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>2</span>
                   <span>Images</span>
+                  <small>Imagen</small>
                 </div>
-                <div className={`${styles.progressStep} ${["upload", "content", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>3</span>
                   <span>Upload</span>
+                  <small>WordPress</small>
                 </div>
-                <div className={`${styles.progressStep} ${["content", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>4</span>
                   <span>Content</span>
+                  <small>Claude 4.5</small>
+                </div>
+                <div className={`${styles.progressStep} ${["format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                  <span className={styles.stepNumber}>5</span>
+                  <span>Format</span>
+                  <small>Kimi 2</small>
                 </div>
               </div>
               <p className={styles.progressMessage}>{state.progress.message}</p>
@@ -992,14 +1021,16 @@ export default function Home() {
           <div className={styles.placeholderSection}>
             <p>Fill in the form above and click "Generate Blog"</p>
             <div className={styles.featuresList}>
-              <h3>Multi-AI Features:</h3>
+              <h3>Multi-AI Orchestration via Vercel AI Gateway:</h3>
               <ul>
-                <li><strong>AI Keyword Research</strong> - Gemini analyzes competitors and suggests optimal keywords</li>
-                <li><strong>Smart Outlines</strong> - Llama 4 Maverick creates structured, SEO-optimized outlines</li>
-                <li><strong>Context-Aware Images</strong> - Gemini generates images that match each section's content</li>
+                <li><strong>Perplexity Sonar Pro</strong> - Deep SEO research and competitor analysis</li>
+                <li><strong>Llama 4 Maverick</strong> - AI Conductor creates structured, SEO-optimized outlines</li>
+                <li><strong>Google Imagen 4.0</strong> - Generates context-aware images for each section</li>
+                <li><strong>Kimi 2 + Claude</strong> - Dual AI image quality review</li>
+                <li><strong>Gemini 3 Pro</strong> - Remakes images that don't pass review</li>
+                <li><strong>Claude Sonnet 4.5</strong> - Writes polished, engaging blog content</li>
+                <li><strong>Kimi 2</strong> - Formats final HTML code for WordPress</li>
                 <li><strong>WordPress Integration</strong> - Publish, schedule, or save drafts directly</li>
-                <li><strong>Professional Content</strong> - Claude writes polished, engaging blog posts</li>
-                <li><strong>Complete SEO Package</strong> - Keywords, meta data, and CSV export included</li>
               </ul>
             </div>
           </div>
@@ -1007,7 +1038,7 @@ export default function Home() {
       </main>
 
       <footer className={styles.footer}>
-        <p>Powered by Llama 4 Maverick, Gemini, and Claude | Multi-AI Orchestration</p>
+        <p>Powered by Vercel AI Gateway | Llama 4 + Claude 4.5 + Imagen 4.0 + Gemini 3 + Kimi 2 + Perplexity</p>
       </footer>
     </div>
   );

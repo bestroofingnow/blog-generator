@@ -1,6 +1,6 @@
 // pages/api/llama-outline.ts
-import Groq from "groq-sdk";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { generateOutline, BlogOutline } from "../../lib/ai-gateway";
 
 interface OutlineRequest {
   topic: string;
@@ -13,40 +13,11 @@ interface OutlineRequest {
   imageThemes?: string[];
 }
 
-interface OutlineSection {
-  title: string;
-  keyPoints: string[];
-  imagePrompt: string;
-  imagePlacement: "before" | "after" | "within";
-}
-
 interface OutlineResponse {
   success: boolean;
-  outline?: {
-    blogTitle: string;
-    introduction: {
-      hook: string;
-      keyPoints: string[];
-      imagePrompt: string;
-    };
-    sections: OutlineSection[];
-    conclusion: {
-      summary: string;
-      callToAction: string;
-    };
-    seo: {
-      primaryKeyword: string;
-      secondaryKeywords: string[];
-      metaTitle: string;
-      metaDescription: string;
-    };
-  };
+  outline?: BlogOutline;
   error?: string;
 }
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
 
 export default async function handler(
   req: NextApiRequest,
@@ -56,10 +27,10 @@ export default async function handler(
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
-  if (!process.env.GROQ_API_KEY) {
+  if (!process.env.AI_GATEWAY_API_KEY) {
     return res.status(500).json({
       success: false,
-      error: "GROQ_API_KEY not configured",
+      error: "AI_GATEWAY_API_KEY not configured",
     });
   }
 
@@ -73,107 +44,16 @@ export default async function handler(
       });
     }
 
-    const { topic, location, blogType, numberOfSections = 5, tone = "professional yet friendly", primaryKeyword, secondaryKeywords, imageThemes } = request;
-
-    // Build SEO context if keywords provided
-    const seoContext = primaryKeyword
-      ? `\n\nSEO REQUIREMENTS:
-- Primary keyword to target: "${primaryKeyword}"
-- Secondary keywords to include naturally: ${secondaryKeywords?.join(", ") || "related terms"}
-- Ensure the outline structure supports natural keyword placement`
-      : "";
-
-    // Build image theme context if provided
-    const imageThemeContext = imageThemes && imageThemes.length > 0
-      ? `\n\nIMAGE THEMES (from research - use these as guides for your image prompts):
-${imageThemes.map((theme, i) => `${i + 1}. ${theme}`).join("\n")}`
-      : "";
-
-    const prompt = `You are an expert content strategist and SEO specialist. Create a detailed blog post outline for a local service company.
-
-BLOG SPECIFICATIONS:
-- Topic: ${topic}
-- Location: ${location}
-- Blog Type: ${blogType}
-- Number of Sections: ${numberOfSections}
-- Tone: ${tone}
-
-Your task is to create a structured outline that will guide the content writer. For each section, provide a detailed image prompt that will be used to generate a unique, professional image.
-${seoContext}
-${imageThemeContext}
-
-IMAGE PROMPT GUIDELINES:
-- Each image prompt should be highly specific and descriptive
-- Include details about: lighting conditions, time of day, architectural style, atmosphere
-- The image MUST directly relate to the section content (e.g., if discussing "pathway lighting", show pathway lights)
-- For ${topic}, include relevant visual elements (products, installations, before/after, etc.)
-- Reference the location naturally (${location} area aesthetics)
-- Aim for photorealistic, professional marketing imagery
-- Avoid generic descriptions - make each prompt unique to its section's specific content
-- Think about what image would best support the reader's understanding of that section
-
-Respond with ONLY valid JSON in this exact format:
-{
-  "blogTitle": "Compelling H1 title mentioning ${location} and ${topic}",
-  "introduction": {
-    "hook": "Opening hook that addresses customer pain points or aspirations",
-    "keyPoints": ["Key point 1", "Key point 2", "Key point 3"],
-    "imagePrompt": "Detailed prompt for hero image: Professional photograph of [specific scene related to ${topic} in ${location}, include relevant details like time of day, style, atmosphere]"
-  },
-  "sections": [
-    {
-      "title": "Section H2 title specific to ${topic} in ${location}",
-      "keyPoints": ["Detailed point 1", "Detailed point 2", "Detailed point 3"],
-      "imagePrompt": "Detailed prompt: Professional photograph of [specific scene related to the section topic, be very descriptive about the subject, style, setting, mood]",
-      "imagePlacement": "after"
-    }
-  ],
-  "conclusion": {
-    "summary": "Key takeaways summary",
-    "callToAction": "Compelling CTA for ${topic} consultation or service"
-  },
-  "seo": {
-    "primaryKeyword": "3-5 word primary keyword phrase with location",
-    "secondaryKeywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5"],
-    "metaTitle": "SEO title under 60 characters",
-    "metaDescription": "Compelling meta description 150-160 characters with primary keyword"
-  }
-}
-
-Generate exactly ${numberOfSections} sections. Make each image prompt unique and specific to that section's content.`;
-
-    const completion = await groq.chat.completions.create({
-      model: "meta-llama/llama-4-maverick-17b-128e-instruct",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert content strategist. Always respond with valid JSON only, no markdown formatting or code blocks.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 4000,
-      temperature: 0.7,
+    const outline = await generateOutline({
+      topic: request.topic,
+      location: request.location,
+      blogType: request.blogType,
+      numberOfSections: request.numberOfSections,
+      tone: request.tone,
+      primaryKeyword: request.primaryKeyword,
+      secondaryKeywords: request.secondaryKeywords,
+      imageThemes: request.imageThemes,
     });
-
-    const responseText = completion.choices[0]?.message?.content || "";
-
-    // Clean up response
-    let cleanedResponse = responseText.trim();
-    if (cleanedResponse.startsWith("```json")) {
-      cleanedResponse = cleanedResponse.slice(7);
-    }
-    if (cleanedResponse.startsWith("```")) {
-      cleanedResponse = cleanedResponse.slice(3);
-    }
-    if (cleanedResponse.endsWith("```")) {
-      cleanedResponse = cleanedResponse.slice(0, -3);
-    }
-    cleanedResponse = cleanedResponse.trim();
-
-    const outline = JSON.parse(cleanedResponse);
 
     return res.status(200).json({
       success: true,
@@ -187,3 +67,7 @@ Generate exactly ${numberOfSections} sections. Make each image prompt unique and
     });
   }
 }
+
+export const config = {
+  maxDuration: 60,
+};
