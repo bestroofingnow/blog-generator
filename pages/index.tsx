@@ -1,5 +1,5 @@
 // pages/index.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "../styles/Home.module.css";
 
 interface FormData {
@@ -8,7 +8,14 @@ interface FormData {
   blogType: string;
   numberOfSections: number;
   tone: string;
-  aiProvider: "claude" | "gemini" | "both";
+  useOrchestration: boolean;
+}
+
+interface WordPressSettings {
+  siteUrl: string;
+  username: string;
+  appPassword: string;
+  isConnected: boolean;
 }
 
 interface SEOData {
@@ -24,6 +31,10 @@ interface GenerationState {
   htmlContent: string | null;
   seoData: SEOData | null;
   copiedToClipboard: boolean;
+  progress: {
+    step: "idle" | "outline" | "images" | "upload" | "content" | "complete";
+    message: string;
+  };
 }
 
 export default function Home() {
@@ -45,8 +56,18 @@ export default function Home() {
     blogType: "Neighborhood Guide",
     numberOfSections: 5,
     tone: "professional yet friendly",
-    aiProvider: "claude",
+    useOrchestration: true,
   });
+
+  const [wordpress, setWordpress] = useState<WordPressSettings>({
+    siteUrl: "",
+    username: "",
+    appPassword: "",
+    isConnected: false,
+  });
+
+  const [showWordPressSettings, setShowWordPressSettings] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
 
   const [state, setState] = useState<GenerationState>({
     isLoading: false,
@@ -54,17 +75,75 @@ export default function Home() {
     htmlContent: null,
     seoData: null,
     copiedToClipboard: false,
+    progress: { step: "idle", message: "" },
   });
+
+  // Load WordPress settings from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("wordpressSettings");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setWordpress(parsed);
+      } catch {
+        // Invalid saved data
+      }
+    }
+  }, []);
+
+  // Save WordPress settings to localStorage
+  const saveWordPressSettings = () => {
+    localStorage.setItem("wordpressSettings", JSON.stringify(wordpress));
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        name === "numberOfSections" ? parseInt(value, 10) : value,
+      [name]: type === "checkbox"
+        ? (e.target as HTMLInputElement).checked
+        : name === "numberOfSections"
+        ? parseInt(value, 10)
+        : value,
     }));
+  };
+
+  const handleWordPressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setWordpress((prev) => ({
+      ...prev,
+      [name]: value,
+      isConnected: false,
+    }));
+  };
+
+  const testWordPressConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const response = await fetch("/api/wordpress-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "test",
+          credentials: wordpress,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setWordpress((prev) => ({ ...prev, isConnected: true }));
+        saveWordPressSettings();
+        alert(`Connected successfully to ${data.siteName || wordpress.siteUrl}`);
+      } else {
+        alert(`Connection failed: ${data.error}`);
+      }
+    } catch {
+      alert("Connection test failed");
+    }
+    setTestingConnection(false);
   };
 
   const handleGenerateBlog = async (e: React.FormEvent) => {
@@ -75,52 +154,64 @@ export default function Home() {
       htmlContent: null,
       seoData: null,
       copiedToClipboard: false,
+      progress: { step: "outline", message: "Creating outline with Llama 4 Maverick..." },
     });
 
     try {
-      const endpoint =
-        formData.aiProvider === "claude"
-          ? "/api/generate-blog"
-          : "/api/generate-with-gemini";
+      if (formData.useOrchestration) {
+        const response = await fetch("/api/orchestrate-blog", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            wordpress: wordpress.isConnected ? wordpress : undefined,
+          }),
+        });
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+        const data = await response.json();
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.error || "Failed to generate blog"
-        );
+        if (!data.success) {
+          throw new Error(data.error || "Failed to generate blog");
+        }
+
+        setState({
+          isLoading: false,
+          error: null,
+          htmlContent: data.htmlContent,
+          seoData: data.seoData,
+          copiedToClipboard: false,
+          progress: { step: "complete", message: "Blog generated successfully!" },
+        });
+      } else {
+        const response = await fetch("/api/generate-blog", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to generate blog");
+        }
+
+        setState({
+          isLoading: false,
+          error: null,
+          htmlContent: data.htmlContent,
+          seoData: data.seoData,
+          copiedToClipboard: false,
+          progress: { step: "complete", message: "Blog generated successfully!" },
+        });
       }
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error);
-      }
-
-      setState({
-        isLoading: false,
-        error: null,
-        htmlContent: data.htmlContent || data.content,
-        seoData: data.seoData || null,
-        copiedToClipboard: false,
-      });
     } catch (error) {
       setState({
         isLoading: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "An unknown error occurred",
+        error: error instanceof Error ? error.message : "An unknown error occurred",
         htmlContent: null,
         seoData: null,
         copiedToClipboard: false,
+        progress: { step: "idle", message: "" },
       });
     }
   };
@@ -128,15 +219,9 @@ export default function Home() {
   const handleCopyToClipboard = () => {
     if (state.htmlContent) {
       navigator.clipboard.writeText(state.htmlContent);
-      setState((prev) => ({
-        ...prev,
-        copiedToClipboard: true,
-      }));
+      setState((prev) => ({ ...prev, copiedToClipboard: true }));
       setTimeout(() => {
-        setState((prev) => ({
-          ...prev,
-          copiedToClipboard: false,
-        }));
+        setState((prev) => ({ ...prev, copiedToClipboard: false }));
       }, 2000);
     }
   };
@@ -144,12 +229,9 @@ export default function Home() {
   const handleDownloadHTML = () => {
     if (state.htmlContent) {
       const element = document.createElement("a");
-      const file = new Blob([state.htmlContent], {
-        type: "text/html",
-      });
+      const file = new Blob([state.htmlContent], { type: "text/html" });
       element.href = URL.createObjectURL(file);
-      element.download =
-        `blog-${formData.location.replace(/\s+/g, "-")}-${Date.now()}.html`;
+      element.download = `blog-${formData.location.replace(/\s+/g, "-")}-${Date.now()}.html`;
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
@@ -170,7 +252,7 @@ export default function Home() {
         "Secondary Keywords",
         "Meta Title",
         "Meta Description",
-        "HTML Content"
+        "HTML Content",
       ];
 
       const row = [
@@ -178,18 +260,15 @@ export default function Home() {
         escapeCSV(state.seoData.secondaryKeywords.join("; ")),
         escapeCSV(state.seoData.metaTitle),
         escapeCSV(state.seoData.metaDescription),
-        escapeCSV(state.htmlContent)
+        escapeCSV(state.htmlContent),
       ];
 
       const csvContent = headers.join(",") + "\n" + row.join(",");
 
       const element = document.createElement("a");
-      const file = new Blob([csvContent], {
-        type: "text/csv;charset=utf-8;",
-      });
+      const file = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       element.href = URL.createObjectURL(file);
-      element.download =
-        `blog-${formData.location.replace(/\s+/g, "-")}-${Date.now()}.csv`;
+      element.download = `blog-${formData.location.replace(/\s+/g, "-")}-${Date.now()}.csv`;
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
@@ -199,13 +278,84 @@ export default function Home() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1>📝 AI Blog Generator</h1>
-        <p>Create stunning landscape lighting blogs in seconds</p>
+        <h1>AI Blog Generator</h1>
+        <p>Multi-AI orchestrated blog creation with real images</p>
       </header>
 
       <main className={styles.main}>
         <div className={styles.formSection}>
           <form onSubmit={handleGenerateBlog} className={styles.form}>
+            {/* WordPress Settings Toggle */}
+            <div className={styles.settingsToggle}>
+              <button
+                type="button"
+                onClick={() => setShowWordPressSettings(!showWordPressSettings)}
+                className={styles.settingsButton}
+              >
+                {showWordPressSettings ? "Hide" : "Show"} WordPress Settings
+                {wordpress.isConnected && " (Connected)"}
+              </button>
+            </div>
+
+            {/* WordPress Settings Panel */}
+            {showWordPressSettings && (
+              <div className={styles.wordpressSettings}>
+                <h3>WordPress Connection</h3>
+                <p className={styles.settingsHelp}>
+                  Connect to your WordPress site to automatically upload generated images.
+                </p>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="siteUrl">Site URL</label>
+                  <input
+                    type="url"
+                    id="siteUrl"
+                    name="siteUrl"
+                    value={wordpress.siteUrl}
+                    onChange={handleWordPressChange}
+                    placeholder="https://yoursite.com"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="wpUsername">Username</label>
+                  <input
+                    type="text"
+                    id="wpUsername"
+                    name="username"
+                    value={wordpress.username}
+                    onChange={handleWordPressChange}
+                    placeholder="admin"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="appPassword">Application Password</label>
+                  <input
+                    type="password"
+                    id="appPassword"
+                    name="appPassword"
+                    value={wordpress.appPassword}
+                    onChange={handleWordPressChange}
+                    placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                  />
+                  <small>
+                    Generate in WordPress Admin - Users - Profile - Application Passwords
+                  </small>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={testWordPressConnection}
+                  disabled={testingConnection || !wordpress.siteUrl || !wordpress.username || !wordpress.appPassword}
+                  className={styles.testButton}
+                >
+                  {testingConnection ? "Testing..." : wordpress.isConnected ? "Connected" : "Test Connection"}
+                </button>
+              </div>
+            )}
+
+            {/* Blog Settings */}
             <div className={styles.formGroup}>
               <label htmlFor="topic">Blog Topic</label>
               <input
@@ -241,10 +391,7 @@ export default function Home() {
                         formData.location === neighborhood ? styles.active : ""
                       }`}
                       onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          location: neighborhood,
-                        }))
+                        setFormData((prev) => ({ ...prev, location: neighborhood }))
                       }
                     >
                       {neighborhood.split(",")[0]}
@@ -305,17 +452,20 @@ export default function Home() {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="aiProvider">AI Provider</label>
-              <select
-                id="aiProvider"
-                name="aiProvider"
-                value={formData.aiProvider}
-                onChange={handleInputChange}
-              >
-                <option value="claude">Claude (Recommended)</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="both">Both (Claude + Gemini)</option>
-              </select>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="useOrchestration"
+                  checked={formData.useOrchestration}
+                  onChange={handleInputChange}
+                />
+                <span>Use AI Orchestration (Llama + Gemini + Claude)</span>
+              </label>
+              <small className={styles.hint}>
+                {formData.useOrchestration
+                  ? "Llama creates outline, Gemini generates images, Claude writes content"
+                  : "Claude-only mode (faster, no image generation)"}
+              </small>
             </div>
 
             <button
@@ -326,11 +476,36 @@ export default function Home() {
               {state.isLoading ? "Generating..." : "Generate Blog"}
             </button>
           </form>
+
+          {/* Progress Indicator */}
+          {state.isLoading && (
+            <div className={styles.progressSection}>
+              <div className={styles.progressSteps}>
+                <div className={`${styles.progressStep} ${["outline", "images", "upload", "content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                  <span className={styles.stepNumber}>1</span>
+                  <span>Outline</span>
+                </div>
+                <div className={`${styles.progressStep} ${["images", "upload", "content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                  <span className={styles.stepNumber}>2</span>
+                  <span>Images</span>
+                </div>
+                <div className={`${styles.progressStep} ${["upload", "content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                  <span className={styles.stepNumber}>3</span>
+                  <span>Upload</span>
+                </div>
+                <div className={`${styles.progressStep} ${["content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                  <span className={styles.stepNumber}>4</span>
+                  <span>Content</span>
+                </div>
+              </div>
+              <p className={styles.progressMessage}>{state.progress.message}</p>
+            </div>
+          )}
         </div>
 
         {state.error && (
           <div className={styles.errorContainer}>
-            <p className={styles.error}>❌ {state.error}</p>
+            <p className={styles.error}>{state.error}</p>
           </div>
         )}
 
@@ -339,23 +514,17 @@ export default function Home() {
             <div className={styles.outputHeader}>
               <h2>Generated Blog Post</h2>
               <div className={styles.buttonGroup}>
-                <button
-                  onClick={handleCopyToClipboard}
-                  className={styles.actionButton}
-                >
-                  {state.copiedToClipboard ? "✓ Copied!" : "📋 Copy HTML"}
+                <button onClick={handleCopyToClipboard} className={styles.actionButton}>
+                  {state.copiedToClipboard ? "Copied!" : "Copy HTML"}
                 </button>
-                <button
-                  onClick={handleDownloadHTML}
-                  className={styles.actionButton}
-                >
-                  💾 HTML
+                <button onClick={handleDownloadHTML} className={styles.actionButton}>
+                  HTML
                 </button>
                 <button
                   onClick={handleDownloadCSV}
                   className={`${styles.actionButton} ${styles.primaryAction}`}
                 >
-                  📊 Download CSV
+                  Download CSV
                 </button>
               </div>
             </div>
@@ -385,11 +554,7 @@ export default function Home() {
             )}
 
             <div className={styles.htmlPreview}>
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: state.htmlContent,
-                }}
-              />
+              <div dangerouslySetInnerHTML={{ __html: state.htmlContent }} />
             </div>
 
             <details className={styles.codeDetails}>
@@ -401,18 +566,18 @@ export default function Home() {
           </div>
         )}
 
-        {!state.htmlContent && !state.error && (
+        {!state.htmlContent && !state.error && !state.isLoading && (
           <div className={styles.placeholderSection}>
-            <p>👆 Fill in the form above and click "Generate Blog"</p>
+            <p>Fill in the form above and click "Generate Blog"</p>
             <div className={styles.featuresList}>
-              <h3>Features:</h3>
+              <h3>New Multi-AI Features:</h3>
               <ul>
-                <li>✨ AI-powered content generation</li>
-                <li>📍 Location-specific details</li>
-                <li>🎯 Conversion-focused copy</li>
-                <li>📱 Mobile-responsive HTML</li>
-                <li>🖼️ Image placeholder integration</li>
-                <li>⚡ Ready to publish instantly</li>
+                <li>Llama 4 Maverick creates structured outlines</li>
+                <li>Gemini generates unique images for each section</li>
+                <li>WordPress integration for image storage</li>
+                <li>Claude writes polished final content</li>
+                <li>Complete SEO metadata included</li>
+                <li>One-click CSV export</li>
               </ul>
             </div>
           </div>
@@ -420,9 +585,7 @@ export default function Home() {
       </main>
 
       <footer className={styles.footer}>
-        <p>
-          Powered by Claude API & Google Gemini | Generate 1000s of blogs per month
-        </p>
+        <p>Powered by Llama 4 Maverick, Gemini, and Claude | Multi-AI Orchestration</p>
       </footer>
     </div>
   );

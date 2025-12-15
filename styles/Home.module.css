@@ -388,6 +388,153 @@
   opacity: 0.9;
 }
 
+/* WordPress Settings */
+.settingsToggle {
+  margin-bottom: 0.5rem;
+}
+
+.settingsButton {
+  background: transparent;
+  border: 2px dashed #667eea;
+  color: #667eea;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.settingsButton:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.wordpressSettings {
+  background: #f8f9ff;
+  border: 2px solid #e0e5ff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.wordpressSettings h3 {
+  margin: 0 0 0.5rem 0;
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.settingsHelp {
+  color: #666;
+  font-size: 0.85rem;
+  margin: 0 0 1rem 0;
+}
+
+.testButton {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.testButton:hover:not(:disabled) {
+  background: #5a6fd6;
+}
+
+.testButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Checkbox */
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: #333;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.hint {
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: normal;
+  margin-top: 0.25rem;
+}
+
+/* Progress Section */
+.progressSection {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: #f8f9ff;
+  border-radius: 8px;
+  border: 2px solid #e0e5ff;
+}
+
+.progressSteps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.progressStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.progressStep.active {
+  opacity: 1;
+}
+
+.stepNumber {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.progressStep.active .stepNumber {
+  background: #667eea;
+  color: white;
+}
+
+.progressStep span:last-child {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.progressMessage {
+  text-align: center;
+  color: #667eea;
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .main {
