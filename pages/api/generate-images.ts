@@ -1,5 +1,5 @@
 // pages/api/generate-images.ts
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 interface ImageGenerationRequest {
@@ -19,17 +19,12 @@ interface ImageGenerationResponse {
   error?: string;
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 async function generateImage(prompt: string, index: number): Promise<GeneratedImage | null> {
   try {
-    // Use Gemini's image generation model
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp", // Experimental model with image generation
-    });
-
     // Enhanced prompt for better image quality
-    const enhancedPrompt = `Generate a high-quality, photorealistic image for a professional landscape lighting blog post.
+    const enhancedPrompt = `Create a high-quality, photorealistic image for a professional landscape lighting blog post.
 
 IMAGE REQUIREMENTS:
 - Style: Professional marketing photography
@@ -39,35 +34,55 @@ IMAGE REQUIREMENTS:
 
 Make the image look like it was taken by a professional architectural photographer for a luxury home magazine. The lighting should be warm and inviting, showcasing the beauty of landscape lighting at dusk or evening.`;
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: enhancedPrompt }],
-        },
-      ],
-      generationConfig: {
+    // Use Gemini 2.5 Flash Image model for image generation
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-05-20",
+      contents: [{ role: "user", parts: [{ text: enhancedPrompt }] }],
+      config: {
         responseModalities: ["image", "text"],
-      } as any, // Type assertion needed for image generation config
+      },
     });
 
-    const response = result.response;
-
-    // Extract image from response
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if ((part as any).inlineData) {
-        const inlineData = (part as any).inlineData;
+    // Check for image in response
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
+      if (part.inlineData) {
         return {
           index,
           prompt,
-          base64: `data:${inlineData.mimeType};base64,${inlineData.data}`,
-          mimeType: inlineData.mimeType,
+          base64: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
+          mimeType: part.inlineData.mimeType || "image/png",
         };
       }
     }
 
-    // If no image was generated, return null
-    console.log(`No image generated for prompt ${index}`);
+    console.log(`No image generated for prompt ${index}, trying Imagen...`);
+
+    // Fallback to Imagen model
+    try {
+      const imagenResponse = await ai.models.generateImages({
+        model: "imagen-3.0-generate-002",
+        prompt: enhancedPrompt,
+        config: {
+          numberOfImages: 1,
+        },
+      });
+
+      if (imagenResponse.generatedImages && imagenResponse.generatedImages.length > 0) {
+        const img = imagenResponse.generatedImages[0];
+        if (img.image?.imageBytes) {
+          return {
+            index,
+            prompt,
+            base64: `data:image/png;base64,${img.image.imageBytes}`,
+            mimeType: "image/png",
+          };
+        }
+      }
+    } catch (imagenError) {
+      console.log(`Imagen fallback failed for prompt ${index}:`, imagenError);
+    }
+
     return null;
   } catch (error) {
     console.error(`Error generating image ${index}:`, error);
@@ -123,7 +138,7 @@ export default async function handler(
 
       // Small delay between requests to avoid rate limiting
       if (i < request.prompts.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
       }
     }
 
@@ -148,5 +163,5 @@ export const config = {
     },
     responseLimit: false,
   },
-  maxDuration: 60, // 60 seconds timeout for Vercel
+  maxDuration: 120, // 120 seconds timeout for multiple images
 };

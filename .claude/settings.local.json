@@ -10,7 +10,12 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd SEO metadata and CSV export functionality\n\n- Generate primary keyword, secondary keywords, meta title, and meta description\n- Add CSV download with all SEO data columns plus HTML content\n- Replace [IMAGE:] placeholders with actual img tags using placehold.co\n- Display SEO data in UI before blog preview\n- Style SEO section with clean grid layout\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push)",
-      "Bash(vercel --prod:*)"
+      "Bash(vercel --prod:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd multi-AI orchestration with WordPress integration\n\n- Add Llama 4 Maverick (via Groq) for intelligent outline generation\n- Add Gemini image generation for unique images per section\n- Add WordPress REST API integration for image uploads\n- Create orchestrator API to coordinate all AI services\n- Add WordPress settings UI with connection testing\n- Add progress indicator showing generation steps\n- Update frontend with orchestration toggle\n- Add groq-sdk dependency\n\nFlow: Llama creates outline -> Gemini generates images -> WordPress uploads -> Claude writes content\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(vercel env add:*)",
+      "Bash(vercel env:*)",
+      "Bash(npm install:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix image generation with new @google/genai SDK\n\n- Replace deprecated @google/generative-ai with @google/genai\n- Use gemini-2.5-flash-preview-05-20 with responseModalities for images\n- Add Imagen 3.0 fallback for image generation\n- Increase timeout to 120s for multiple images\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
