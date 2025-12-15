@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vercel logs:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(cat:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
