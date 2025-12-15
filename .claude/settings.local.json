@@ -7,7 +7,10 @@
       "Bash(npm install)",
       "Bash(npm run build:*)",
       "Bash(rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd SEO metadata and CSV export functionality\n\n- Generate primary keyword, secondary keywords, meta title, and meta description\n- Add CSV download with all SEO data columns plus HTML content\n- Replace [IMAGE:] placeholders with actual img tags using placehold.co\n- Display SEO data in UI before blog preview\n- Style SEO section with clean grid layout\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push)",
+      "Bash(vercel --prod:*)"
     ],
     "deny": [],
     "ask": []
