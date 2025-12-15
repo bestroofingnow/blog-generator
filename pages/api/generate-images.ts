@@ -24,19 +24,19 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 async function generateImage(prompt: string, index: number): Promise<GeneratedImage | null> {
   try {
     // Enhanced prompt for better image quality
-    const enhancedPrompt = `Create a high-quality, photorealistic image for a professional landscape lighting blog post.
+    const enhancedPrompt = `Create a high-quality, photorealistic image for a professional blog post.
 
 IMAGE REQUIREMENTS:
 - Style: Professional marketing photography
 - Quality: High resolution, sharp details
-- Lighting: Warm, inviting evening/dusk atmosphere
+- Composition: Well-balanced, visually appealing
 - Subject: ${prompt}
 
-Make the image look like it was taken by a professional architectural photographer for a luxury home magazine. The lighting should be warm and inviting, showcasing the beauty of landscape lighting at dusk or evening.`;
+Make the image look like it was taken by a professional photographer for a magazine or marketing material. Focus on high quality and visual appeal.`;
 
-    // Use Gemini 2.5 Flash Image model for image generation
+    // Use Gemini 2.0 Flash for image generation
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-05-20",
+      model: "gemini-2.0-flash",
       contents: [{ role: "user", parts: [{ text: enhancedPrompt }] }],
       config: {
         responseModalities: ["image", "text"],

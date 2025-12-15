@@ -72,22 +72,9 @@ interface GenerationState {
 }
 
 export default function Home() {
-  const charlotteNeighborhoods = [
-    "Myers Park, Charlotte, NC",
-    "Providence Plantation, Charlotte, NC",
-    "Freedom Park Area, Charlotte, NC",
-    "Beverly Woods, Charlotte, NC",
-    "Sedgefield, Charlotte, NC",
-    "Steele Creek, Charlotte, NC",
-    "Lake Wylie, NC",
-    "Lake Norman, NC",
-    "Mooresville, NC",
-    "Huntersville, NC",
-  ];
-
   const [formData, setFormData] = useState<FormData>({
-    topic: "Landscape Lighting",
-    location: "Charlotte, NC",
+    topic: "",
+    location: "",
     blogType: "Neighborhood Guide",
     numberOfSections: 5,
     tone: "professional yet friendly",
@@ -616,25 +603,6 @@ export default function Home() {
                 placeholder="e.g., Charlotte, NC"
                 required
               />
-              <div className={styles.quickSelect}>
-                <small>Quick select Charlotte areas:</small>
-                <div className={styles.buttonGrid}>
-                  {charlotteNeighborhoods.map((neighborhood) => (
-                    <button
-                      key={neighborhood}
-                      type="button"
-                      className={`${styles.quickSelectButton} ${
-                        formData.location === neighborhood ? styles.active : ""
-                      }`}
-                      onClick={() =>
-                        setFormData((prev) => ({ ...prev, location: neighborhood }))
-                      }
-                    >
-                      {neighborhood.split(",")[0]}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             <div className={styles.formGroup}>

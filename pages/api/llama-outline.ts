@@ -116,21 +116,21 @@ Respond with ONLY valid JSON in this exact format:
 {
   "blogTitle": "Compelling H1 title mentioning ${location} and ${topic}",
   "introduction": {
-    "hook": "Opening hook that addresses homeowner pain points or aspirations",
+    "hook": "Opening hook that addresses customer pain points or aspirations",
     "keyPoints": ["Key point 1", "Key point 2", "Key point 3"],
-    "imagePrompt": "Detailed prompt for hero image: Professional photograph of [specific scene with landscape lighting in ${location}, include time of day, lighting style, architectural details, atmosphere]"
+    "imagePrompt": "Detailed prompt for hero image: Professional photograph of [specific scene related to ${topic} in ${location}, include relevant details like time of day, style, atmosphere]"
   },
   "sections": [
     {
-      "title": "Section H2 title specific to ${location}",
+      "title": "Section H2 title specific to ${topic} in ${location}",
       "keyPoints": ["Detailed point 1", "Detailed point 2", "Detailed point 3"],
-      "imagePrompt": "Detailed prompt: Professional photograph of [specific landscape lighting scene, be very descriptive about the lighting fixtures, their placement, the home style, vegetation, time of day, mood]",
+      "imagePrompt": "Detailed prompt: Professional photograph of [specific scene related to the section topic, be very descriptive about the subject, style, setting, mood]",
       "imagePlacement": "after"
     }
   ],
   "conclusion": {
     "summary": "Key takeaways summary",
-    "callToAction": "Compelling CTA for landscape lighting consultation"
+    "callToAction": "Compelling CTA for ${topic} consultation or service"
   },
   "seo": {
     "primaryKeyword": "3-5 word primary keyword phrase with location",
