@@ -1,6 +1,11 @@
 // lib/ai-gateway.ts
-import { gateway } from "@ai-sdk/gateway";
+import { createGateway } from "@ai-sdk/gateway";
 import { generateText, experimental_generateImage as generateImageAI } from "ai";
+
+// Create gateway instance with API key authentication
+const gateway = createGateway({
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? "",
+});
 
 // Language Model assignments based on user specification
 // Using correct Vercel AI Gateway model IDs (no provider prefix needed)
