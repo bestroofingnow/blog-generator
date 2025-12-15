@@ -11,9 +11,17 @@ interface BlogGeneratorRequest {
   includeImages?: boolean;
 }
 
+interface SEOData {
+  primaryKeyword: string;
+  secondaryKeywords: string[];
+  metaTitle: string;
+  metaDescription: string;
+}
+
 interface BlogGeneratorResponse {
   success: boolean;
   htmlContent?: string;
+  seoData?: SEOData;
   error?: string;
   tokens?: {
     input: number;
@@ -69,9 +77,14 @@ COMMON THEMES TO INCORPORATE:
 - Energy efficiency benefits
 - Neighborhood character and community standards`;
 
+interface GeneratedContent {
+  htmlContent: string;
+  seoData: SEOData;
+}
+
 async function generateBlogContent(
   request: BlogGeneratorRequest
-): Promise<string> {
+): Promise<GeneratedContent> {
   const {
     topic,
     location,
@@ -96,7 +109,7 @@ CONTENT REQUIREMENTS:
    - Start with a compelling hook that speaks to homeowner pain points or aspirations
    - 2-3 paragraphs explaining why this topic matters for ${location} properties
    - End intro with a transition to main content
-   - Include one [IMAGE:description] after intro
+   - Include one image tag after intro using this format: <img src="https://placehold.co/800x400/667eea/ffffff?text=Landscape+Lighting+in+${encodeURIComponent(location)}" alt="[descriptive alt text]" />
 
 3. MAIN SECTIONS (${numberOfSections} sections):
    - Create H2 headers that are specific to ${location} neighborhoods or aspects
@@ -107,7 +120,7 @@ CONTENT REQUIREMENTS:
      * Local landmarks, parks, or neighborhood characteristics
      * Lifestyle/emotional benefits alongside practical benefits
      * Specific architectural or design considerations
-   - Include [IMAGE:description] between 2-3 major sections
+   - Include 2-3 images throughout using: <img src="https://placehold.co/800x400/764ba2/ffffff?text=[URL+Encoded+Description]" alt="[descriptive alt text]" />
    - Use <strong> tags for key concepts, product names, or feature highlights
 
 4. CLOSING SECTION:
@@ -122,27 +135,75 @@ CHARLOTTE-SPECIFIC DETAILS TO INCORPORATE:
 - Mention community standards and HOA considerations where relevant
 - Include ROI/investment return angle for luxury market
 
-Generate ONLY valid HTML code. Do not include markdown formatting, code fences, or any text outside the HTML tags.`;
+IMPORTANT: Your response must be valid JSON with this exact structure:
+{
+  "seo": {
+    "primaryKeyword": "main SEO keyword phrase (3-5 words, location + service focused)",
+    "secondaryKeywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5"],
+    "metaTitle": "SEO optimized title under 60 characters including primary keyword",
+    "metaDescription": "Compelling meta description 150-160 characters with primary keyword and call to action"
+  },
+  "html": "YOUR FULL HTML CONTENT HERE"
+}
+
+The HTML should be complete and ready to copy-paste. Include actual <img> tags with placeholder URLs, not [IMAGE:] placeholders.`;
 
   const message = await client.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 4000,
+    max_tokens: 5000,
     messages: [
       {
         role: "user",
         content: userPrompt,
       },
     ],
-    system: systemPrompt,
+    system: systemPrompt + "\n\nIMPORTANT: Always respond with valid JSON only. No markdown code fences, no extra text before or after the JSON.",
   });
 
   // Extract text content
-  let htmlContent = "";
+  let responseText = "";
   if (message.content[0].type === "text") {
-    htmlContent = message.content[0].text;
+    responseText = message.content[0].text;
   }
 
-  return htmlContent;
+  // Parse the JSON response
+  try {
+    // Clean up response if it has markdown code fences
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith("```json")) {
+      cleanedResponse = cleanedResponse.slice(7);
+    }
+    if (cleanedResponse.startsWith("```")) {
+      cleanedResponse = cleanedResponse.slice(3);
+    }
+    if (cleanedResponse.endsWith("```")) {
+      cleanedResponse = cleanedResponse.slice(0, -3);
+    }
+    cleanedResponse = cleanedResponse.trim();
+
+    const parsed = JSON.parse(cleanedResponse);
+
+    return {
+      htmlContent: parsed.html,
+      seoData: {
+        primaryKeyword: parsed.seo.primaryKeyword,
+        secondaryKeywords: parsed.seo.secondaryKeywords,
+        metaTitle: parsed.seo.metaTitle,
+        metaDescription: parsed.seo.metaDescription,
+      },
+    };
+  } catch {
+    // Fallback if JSON parsing fails - return raw content with default SEO
+    return {
+      htmlContent: responseText,
+      seoData: {
+        primaryKeyword: `${topic} ${location}`,
+        secondaryKeywords: [topic, location, "landscape lighting", "outdoor lighting", "professional lighting"],
+        metaTitle: `${topic} in ${location} | Professional Guide`,
+        metaDescription: `Discover the best ${topic.toLowerCase()} options for ${location}. Expert tips, local insights, and professional recommendations.`,
+      },
+    };
+  }
 }
 
 export default async function handler(
@@ -172,11 +233,12 @@ export default async function handler(
       });
     }
 
-    const htmlContent = await generateBlogContent(request);
+    const { htmlContent, seoData } = await generateBlogContent(request);
 
     return res.status(200).json({
       success: true,
       htmlContent,
+      seoData,
       tokens: {
         input: 0,
         output: 0,

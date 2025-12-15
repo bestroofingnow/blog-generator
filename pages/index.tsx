@@ -11,10 +11,18 @@ interface FormData {
   aiProvider: "claude" | "gemini" | "both";
 }
 
+interface SEOData {
+  primaryKeyword: string;
+  secondaryKeywords: string[];
+  metaTitle: string;
+  metaDescription: string;
+}
+
 interface GenerationState {
   isLoading: boolean;
   error: string | null;
   htmlContent: string | null;
+  seoData: SEOData | null;
   copiedToClipboard: boolean;
 }
 
@@ -44,6 +52,7 @@ export default function Home() {
     isLoading: false,
     error: null,
     htmlContent: null,
+    seoData: null,
     copiedToClipboard: false,
   });
 
@@ -64,6 +73,7 @@ export default function Home() {
       isLoading: true,
       error: null,
       htmlContent: null,
+      seoData: null,
       copiedToClipboard: false,
     });
 
@@ -98,6 +108,7 @@ export default function Home() {
         isLoading: false,
         error: null,
         htmlContent: data.htmlContent || data.content,
+        seoData: data.seoData || null,
         copiedToClipboard: false,
       });
     } catch (error) {
@@ -108,6 +119,7 @@ export default function Home() {
             ? error.message
             : "An unknown error occurred",
         htmlContent: null,
+        seoData: null,
         copiedToClipboard: false,
       });
     }
@@ -138,6 +150,46 @@ export default function Home() {
       element.href = URL.createObjectURL(file);
       element.download =
         `blog-${formData.location.replace(/\s+/g, "-")}-${Date.now()}.html`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+  };
+
+  const escapeCSV = (str: string): string => {
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const handleDownloadCSV = () => {
+    if (state.htmlContent && state.seoData) {
+      const headers = [
+        "Primary Keyword",
+        "Secondary Keywords",
+        "Meta Title",
+        "Meta Description",
+        "HTML Content"
+      ];
+
+      const row = [
+        escapeCSV(state.seoData.primaryKeyword),
+        escapeCSV(state.seoData.secondaryKeywords.join("; ")),
+        escapeCSV(state.seoData.metaTitle),
+        escapeCSV(state.seoData.metaDescription),
+        escapeCSV(state.htmlContent)
+      ];
+
+      const csvContent = headers.join(",") + "\n" + row.join(",");
+
+      const element = document.createElement("a");
+      const file = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+      element.href = URL.createObjectURL(file);
+      element.download =
+        `blog-${formData.location.replace(/\s+/g, "-")}-${Date.now()}.csv`;
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
@@ -297,10 +349,40 @@ export default function Home() {
                   onClick={handleDownloadHTML}
                   className={styles.actionButton}
                 >
-                  💾 Download HTML
+                  💾 HTML
+                </button>
+                <button
+                  onClick={handleDownloadCSV}
+                  className={`${styles.actionButton} ${styles.primaryAction}`}
+                >
+                  📊 Download CSV
                 </button>
               </div>
             </div>
+
+            {state.seoData && (
+              <div className={styles.seoSection}>
+                <h3>SEO Data</h3>
+                <div className={styles.seoGrid}>
+                  <div className={styles.seoItem}>
+                    <label>Primary Keyword:</label>
+                    <span>{state.seoData.primaryKeyword}</span>
+                  </div>
+                  <div className={styles.seoItem}>
+                    <label>Secondary Keywords:</label>
+                    <span>{state.seoData.secondaryKeywords.join(", ")}</span>
+                  </div>
+                  <div className={styles.seoItem}>
+                    <label>Meta Title:</label>
+                    <span>{state.seoData.metaTitle}</span>
+                  </div>
+                  <div className={styles.seoItem}>
+                    <label>Meta Description:</label>
+                    <span>{state.seoData.metaDescription}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className={styles.htmlPreview}>
               <div
