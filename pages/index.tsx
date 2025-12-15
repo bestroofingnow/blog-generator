@@ -60,6 +60,7 @@ interface GenerationState {
   error: string | null;
   htmlContent: string | null;
   seoData: SEOData | null;
+  featuredImageId: number | null;
   copiedToClipboard: boolean;
   progress: {
     step: "idle" | "research" | "outline" | "images" | "upload" | "content" | "format" | "publishing" | "complete";
@@ -117,6 +118,7 @@ export default function Home() {
     error: null,
     htmlContent: null,
     seoData: null,
+    featuredImageId: null,
     copiedToClipboard: false,
     progress: { step: "idle", message: "" },
     publishedPost: null,
@@ -298,6 +300,7 @@ export default function Home() {
             status: publishSettings.action === "schedule" ? "future" : publishSettings.action,
             scheduledDate,
             categoryId: publishSettings.categoryId,
+            featuredMediaId: state.featuredImageId || undefined,
             metaTitle: state.seoData.metaTitle,
             metaDescription: state.seoData.metaDescription,
             excerpt: state.seoData.metaDescription,
@@ -340,10 +343,15 @@ export default function Home() {
       error: null,
       htmlContent: null,
       seoData: null,
+      featuredImageId: null,
       copiedToClipboard: false,
       progress: { step: "outline", message: "Creating outline with Llama 4 Maverick..." },
       publishedPost: null,
     });
+    // Auto-show publish settings when WordPress is connected
+    if (wordpress.isConnected) {
+      setShowPublishSettings(true);
+    }
 
     try {
       if (formData.useOrchestration) {
@@ -370,6 +378,7 @@ export default function Home() {
           error: null,
           htmlContent: data.htmlContent,
           seoData: data.seoData,
+          featuredImageId: data.featuredImageId || null,
           copiedToClipboard: false,
           progress: { step: "complete", message: "Blog generated successfully!" },
           publishedPost: null,
@@ -392,6 +401,7 @@ export default function Home() {
           error: null,
           htmlContent: data.htmlContent,
           seoData: data.seoData,
+          featuredImageId: null,
           copiedToClipboard: false,
           progress: { step: "complete", message: "Blog generated successfully!" },
           publishedPost: null,
@@ -403,6 +413,7 @@ export default function Home() {
         error: error instanceof Error ? error.message : "An unknown error occurred",
         htmlContent: null,
         seoData: null,
+        featuredImageId: null,
         copiedToClipboard: false,
         progress: { step: "idle", message: "" },
         publishedPost: null,
@@ -877,78 +888,81 @@ export default function Home() {
               <div className={styles.publishSection}>
                 <div className={styles.publishHeader}>
                   <h3>Publish to WordPress</h3>
-                  <button
-                    type="button"
-                    onClick={() => setShowPublishSettings(!showPublishSettings)}
-                    className={styles.togglePublishSettings}
-                  >
-                    {showPublishSettings ? "Hide Options" : "Show Options"}
-                  </button>
+                  {state.featuredImageId && (
+                    <span className={styles.featuredImageBadge}>Featured image set</span>
+                  )}
                 </div>
 
-                {showPublishSettings && (
-                  <div className={styles.publishOptions}>
+                <div className={styles.publishOptions}>
+                  <div className={styles.publishActionButtons}>
+                    <button
+                      type="button"
+                      onClick={() => setPublishSettings(prev => ({ ...prev, action: "draft" }))}
+                      className={`${styles.publishActionBtn} ${publishSettings.action === "draft" ? styles.active : ""}`}
+                    >
+                      Save Draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPublishSettings(prev => ({ ...prev, action: "publish" }))}
+                      className={`${styles.publishActionBtn} ${publishSettings.action === "publish" ? styles.active : ""}`}
+                    >
+                      Publish Now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPublishSettings(prev => ({ ...prev, action: "schedule" }))}
+                      className={`${styles.publishActionBtn} ${publishSettings.action === "schedule" ? styles.active : ""}`}
+                    >
+                      Schedule
+                    </button>
+                  </div>
+
+                  {publishSettings.action === "schedule" && (
+                    <div className={styles.scheduleInputs}>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="scheduledDate">Date</label>
+                        <input
+                          type="date"
+                          id="scheduledDate"
+                          name="scheduledDate"
+                          value={publishSettings.scheduledDate}
+                          onChange={handlePublishSettingsChange}
+                          min={getMinDate()}
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="scheduledTime">Time</label>
+                        <input
+                          type="time"
+                          id="scheduledTime"
+                          name="scheduledTime"
+                          value={publishSettings.scheduledTime}
+                          onChange={handlePublishSettingsChange}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {categories.length > 0 && (
                     <div className={styles.formGroup}>
-                      <label htmlFor="publishAction">Publish Action</label>
+                      <label htmlFor="categoryId">Category</label>
                       <select
-                        id="publishAction"
-                        name="action"
-                        value={publishSettings.action}
+                        id="categoryId"
+                        name="categoryId"
+                        value={publishSettings.categoryId || ""}
                         onChange={handlePublishSettingsChange}
                       >
-                        <option value="none">Don't publish (download only)</option>
-                        <option value="draft">Save as Draft</option>
-                        <option value="publish">Publish Now</option>
-                        <option value="schedule">Schedule for Later</option>
+                        <option value="">No category</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
-
-                    {publishSettings.action === "schedule" && (
-                      <div className={styles.scheduleInputs}>
-                        <div className={styles.formGroup}>
-                          <label htmlFor="scheduledDate">Date</label>
-                          <input
-                            type="date"
-                            id="scheduledDate"
-                            name="scheduledDate"
-                            value={publishSettings.scheduledDate}
-                            onChange={handlePublishSettingsChange}
-                            min={getMinDate()}
-                          />
-                        </div>
-                        <div className={styles.formGroup}>
-                          <label htmlFor="scheduledTime">Time</label>
-                          <input
-                            type="time"
-                            id="scheduledTime"
-                            name="scheduledTime"
-                            value={publishSettings.scheduledTime}
-                            onChange={handlePublishSettingsChange}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {categories.length > 0 && (
-                      <div className={styles.formGroup}>
-                        <label htmlFor="categoryId">Category</label>
-                        <select
-                          id="categoryId"
-                          name="categoryId"
-                          value={publishSettings.categoryId || ""}
-                          onChange={handlePublishSettingsChange}
-                        >
-                          <option value="">No category</option>
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                              {cat.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {publishSettings.action !== "none" && (
                   <button
@@ -962,8 +976,8 @@ export default function Home() {
                       : publishSettings.action === "draft"
                       ? "Save Draft to WordPress"
                       : publishSettings.action === "schedule"
-                      ? "Schedule Post"
-                      : "Publish to WordPress"}
+                      ? `Schedule for ${publishSettings.scheduledDate || "..."}`
+                      : "Publish Now to WordPress"}
                   </button>
                 )}
 

@@ -41,6 +41,7 @@ interface OrchestrateResponse {
   success: boolean;
   htmlContent?: string;
   seoData?: SEOData;
+  featuredImageId?: number; // WordPress media ID for the hero/featured image
   error?: string;
   steps?: {
     outline: boolean;
@@ -174,27 +175,48 @@ export default async function handler(
     // STEP 3: Upload to WordPress (if credentials provided)
     console.log("Step 3: Uploading to WordPress...");
     let imageUrls: string[] = [];
+    const uploadedImageIds: number[] = []; // Store WordPress media IDs for featured image
 
     if (request.wordpress && generatedImages.length > 0) {
       try {
+        // Filter images that have base64 data and strip the data URI prefix
         const imagesToUpload = generatedImages
           .filter((img) => img.base64 && img.base64.length > 0)
-          .map((img, index) => ({
-            base64: img.base64,
-            filename: `blog-image-${Date.now()}-${index}.png`,
-            altText: img.prompt.substring(0, 100),
-          }));
+          .map((img, index) => {
+            // Strip data URI prefix if present (e.g., "data:image/png;base64,")
+            let base64Data = img.base64;
+            if (base64Data.includes(",")) {
+              base64Data = base64Data.split(",")[1];
+            }
+
+            return {
+              base64: base64Data,
+              filename: `${request.topic.replace(/\s+/g, "-").toLowerCase()}-${request.location.replace(/\s+/g, "-").toLowerCase()}-${index + 1}-${Date.now()}.png`,
+              altText: img.prompt.substring(0, 100),
+              caption: `${request.topic} - ${outline.sections[index - 1]?.title || "Hero Image"}`,
+            };
+          });
 
         if (imagesToUpload.length > 0) {
+          console.log(`Uploading ${imagesToUpload.length} images to WordPress...`);
           const uploadResponse = await callInternalApi("/api/wordpress-upload", {
             action: "uploadMultiple",
             credentials: request.wordpress,
             images: imagesToUpload,
-          }) as { success: boolean; images?: Array<{ url: string }> };
+          }) as { success: boolean; images?: Array<{ id: number; url: string }> };
 
           if (uploadResponse.success && uploadResponse.images) {
-            imageUrls = uploadResponse.images.map((img) => img.url).filter(Boolean);
+            // Map uploaded images back to their original indices
+            uploadResponse.images.forEach((uploaded, i) => {
+              if (uploaded.url) {
+                imageUrls[i] = uploaded.url;
+              }
+              if (uploaded.id) {
+                uploadedImageIds[i] = uploaded.id;
+              }
+            });
             steps.upload = true;
+            console.log(`Successfully uploaded ${imageUrls.filter(Boolean).length} images to WordPress`);
           }
         }
       } catch (error) {
@@ -203,16 +225,18 @@ export default async function handler(
       }
     }
 
-    // If no WordPress or upload failed, use base64 images or placeholders
-    if (imageUrls.length === 0) {
-      imageUrls = generatedImages.map((img, index) => {
+    // Fill in any missing URLs with base64 or placeholders
+    for (let i = 0; i < generatedImages.length; i++) {
+      if (!imageUrls[i]) {
+        const img = generatedImages[i];
         if (img.base64 && img.base64.length > 0) {
-          return img.base64; // Use base64 directly
+          imageUrls[i] = img.base64; // Use base64 directly (includes data URI prefix)
+        } else {
+          // Placeholder with topic-relevant text
+          const placeholderText = encodeURIComponent(`${request.topic} Image ${i + 1}`);
+          imageUrls[i] = `https://placehold.co/800x400/667eea/ffffff?text=${placeholderText}`;
         }
-        // Placeholder with topic-relevant text
-        const placeholderText = encodeURIComponent(`${request.topic} Image ${index + 1}`);
-        return `https://placehold.co/800x400/667eea/ffffff?text=${placeholderText}`;
-      });
+      }
     }
 
     // STEP 4: Generate content with Claude Sonnet 4.5
@@ -254,6 +278,7 @@ export default async function handler(
       success: true,
       htmlContent,
       seoData,
+      featuredImageId: uploadedImageIds[0], // First image (hero) as featured image
       steps,
     });
   } catch (error) {
