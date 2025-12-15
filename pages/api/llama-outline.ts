@@ -8,6 +8,9 @@ interface OutlineRequest {
   blogType: string;
   numberOfSections?: number;
   tone?: string;
+  primaryKeyword?: string;
+  secondaryKeywords?: string[];
+  imageThemes?: string[];
 }
 
 interface OutlineSection {
@@ -70,9 +73,23 @@ export default async function handler(
       });
     }
 
-    const { topic, location, blogType, numberOfSections = 5, tone = "professional yet friendly" } = request;
+    const { topic, location, blogType, numberOfSections = 5, tone = "professional yet friendly", primaryKeyword, secondaryKeywords, imageThemes } = request;
 
-    const prompt = `You are an expert content strategist and SEO specialist. Create a detailed blog post outline for a landscape lighting company targeting the Charlotte, NC area.
+    // Build SEO context if keywords provided
+    const seoContext = primaryKeyword
+      ? `\n\nSEO REQUIREMENTS:
+- Primary keyword to target: "${primaryKeyword}"
+- Secondary keywords to include naturally: ${secondaryKeywords?.join(", ") || "related terms"}
+- Ensure the outline structure supports natural keyword placement`
+      : "";
+
+    // Build image theme context if provided
+    const imageThemeContext = imageThemes && imageThemes.length > 0
+      ? `\n\nIMAGE THEMES (from research - use these as guides for your image prompts):
+${imageThemes.map((theme, i) => `${i + 1}. ${theme}`).join("\n")}`
+      : "";
+
+    const prompt = `You are an expert content strategist and SEO specialist. Create a detailed blog post outline for a local service company.
 
 BLOG SPECIFICATIONS:
 - Topic: ${topic}
@@ -82,14 +99,18 @@ BLOG SPECIFICATIONS:
 - Tone: ${tone}
 
 Your task is to create a structured outline that will guide the content writer. For each section, provide a detailed image prompt that will be used to generate a unique, professional image.
+${seoContext}
+${imageThemeContext}
 
 IMAGE PROMPT GUIDELINES:
 - Each image prompt should be highly specific and descriptive
 - Include details about: lighting conditions, time of day, architectural style, atmosphere
-- Mention specific elements like: LED lights, path lights, uplighting, accent lighting
-- Reference the location naturally (Charlotte, NC area aesthetics)
+- The image MUST directly relate to the section content (e.g., if discussing "pathway lighting", show pathway lights)
+- For ${topic}, include relevant visual elements (products, installations, before/after, etc.)
+- Reference the location naturally (${location} area aesthetics)
 - Aim for photorealistic, professional marketing imagery
-- Avoid generic descriptions - make each prompt unique to its section
+- Avoid generic descriptions - make each prompt unique to its section's specific content
+- Think about what image would best support the reader's understanding of that section
 
 Respond with ONLY valid JSON in this exact format:
 {

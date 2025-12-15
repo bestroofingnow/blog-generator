@@ -9,6 +9,12 @@ interface FormData {
   numberOfSections: number;
   tone: string;
   useOrchestration: boolean;
+  companyName: string;
+  companyWebsite: string;
+  primaryKeyword: string;
+  secondaryKeywords: string;
+  metaTitle: string;
+  metaDescription: string;
 }
 
 interface WordPressSettings {
@@ -25,6 +31,16 @@ interface SEOData {
   metaDescription: string;
 }
 
+interface ResearchData {
+  primaryKeyword: string;
+  secondaryKeywords: string[];
+  metaTitle: string;
+  metaDescription: string;
+  competitorInsights: string[];
+  contentAngles: string[];
+  imageThemes: string[];
+}
+
 interface GenerationState {
   isLoading: boolean;
   error: string | null;
@@ -32,7 +48,7 @@ interface GenerationState {
   seoData: SEOData | null;
   copiedToClipboard: boolean;
   progress: {
-    step: "idle" | "outline" | "images" | "upload" | "content" | "complete";
+    step: "idle" | "research" | "outline" | "images" | "upload" | "content" | "complete";
     message: string;
   };
 }
@@ -46,6 +62,7 @@ export default function Home() {
     "Sedgefield, Charlotte, NC",
     "Steele Creek, Charlotte, NC",
     "Lake Wylie, NC",
+    "Lake Norman, NC",
     "Mooresville, NC",
     "Huntersville, NC",
   ];
@@ -57,6 +74,12 @@ export default function Home() {
     numberOfSections: 5,
     tone: "professional yet friendly",
     useOrchestration: true,
+    companyName: "",
+    companyWebsite: "",
+    primaryKeyword: "",
+    secondaryKeywords: "",
+    metaTitle: "",
+    metaDescription: "",
   });
 
   const [wordpress, setWordpress] = useState<WordPressSettings>({
@@ -67,7 +90,10 @@ export default function Home() {
   });
 
   const [showWordPressSettings, setShowWordPressSettings] = useState(false);
+  const [showSEOSettings, setShowSEOSettings] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
+  const [isResearching, setIsResearching] = useState(false);
+  const [researchData, setResearchData] = useState<ResearchData | null>(null);
 
   const [state, setState] = useState<GenerationState>({
     isLoading: false,
@@ -146,6 +172,43 @@ export default function Home() {
     setTestingConnection(false);
   };
 
+  const handleResearchKeywords = async () => {
+    setIsResearching(true);
+    try {
+      const response = await fetch("/api/research-keywords", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: formData.topic,
+          location: formData.location,
+          companyName: formData.companyName,
+          companyWebsite: formData.companyWebsite,
+          blogType: formData.blogType,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.suggestions) {
+        setResearchData(data.suggestions);
+        // Auto-fill the form fields
+        setFormData((prev) => ({
+          ...prev,
+          primaryKeyword: data.suggestions.primaryKeyword,
+          secondaryKeywords: data.suggestions.secondaryKeywords.join(", "),
+          metaTitle: data.suggestions.metaTitle,
+          metaDescription: data.suggestions.metaDescription,
+        }));
+        setShowSEOSettings(true);
+      } else {
+        alert(`Research failed: ${data.error}`);
+      }
+    } catch (error) {
+      alert("Keyword research failed");
+    }
+    setIsResearching(false);
+  };
+
   const handleGenerateBlog = async (e: React.FormEvent) => {
     e.preventDefault();
     setState({
@@ -164,6 +227,8 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...formData,
+            secondaryKeywords: formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean),
+            imageThemes: researchData?.imageThemes || [],
             wordpress: wordpress.isConnected ? wordpress : undefined,
           }),
         });
@@ -302,7 +367,7 @@ export default function Home() {
               <div className={styles.wordpressSettings}>
                 <h3>WordPress Connection</h3>
                 <p className={styles.settingsHelp}>
-                  Connect to your WordPress site to automatically upload generated images.
+                  Connect to your WordPress site to automatically upload generated images and set meta data.
                 </p>
 
                 <div className={styles.formGroup}>
@@ -340,7 +405,7 @@ export default function Home() {
                     placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
                   />
                   <small>
-                    Generate in WordPress Admin - Users - Profile - Application Passwords
+                    Generate in WordPress Admin → Users → Profile → Application Passwords
                   </small>
                 </div>
 
@@ -355,6 +420,31 @@ export default function Home() {
               </div>
             )}
 
+            {/* Company Info */}
+            <div className={styles.formGroup}>
+              <label htmlFor="companyName">Company Name (Optional)</label>
+              <input
+                type="text"
+                id="companyName"
+                name="companyName"
+                value={formData.companyName}
+                onChange={handleInputChange}
+                placeholder="e.g., Charlotte Landscape Lighting Co."
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="companyWebsite">Company Website (Optional)</label>
+              <input
+                type="url"
+                id="companyWebsite"
+                name="companyWebsite"
+                value={formData.companyWebsite}
+                onChange={handleInputChange}
+                placeholder="https://yourcompany.com"
+              />
+            </div>
+
             {/* Blog Settings */}
             <div className={styles.formGroup}>
               <label htmlFor="topic">Blog Topic</label>
@@ -364,7 +454,7 @@ export default function Home() {
                 name="topic"
                 value={formData.topic}
                 onChange={handleInputChange}
-                placeholder="e.g., Landscape Lighting, Outdoor Design"
+                placeholder="e.g., Landscape Lighting, Roof Replacement, Outdoor Design"
                 required
               />
             </div>
@@ -416,8 +506,118 @@ export default function Home() {
                 <option>Property Showcase</option>
                 <option>Expert Tips</option>
                 <option>Season-Specific Guide</option>
+                <option>Before and After</option>
+                <option>Product Comparison</option>
               </select>
             </div>
+
+            {/* Research Button */}
+            <div className={styles.researchSection}>
+              <button
+                type="button"
+                onClick={handleResearchKeywords}
+                disabled={isResearching || !formData.topic || !formData.location}
+                className={styles.researchButton}
+              >
+                {isResearching ? "Researching..." : "Research Keywords & SEO (AI)"}
+              </button>
+              <small>Uses Gemini to analyze competitors and suggest optimal keywords</small>
+            </div>
+
+            {/* SEO Settings Toggle */}
+            <div className={styles.settingsToggle}>
+              <button
+                type="button"
+                onClick={() => setShowSEOSettings(!showSEOSettings)}
+                className={styles.settingsButton}
+              >
+                {showSEOSettings ? "Hide" : "Show"} SEO & Keyword Settings
+                {formData.primaryKeyword && " (Configured)"}
+              </button>
+            </div>
+
+            {/* SEO Settings Panel */}
+            {showSEOSettings && (
+              <div className={styles.seoSettings}>
+                <h3>SEO & Keywords</h3>
+
+                {researchData && (
+                  <div className={styles.researchInsights}>
+                    <h4>AI Research Insights:</h4>
+                    <div className={styles.insightsList}>
+                      <div>
+                        <strong>Competitor Insights:</strong>
+                        <ul>
+                          {researchData.competitorInsights.map((insight, i) => (
+                            <li key={i}>{insight}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <strong>Content Angles:</strong>
+                        <ul>
+                          {researchData.contentAngles.map((angle, i) => (
+                            <li key={i}>{angle}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="primaryKeyword">Primary Keyword</label>
+                  <input
+                    type="text"
+                    id="primaryKeyword"
+                    name="primaryKeyword"
+                    value={formData.primaryKeyword}
+                    onChange={handleInputChange}
+                    placeholder="e.g., landscape lighting charlotte nc"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="secondaryKeywords">Secondary Keywords (comma separated)</label>
+                  <textarea
+                    id="secondaryKeywords"
+                    name="secondaryKeywords"
+                    value={formData.secondaryKeywords}
+                    onChange={handleInputChange}
+                    placeholder="e.g., outdoor lighting, pathway lights, garden illumination"
+                    rows={2}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="metaTitle">Meta Title</label>
+                  <input
+                    type="text"
+                    id="metaTitle"
+                    name="metaTitle"
+                    value={formData.metaTitle}
+                    onChange={handleInputChange}
+                    placeholder="SEO-optimized page title (under 60 characters)"
+                    maxLength={60}
+                  />
+                  <small>{formData.metaTitle.length}/60 characters</small>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="metaDescription">Meta Description</label>
+                  <textarea
+                    id="metaDescription"
+                    name="metaDescription"
+                    value={formData.metaDescription}
+                    onChange={handleInputChange}
+                    placeholder="Compelling description for search results (under 160 characters)"
+                    maxLength={160}
+                    rows={2}
+                  />
+                  <small>{formData.metaDescription.length}/160 characters</small>
+                </div>
+              </div>
+            )}
 
             <div className={styles.formGroup}>
               <label htmlFor="numberOfSections">Number of Sections</label>
@@ -463,7 +663,7 @@ export default function Home() {
               </label>
               <small className={styles.hint}>
                 {formData.useOrchestration
-                  ? "Llama creates outline, Gemini generates images, Claude writes content"
+                  ? "Llama creates outline, Gemini generates context-aware images, Claude writes content"
                   : "Claude-only mode (faster, no image generation)"}
               </small>
             </div>
@@ -481,7 +681,7 @@ export default function Home() {
           {state.isLoading && (
             <div className={styles.progressSection}>
               <div className={styles.progressSteps}>
-                <div className={`${styles.progressStep} ${["outline", "images", "upload", "content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["research", "outline", "images", "upload", "content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>1</span>
                   <span>Outline</span>
                 </div>
@@ -570,14 +770,14 @@ export default function Home() {
           <div className={styles.placeholderSection}>
             <p>Fill in the form above and click "Generate Blog"</p>
             <div className={styles.featuresList}>
-              <h3>New Multi-AI Features:</h3>
+              <h3>Multi-AI Features:</h3>
               <ul>
-                <li>Llama 4 Maverick creates structured outlines</li>
-                <li>Gemini generates unique images for each section</li>
-                <li>WordPress integration for image storage</li>
-                <li>Claude writes polished final content</li>
-                <li>Complete SEO metadata included</li>
-                <li>One-click CSV export</li>
+                <li><strong>AI Keyword Research</strong> - Gemini analyzes competitors and suggests optimal keywords</li>
+                <li><strong>Smart Outlines</strong> - Llama 4 Maverick creates structured, SEO-optimized outlines</li>
+                <li><strong>Context-Aware Images</strong> - Gemini generates images that match each section's content</li>
+                <li><strong>WordPress Integration</strong> - Auto-upload images and set meta title/description</li>
+                <li><strong>Professional Content</strong> - Claude writes polished, engaging blog posts</li>
+                <li><strong>Complete SEO Package</strong> - Keywords, meta data, and CSV export included</li>
               </ul>
             </div>
           </div>

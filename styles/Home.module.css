@@ -474,6 +474,106 @@
   margin-top: 0.25rem;
 }
 
+/* Research Section */
+.researchSection {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.researchButton {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.researchButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.researchButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.researchSection small {
+  display: block;
+  margin-top: 0.5rem;
+  color: #888;
+  font-size: 0.75rem;
+}
+
+/* SEO Settings */
+.seoSettings {
+  background: #f0fdf4;
+  border: 2px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.seoSettings h3 {
+  margin: 0 0 1rem 0;
+  color: #166534;
+  font-size: 1.1rem;
+}
+
+.researchInsights {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #dcfce7;
+}
+
+.researchInsights h4 {
+  margin: 0 0 0.75rem 0;
+  color: #166534;
+  font-size: 0.9rem;
+}
+
+.insightsList {
+  display: grid;
+  gap: 1rem;
+}
+
+.insightsList > div {
+  font-size: 0.85rem;
+}
+
+.insightsList strong {
+  display: block;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.insightsList ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #666;
+}
+
+.insightsList li {
+  margin-bottom: 0.25rem;
+}
+
+.seoSettings textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.seoSettings small {
+  color: #666;
+  font-size: 0.75rem;
+}
+
 /* Progress Section */
 .progressSection {
   margin-top: 1.5rem;
