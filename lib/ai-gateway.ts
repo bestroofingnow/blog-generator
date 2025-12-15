@@ -3,30 +3,31 @@ import { gateway } from "@ai-sdk/gateway";
 import { generateText, experimental_generateImage as generateImageAI } from "ai";
 
 // Language Model assignments based on user specification
+// Using correct Vercel AI Gateway model IDs (no provider prefix needed)
 export const MODELS = {
   // Llama 4 Maverick - AI Conductor/Orchestrator
-  conductor: gateway("meta/llama-4-maverick"),
+  conductor: gateway("llama-4-maverick"),
 
   // Claude Sonnet 4.5 - Content writer
-  contentWriter: gateway("anthropic/claude-sonnet-4.5"),
+  contentWriter: gateway("claude-sonnet-4.5"),
 
   // Kimi 2 - Code writer for blog posts and image review
-  codeWriter: gateway("moonshotai/kimi-k2"),
+  codeWriter: gateway("kimi-k2"),
 
-  // Gemini 2.5 Flash - For image generation
-  geminiFlash: gateway("google/gemini-2.5-flash"),
+  // Gemini 2.5 Flash - For image generation prompts
+  geminiFlash: gateway("gemini-2.5-flash"),
 
   // Gemini 3 Pro - For image editing/remaking
-  geminiPro: gateway("google/gemini-3-pro-image"),
+  geminiPro: gateway("gemini-3-pro-preview"),
 
   // Perplexity Sonar Reasoning Pro - Deep SEO research
-  researcher: gateway("perplexity/sonar-reasoning-pro"),
+  researcher: gateway("sonar-reasoning-pro"),
 };
 
 // Image Model assignments - using Gateway's imageModel method
 export const IMAGE_MODELS = {
   // Google Imagen 4.0 for initial image generation
-  imageGenerator: gateway.imageModel("google/imagen-4.0-generate"),
+  imageGenerator: gateway.imageModel("imagen-4.0-generate-001"),
 };
 
 // Types for the various AI operations
