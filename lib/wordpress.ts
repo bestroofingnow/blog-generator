@@ -14,6 +14,28 @@ export interface UploadedImage {
   title: string;
 }
 
+export interface WordPressPost {
+  id: number;
+  link: string;
+  status: "publish" | "draft" | "future" | "pending";
+  title: string;
+}
+
+export interface CreatePostOptions {
+  title: string;
+  content: string;
+  status: "publish" | "draft" | "future";
+  date?: string; // ISO 8601 format for scheduled posts
+  featuredMediaId?: number;
+  categories?: number[];
+  tags?: number[];
+  excerpt?: string;
+  slug?: string;
+  // SEO meta (for Yoast/RankMath if available)
+  metaTitle?: string;
+  metaDescription?: string;
+}
+
 export interface WordPressError {
   code: string;
   message: string;
@@ -166,4 +188,112 @@ export async function uploadImages(
   }
 
   return results;
+}
+
+/**
+ * Creates a new WordPress post
+ */
+export async function createPost(
+  credentials: WordPressCredentials,
+  options: CreatePostOptions
+): Promise<WordPressPost> {
+  const url = `${credentials.siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts`;
+
+  // Build post data
+  const postData: Record<string, any> = {
+    title: options.title,
+    content: options.content,
+    status: options.status,
+  };
+
+  // Add scheduled date if provided
+  if (options.date && options.status === "future") {
+    postData.date = options.date;
+  }
+
+  // Add featured image if provided
+  if (options.featuredMediaId) {
+    postData.featured_media = options.featuredMediaId;
+  }
+
+  // Add categories and tags
+  if (options.categories && options.categories.length > 0) {
+    postData.categories = options.categories;
+  }
+  if (options.tags && options.tags.length > 0) {
+    postData.tags = options.tags;
+  }
+
+  // Add excerpt if provided
+  if (options.excerpt) {
+    postData.excerpt = options.excerpt;
+  }
+
+  // Add slug if provided
+  if (options.slug) {
+    postData.slug = options.slug;
+  }
+
+  // Try to add Yoast SEO meta if available
+  if (options.metaTitle || options.metaDescription) {
+    postData.meta = {
+      // Yoast SEO fields
+      _yoast_wpseo_title: options.metaTitle || "",
+      _yoast_wpseo_metadesc: options.metaDescription || "",
+      // RankMath fields (alternative)
+      rank_math_title: options.metaTitle || "",
+      rank_math_description: options.metaDescription || "",
+    };
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: createAuthHeader(credentials),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(postData),
+  });
+
+  if (!response.ok) {
+    const error = await response.json() as WordPressError;
+    throw new Error(error.message || `Failed to create post: HTTP ${response.status}`);
+  }
+
+  const post = await response.json();
+
+  return {
+    id: post.id,
+    link: post.link,
+    status: post.status,
+    title: post.title?.rendered || options.title,
+  };
+}
+
+/**
+ * Gets WordPress categories
+ */
+export async function getCategories(
+  credentials: WordPressCredentials
+): Promise<Array<{ id: number; name: string; slug: string }>> {
+  const url = `${credentials.siteUrl.replace(/\/$/, "")}/wp-json/wp/v2/categories?per_page=100`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: createAuthHeader(credentials),
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const categories = await response.json();
+  return categories.map((cat: any) => ({
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+  }));
 }

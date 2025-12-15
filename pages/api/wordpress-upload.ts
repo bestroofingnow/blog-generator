@@ -4,12 +4,15 @@ import {
   testConnection,
   uploadImage,
   uploadImages,
+  createPost,
+  getCategories,
   WordPressCredentials,
   UploadedImage,
+  WordPressPost,
 } from "../../lib/wordpress";
 
 interface UploadRequest {
-  action: "test" | "upload" | "uploadMultiple";
+  action: "test" | "upload" | "uploadMultiple" | "createPost" | "getCategories";
   credentials: WordPressCredentials;
   image?: {
     base64: string;
@@ -23,6 +26,17 @@ interface UploadRequest {
     altText: string;
     caption?: string;
   }>;
+  post?: {
+    title: string;
+    content: string;
+    status: "publish" | "draft" | "future";
+    scheduledDate?: string;
+    featuredMediaId?: number;
+    categoryId?: number;
+    metaTitle?: string;
+    metaDescription?: string;
+    excerpt?: string;
+  };
 }
 
 interface UploadResponse {
@@ -31,6 +45,8 @@ interface UploadResponse {
   siteName?: string;
   image?: UploadedImage;
   images?: UploadedImage[];
+  post?: WordPressPost;
+  categories?: Array<{ id: number; name: string; slug: string }>;
 }
 
 export default async function handler(
@@ -88,6 +104,40 @@ export default async function handler(
         return res.status(200).json({
           success: true,
           images: uploaded,
+        });
+      }
+
+      case "createPost": {
+        if (!request.post) {
+          return res.status(400).json({
+            success: false,
+            error: "No post data provided",
+          });
+        }
+
+        const post = await createPost(request.credentials, {
+          title: request.post.title,
+          content: request.post.content,
+          status: request.post.status,
+          date: request.post.scheduledDate,
+          featuredMediaId: request.post.featuredMediaId,
+          categories: request.post.categoryId ? [request.post.categoryId] : undefined,
+          metaTitle: request.post.metaTitle,
+          metaDescription: request.post.metaDescription,
+          excerpt: request.post.excerpt,
+        });
+
+        return res.status(200).json({
+          success: true,
+          post,
+        });
+      }
+
+      case "getCategories": {
+        const categories = await getCategories(request.credentials);
+        return res.status(200).json({
+          success: true,
+          categories,
         });
       }
 

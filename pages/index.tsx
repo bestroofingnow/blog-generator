@@ -41,6 +41,19 @@ interface ResearchData {
   imageThemes: string[];
 }
 
+interface WordPressCategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+interface PublishSettings {
+  action: "none" | "draft" | "publish" | "schedule";
+  scheduledDate: string;
+  scheduledTime: string;
+  categoryId: number | null;
+}
+
 interface GenerationState {
   isLoading: boolean;
   error: string | null;
@@ -48,9 +61,14 @@ interface GenerationState {
   seoData: SEOData | null;
   copiedToClipboard: boolean;
   progress: {
-    step: "idle" | "research" | "outline" | "images" | "upload" | "content" | "complete";
+    step: "idle" | "research" | "outline" | "images" | "upload" | "content" | "publishing" | "complete";
     message: string;
   };
+  publishedPost: {
+    id: number;
+    link: string;
+    status: string;
+  } | null;
 }
 
 export default function Home() {
@@ -89,10 +107,20 @@ export default function Home() {
     isConnected: false,
   });
 
+  const [publishSettings, setPublishSettings] = useState<PublishSettings>({
+    action: "none",
+    scheduledDate: "",
+    scheduledTime: "09:00",
+    categoryId: null,
+  });
+
+  const [categories, setCategories] = useState<WordPressCategory[]>([]);
   const [showWordPressSettings, setShowWordPressSettings] = useState(false);
   const [showSEOSettings, setShowSEOSettings] = useState(false);
+  const [showPublishSettings, setShowPublishSettings] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [researchData, setResearchData] = useState<ResearchData | null>(null);
 
   const [state, setState] = useState<GenerationState>({
@@ -102,6 +130,7 @@ export default function Home() {
     seoData: null,
     copiedToClipboard: false,
     progress: { step: "idle", message: "" },
+    publishedPost: null,
   });
 
   // Load WordPress settings from localStorage
@@ -121,6 +150,35 @@ export default function Home() {
   const saveWordPressSettings = () => {
     localStorage.setItem("wordpressSettings", JSON.stringify(wordpress));
   };
+
+  // Fetch categories when WordPress is connected
+  const fetchCategories = async () => {
+    if (!wordpress.isConnected) return;
+
+    try {
+      const response = await fetch("/api/wordpress-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "getCategories",
+          credentials: wordpress,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success && data.categories) {
+        setCategories(data.categories);
+      }
+    } catch {
+      // Silently fail - categories are optional
+    }
+  };
+
+  useEffect(() => {
+    if (wordpress.isConnected) {
+      fetchCategories();
+    }
+  }, [wordpress.isConnected]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -142,6 +200,16 @@ export default function Home() {
       ...prev,
       [name]: value,
       isConnected: false,
+    }));
+  };
+
+  const handlePublishSettingsChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setPublishSettings((prev) => ({
+      ...prev,
+      [name]: name === "categoryId" ? (value ? parseInt(value, 10) : null) : value,
     }));
   };
 
@@ -209,6 +277,73 @@ export default function Home() {
     setIsResearching(false);
   };
 
+  const handlePublishToWordPress = async () => {
+    if (!state.htmlContent || !state.seoData || !wordpress.isConnected) return;
+
+    setIsPublishing(true);
+    setState((prev) => ({
+      ...prev,
+      progress: { step: "publishing", message: "Publishing to WordPress..." },
+    }));
+
+    try {
+      // Extract title from HTML content
+      const titleMatch = state.htmlContent.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, "") : state.seoData.metaTitle;
+
+      // Build scheduled date if applicable
+      let scheduledDate: string | undefined;
+      if (publishSettings.action === "schedule" && publishSettings.scheduledDate) {
+        scheduledDate = `${publishSettings.scheduledDate}T${publishSettings.scheduledTime}:00`;
+      }
+
+      const response = await fetch("/api/wordpress-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "createPost",
+          credentials: wordpress,
+          post: {
+            title,
+            content: state.htmlContent,
+            status: publishSettings.action === "schedule" ? "future" : publishSettings.action,
+            scheduledDate,
+            categoryId: publishSettings.categoryId,
+            metaTitle: state.seoData.metaTitle,
+            metaDescription: state.seoData.metaDescription,
+            excerpt: state.seoData.metaDescription,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.post) {
+        setState((prev) => ({
+          ...prev,
+          publishedPost: {
+            id: data.post.id,
+            link: data.post.link,
+            status: data.post.status,
+          },
+          progress: { step: "complete", message: "Published to WordPress!" },
+        }));
+
+        const statusMessage = data.post.status === "future"
+          ? "Post scheduled successfully!"
+          : data.post.status === "draft"
+          ? "Draft saved successfully!"
+          : "Post published successfully!";
+        alert(`${statusMessage}\n\nView: ${data.post.link}`);
+      } else {
+        alert(`Failed to publish: ${data.error}`);
+      }
+    } catch (error) {
+      alert("Failed to publish to WordPress");
+    }
+    setIsPublishing(false);
+  };
+
   const handleGenerateBlog = async (e: React.FormEvent) => {
     e.preventDefault();
     setState({
@@ -218,6 +353,7 @@ export default function Home() {
       seoData: null,
       copiedToClipboard: false,
       progress: { step: "outline", message: "Creating outline with Llama 4 Maverick..." },
+      publishedPost: null,
     });
 
     try {
@@ -246,6 +382,7 @@ export default function Home() {
           seoData: data.seoData,
           copiedToClipboard: false,
           progress: { step: "complete", message: "Blog generated successfully!" },
+          publishedPost: null,
         });
       } else {
         const response = await fetch("/api/generate-blog", {
@@ -267,6 +404,7 @@ export default function Home() {
           seoData: data.seoData,
           copiedToClipboard: false,
           progress: { step: "complete", message: "Blog generated successfully!" },
+          publishedPost: null,
         });
       }
     } catch (error) {
@@ -277,6 +415,7 @@ export default function Home() {
         seoData: null,
         copiedToClipboard: false,
         progress: { step: "idle", message: "" },
+        publishedPost: null,
       });
     }
   };
@@ -340,6 +479,13 @@ export default function Home() {
     }
   };
 
+  // Get minimum date for scheduling (tomorrow)
+  const getMinDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split("T")[0];
+  };
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -367,7 +513,7 @@ export default function Home() {
               <div className={styles.wordpressSettings}>
                 <h3>WordPress Connection</h3>
                 <p className={styles.settingsHelp}>
-                  Connect to your WordPress site to automatically upload generated images and set meta data.
+                  Connect to your WordPress site to upload images and publish posts directly.
                 </p>
 
                 <div className={styles.formGroup}>
@@ -681,19 +827,19 @@ export default function Home() {
           {state.isLoading && (
             <div className={styles.progressSection}>
               <div className={styles.progressSteps}>
-                <div className={`${styles.progressStep} ${["research", "outline", "images", "upload", "content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["research", "outline", "images", "upload", "content", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>1</span>
                   <span>Outline</span>
                 </div>
-                <div className={`${styles.progressStep} ${["images", "upload", "content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["images", "upload", "content", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>2</span>
                   <span>Images</span>
                 </div>
-                <div className={`${styles.progressStep} ${["upload", "content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["upload", "content", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>3</span>
                   <span>Upload</span>
                 </div>
-                <div className={`${styles.progressStep} ${["content", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["content", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>4</span>
                   <span>Content</span>
                 </div>
@@ -728,6 +874,114 @@ export default function Home() {
                 </button>
               </div>
             </div>
+
+            {/* WordPress Publish Section */}
+            {wordpress.isConnected && (
+              <div className={styles.publishSection}>
+                <div className={styles.publishHeader}>
+                  <h3>Publish to WordPress</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowPublishSettings(!showPublishSettings)}
+                    className={styles.togglePublishSettings}
+                  >
+                    {showPublishSettings ? "Hide Options" : "Show Options"}
+                  </button>
+                </div>
+
+                {showPublishSettings && (
+                  <div className={styles.publishOptions}>
+                    <div className={styles.formGroup}>
+                      <label htmlFor="publishAction">Publish Action</label>
+                      <select
+                        id="publishAction"
+                        name="action"
+                        value={publishSettings.action}
+                        onChange={handlePublishSettingsChange}
+                      >
+                        <option value="none">Don't publish (download only)</option>
+                        <option value="draft">Save as Draft</option>
+                        <option value="publish">Publish Now</option>
+                        <option value="schedule">Schedule for Later</option>
+                      </select>
+                    </div>
+
+                    {publishSettings.action === "schedule" && (
+                      <div className={styles.scheduleInputs}>
+                        <div className={styles.formGroup}>
+                          <label htmlFor="scheduledDate">Date</label>
+                          <input
+                            type="date"
+                            id="scheduledDate"
+                            name="scheduledDate"
+                            value={publishSettings.scheduledDate}
+                            onChange={handlePublishSettingsChange}
+                            min={getMinDate()}
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label htmlFor="scheduledTime">Time</label>
+                          <input
+                            type="time"
+                            id="scheduledTime"
+                            name="scheduledTime"
+                            value={publishSettings.scheduledTime}
+                            onChange={handlePublishSettingsChange}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {categories.length > 0 && (
+                      <div className={styles.formGroup}>
+                        <label htmlFor="categoryId">Category</label>
+                        <select
+                          id="categoryId"
+                          name="categoryId"
+                          value={publishSettings.categoryId || ""}
+                          onChange={handlePublishSettingsChange}
+                        >
+                          <option value="">No category</option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {publishSettings.action !== "none" && (
+                  <button
+                    type="button"
+                    onClick={handlePublishToWordPress}
+                    disabled={isPublishing || (publishSettings.action === "schedule" && !publishSettings.scheduledDate)}
+                    className={styles.publishButton}
+                  >
+                    {isPublishing
+                      ? "Publishing..."
+                      : publishSettings.action === "draft"
+                      ? "Save Draft to WordPress"
+                      : publishSettings.action === "schedule"
+                      ? "Schedule Post"
+                      : "Publish to WordPress"}
+                  </button>
+                )}
+
+                {state.publishedPost && (
+                  <div className={styles.publishedInfo}>
+                    <p>
+                      {state.publishedPost.status === "future" ? "Scheduled" : state.publishedPost.status === "draft" ? "Draft saved" : "Published"}!{" "}
+                      <a href={state.publishedPost.link} target="_blank" rel="noopener noreferrer">
+                        View Post
+                      </a>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {state.seoData && (
               <div className={styles.seoSection}>
@@ -775,7 +1029,7 @@ export default function Home() {
                 <li><strong>AI Keyword Research</strong> - Gemini analyzes competitors and suggests optimal keywords</li>
                 <li><strong>Smart Outlines</strong> - Llama 4 Maverick creates structured, SEO-optimized outlines</li>
                 <li><strong>Context-Aware Images</strong> - Gemini generates images that match each section's content</li>
-                <li><strong>WordPress Integration</strong> - Auto-upload images and set meta title/description</li>
+                <li><strong>WordPress Integration</strong> - Publish, schedule, or save drafts directly</li>
                 <li><strong>Professional Content</strong> - Claude writes polished, engaging blog posts</li>
                 <li><strong>Complete SEO Package</strong> - Keywords, meta data, and CSV export included</li>
               </ul>
