@@ -2,7 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   generateContent,
-  formatBlogCode,
+  generateOutline,
   BlogOutline,
   GeneratedImage,
 } from "../../lib/ai-gateway";
@@ -116,7 +116,8 @@ export default async function handler(
     let outline: BlogOutline;
 
     try {
-      const outlineResponse = await callInternalApi("/api/llama-outline", {
+      // Call generateOutline directly instead of through internal API to save time
+      outline = await generateOutline({
         topic: request.topic,
         location: request.location,
         blogType: request.blogType,
@@ -125,14 +126,9 @@ export default async function handler(
         primaryKeyword: request.primaryKeyword,
         secondaryKeywords: request.secondaryKeywords,
         imageThemes: request.imageThemes,
-      }) as { success: boolean; outline?: BlogOutline; error?: string };
-
-      if (outlineResponse.success && outlineResponse.outline) {
-        outline = outlineResponse.outline;
-        steps.outline = true;
-      } else {
-        throw new Error(outlineResponse.error || "Failed to generate outline");
-      }
+      });
+      steps.outline = true;
+      console.log("Outline generated successfully");
     } catch (error) {
       console.error("Outline generation failed, using fallback:", error);
       outline = createFallbackOutline(request);
@@ -263,28 +259,11 @@ export default async function handler(
     });
     steps.content = true;
 
-    // STEP 5: Format final blog HTML with Felix (the Fixer)
-    console.log("Step 5: Felix is formatting your blog code...");
-
-    // Prepare images with URLs for Kimi to format
-    const imagesWithUrls = generatedImages.map((img, index) => ({
-      ...img,
-      base64: imageUrls[index] || img.base64,
-    }));
-
-    let htmlContent: string;
-    try {
-      htmlContent = await formatBlogCode({
-        content: rawContent,
-        images: imagesWithUrls,
-        outline,
-      });
-      steps.format = true;
-    } catch (error) {
-      console.error("Felix formatting failed, using Penelope's output:", error);
-      // Fall back to Claude's raw content with simple image insertion
-      htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
-    }
+    // STEP 5: Format final blog HTML
+    // Skip Felix (Kimi) formatting to save time - use simple image insertion instead
+    console.log("Step 5: Formatting blog with image insertion...");
+    const htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
+    steps.format = true;
 
     return res.status(200).json({
       success: true,
