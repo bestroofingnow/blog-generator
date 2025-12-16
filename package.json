@@ -14,6 +14,7 @@
     "@anthropic-ai/sdk": "^0.32.0",
     "@google/genai": "^1.33.0",
     "@google/generative-ai": "^0.24.0",
+    "@vercel/blob": "^2.0.0",
     "ai": "^5.0.113",
     "groq-sdk": "^0.37.0",
     "next": "^14.2.0",

@@ -273,14 +273,59 @@ export default async function handler(
       }
     }
 
-    // Fill in any missing URLs with base64 or placeholders
+    // Fill missing URLs - try Vercel Blob if WordPress wasn't used
+    const needsBlobStorage = generatedImages.some((img, i) => !imageUrls[i] && img.base64 && img.base64.length > 0);
+
+    if (needsBlobStorage && !request.wordpress) {
+      console.log("Storing images in Vercel Blob...");
+
+      const primaryKeywordSlug = (seoData.primaryKeyword || request.topic)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .substring(0, 50);
+
+      for (let i = 0; i < generatedImages.length; i++) {
+        if (!imageUrls[i]) {
+          const img = generatedImages[i];
+          if (img.base64 && img.base64.length > 0) {
+            try {
+              const sectionTitle = i === 0
+                ? "hero"
+                : (outline.sections[i - 1]?.title || `section-${i}`)
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, "")
+                    .replace(/\s+/g, "-")
+                    .substring(0, 30);
+
+              const filename = `${primaryKeywordSlug}-${sectionTitle}-${Date.now()}.png`;
+
+              const storeResponse = await callInternalApi("/api/store-image", {
+                base64: img.base64,
+                filename,
+                contentType: img.mimeType || "image/png",
+              }) as { success: boolean; url?: string };
+
+              if (storeResponse.success && storeResponse.url) {
+                imageUrls[i] = storeResponse.url;
+                console.log(`Image ${i} stored in Vercel Blob:`, storeResponse.url);
+              }
+            } catch (error) {
+              console.error(`Failed to store image ${i} in Vercel Blob:`, error);
+            }
+          }
+        }
+      }
+      steps.upload = imageUrls.some(url => url && !url.startsWith("data:"));
+    }
+
+    // Final fallback - use base64 or placeholders for any remaining
     for (let i = 0; i < generatedImages.length; i++) {
       if (!imageUrls[i]) {
         const img = generatedImages[i];
         if (img.base64 && img.base64.length > 0) {
-          imageUrls[i] = img.base64; // Use base64 directly (includes data URI prefix)
+          imageUrls[i] = img.base64.startsWith("data:") ? img.base64 : `data:${img.mimeType || "image/png"};base64,${img.base64}`;
         } else {
-          // Placeholder with topic-relevant text
           const placeholderText = encodeURIComponent(`${request.topic} Image ${i + 1}`);
           imageUrls[i] = `https://placehold.co/800x400/667eea/ffffff?text=${placeholderText}`;
         }
