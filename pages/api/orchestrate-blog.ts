@@ -58,13 +58,23 @@ async function callInternalApi(endpoint: string, body: unknown): Promise<unknown
     ? `https://${process.env.VERCEL_URL}`
     : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
+  console.log(`[Internal API] Calling ${baseUrl}${endpoint}`);
+
   const response = await fetch(`${baseUrl}${endpoint}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
-  return response.json();
+  const responseText = await response.text();
+
+  // Check if response is valid JSON
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    console.error(`[Internal API] ${endpoint} returned non-JSON response:`, responseText.substring(0, 500));
+    throw new Error(`Internal API ${endpoint} returned invalid response: ${responseText.substring(0, 100)}`);
+  }
 }
 
 export default async function handler(

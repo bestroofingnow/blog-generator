@@ -246,7 +246,15 @@ export default function Home() {
         }),
       });
 
-      const data = await response.json();
+      // Get response text first to handle non-JSON errors
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        console.error("Research API returned non-JSON response:", responseText.substring(0, 500));
+        throw new Error(`Server error: ${responseText.substring(0, 200)}`);
+      }
 
       if (data.success && data.suggestions) {
         setResearchData(data.suggestions);
@@ -367,7 +375,15 @@ export default function Home() {
           }),
         });
 
-        const data = await response.json();
+        // Get response text first to handle non-JSON errors
+        const responseText = await response.text();
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          console.error("API returned non-JSON response:", responseText.substring(0, 500));
+          throw new Error(`Server error: ${responseText.substring(0, 200)}`);
+        }
 
         if (!data.success) {
           throw new Error(data.error || "Failed to generate blog");
@@ -390,7 +406,15 @@ export default function Home() {
           body: JSON.stringify(formData),
         });
 
-        const data = await response.json();
+        // Get response text first to handle non-JSON errors
+        const responseText = await response.text();
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          console.error("API returned non-JSON response:", responseText.substring(0, 500));
+          throw new Error(`Server error: ${responseText.substring(0, 200)}`);
+        }
 
         if (!data.success) {
           throw new Error(data.error || "Failed to generate blog");
