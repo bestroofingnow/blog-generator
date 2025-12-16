@@ -30,9 +30,10 @@ export const MODELS = {
 };
 
 // Image Model assignments - using Gateway's imageModel method
+// Full model ID format: provider/model-name
 export const IMAGE_MODELS = {
-  // Google Imagen 4.0 for initial image generation
-  imageGenerator: gateway.imageModel("imagen-4.0-generate-001"),
+  // Google Imagen 4.0 for initial image generation (using full provider/model format)
+  imageGenerator: gateway.imageModel("google/imagen-4.0-generate-001"),
 };
 
 // Types for the various AI operations
@@ -553,17 +554,25 @@ IMAGE REQUIREMENTS:
 Make the image look like it was taken by a professional photographer for a magazine or marketing material.`;
 
   try {
+    console.log(`[Image Gen] Starting image generation for index ${index}...`);
+    console.log(`[Image Gen] Using model: google/imagen-4.0-generate-001`);
+    console.log(`[Image Gen] Prompt length: ${enhancedPrompt.length} chars`);
+
     const result = await generateImageAI({
       model: IMAGE_MODELS.imageGenerator,
       prompt: enhancedPrompt,
       n: 1,
     });
 
+    console.log(`[Image Gen] Result received, images count: ${result.images?.length || 0}`);
+
     // Get the first generated image
     if (result.images && result.images.length > 0) {
       const image = result.images[0];
       const base64Data = image.base64;
       const mediaType = image.mediaType || "image/png";
+
+      console.log(`[Image Gen] Image ${index} generated successfully, base64 length: ${base64Data?.length || 0}`);
 
       return {
         index,
@@ -573,9 +582,11 @@ Make the image look like it was taken by a professional photographer for a magaz
       };
     }
 
+    console.log(`[Image Gen] No images in result for index ${index}`);
     return null;
   } catch (error) {
-    console.error(`Error generating image ${index}:`, error);
+    console.error(`[Image Gen] Error generating image ${index}:`, error);
+    console.error(`[Image Gen] Error details:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return null;
   }
 }
