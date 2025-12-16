@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import {
   generateContent,
   generateOutline,
+  generateBlogImage,
   BlogOutline,
   GeneratedImage,
 } from "../../lib/ai-gateway";
@@ -144,23 +145,62 @@ export default async function handler(
     };
 
     // STEP 2: Generate images with Picasso (the Artist)
-    // NOTE: Image generation is temporarily disabled to prevent 504 timeouts
-    // The orchestration was timing out due to too many sequential AI calls
-    console.log("Step 2: Picasso is preparing placeholder images (AI images disabled to prevent timeout)...");
+    // Generate images in PARALLEL to save time - only generate hero + 2 section images
+    console.log("Step 2: Picasso is generating images in parallel...");
     let generatedImages: GeneratedImage[] = [];
 
-    // Create placeholder images for now - real image generation would timeout
-    const numImages = (outline.sections?.length || 5) + 1; // +1 for hero
-    for (let i = 0; i < numImages; i++) {
-      const sectionTitle = i === 0 ? "Hero" : (outline.sections[i - 1]?.title || `Section ${i}`);
-      generatedImages.push({
-        index: i,
-        prompt: `${request.topic} - ${sectionTitle}`,
-        base64: "", // Empty - will use placeholder URL
-        mimeType: "image/png",
+    // Build image prompts from outline
+    const imagePrompts: { prompt: string; index: number }[] = [];
+
+    // Hero image
+    if (outline.introduction?.imagePrompt) {
+      imagePrompts.push({ prompt: outline.introduction.imagePrompt, index: 0 });
+    } else {
+      imagePrompts.push({
+        prompt: `Professional photography of a stunning ${request.location} home showcasing ${request.topic.toLowerCase()}. Magazine-quality, perfect lighting.`,
+        index: 0,
       });
     }
-    steps.images = true; // Mark as complete with placeholders
+
+    // Only generate 2 section images to save time (sections 0 and 2 for variety)
+    const sectionIndices = [0, Math.min(2, outline.sections.length - 1)];
+    sectionIndices.forEach((sectionIdx, i) => {
+      const section = outline.sections[sectionIdx];
+      if (section?.imagePrompt) {
+        imagePrompts.push({ prompt: section.imagePrompt, index: i + 1 });
+      } else {
+        imagePrompts.push({
+          prompt: `Professional photography for ${section?.title || request.topic} in ${request.location}. High quality marketing image.`,
+          index: i + 1,
+        });
+      }
+    });
+
+    // Generate all images in parallel
+    console.log(`Generating ${imagePrompts.length} images in parallel...`);
+    const imageResults = await Promise.allSettled(
+      imagePrompts.map((p) => generateBlogImage(p))
+    );
+
+    // Collect successful images
+    imageResults.forEach((result, idx) => {
+      if (result.status === "fulfilled" && result.value) {
+        generatedImages.push(result.value);
+        console.log(`Image ${idx} generated successfully`);
+      } else {
+        console.log(`Image ${idx} failed:`, result.status === "rejected" ? result.reason : "null result");
+        // Add placeholder for failed images
+        generatedImages.push({
+          index: idx,
+          prompt: imagePrompts[idx].prompt,
+          base64: "",
+          mimeType: "image/png",
+        });
+      }
+    });
+
+    steps.images = generatedImages.some((img) => img.base64 && img.base64.length > 0);
+    console.log(`Generated ${generatedImages.filter((img) => img.base64).length} real images`);
 
     // STEP 3: Upload to WordPress (if credentials provided)
     console.log("Step 3: Uploading to WordPress...");
