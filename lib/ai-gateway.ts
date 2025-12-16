@@ -79,6 +79,7 @@ export interface GeneratedImage {
   prompt: string;
   base64: string;
   mimeType: string;
+  url?: string; // Optional external URL for user-provided images
 }
 
 export interface ImageReviewResult {

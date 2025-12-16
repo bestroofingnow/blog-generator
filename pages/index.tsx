@@ -2,6 +2,14 @@
 import React, { useState, useEffect } from "react";
 import styles from "../styles/Home.module.css";
 
+type ImageMode = "auto" | "manual" | "enhance";
+
+interface UserImage {
+  id: string;
+  url: string; // Can be URL or base64 data URI
+  caption?: string;
+}
+
 interface FormData {
   topic: string;
   location: string;
@@ -16,6 +24,8 @@ interface FormData {
   secondaryKeywords: string;
   metaTitle: string;
   metaDescription: string;
+  imageMode: ImageMode;
+  userImages: UserImage[];
 }
 
 interface WordPressSettings {
@@ -109,6 +119,8 @@ export default function Home() {
     secondaryKeywords: "",
     metaTitle: "",
     metaDescription: "",
+    imageMode: "auto",
+    userImages: [],
   });
 
   const [wordpress, setWordpress] = useState<WordPressSettings>({
@@ -1135,6 +1147,124 @@ export default function Home() {
                 <small className={styles.hint}>
                   Felix and Penelope review images, Mona remakes any that don't meet quality standards (slower but better results)
                 </small>
+              </div>
+            )}
+
+            {/* Image Mode Selection */}
+            {formData.useOrchestration && (
+              <div className={styles.formGroup}>
+                <label>Image Source</label>
+                <div className={styles.publishActionButtons}>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, imageMode: "auto", userImages: [] }))}
+                    className={`${styles.publishActionBtn} ${formData.imageMode === "auto" ? styles.active : ""}`}
+                  >
+                    AI Generated
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, imageMode: "manual" }))}
+                    className={`${styles.publishActionBtn} ${formData.imageMode === "manual" ? styles.active : ""}`}
+                  >
+                    My Images
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, imageMode: "enhance" }))}
+                    className={`${styles.publishActionBtn} ${formData.imageMode === "enhance" ? styles.active : ""}`}
+                  >
+                    AI Enhanced
+                  </button>
+                </div>
+                <small className={styles.hint}>
+                  {formData.imageMode === "auto" && "Picasso will generate unique images for your blog"}
+                  {formData.imageMode === "manual" && "Use your own images - add URLs or upload files"}
+                  {formData.imageMode === "enhance" && "Upload images and AI will enhance/edit them for your blog"}
+                </small>
+              </div>
+            )}
+
+            {/* User Image Upload */}
+            {formData.useOrchestration && (formData.imageMode === "manual" || formData.imageMode === "enhance") && (
+              <div className={styles.formGroup}>
+                <label>Your Images</label>
+                <div className={styles.imageUploadSection}>
+                  {/* URL Input */}
+                  <div className={styles.imageUrlInput}>
+                    <input
+                      type="text"
+                      placeholder="Paste image URL and press Enter"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const input = e.target as HTMLInputElement;
+                          const url = input.value.trim();
+                          if (url) {
+                            setFormData(prev => ({
+                              ...prev,
+                              userImages: [...prev.userImages, { id: Date.now().toString(), url }]
+                            }));
+                            input.value = "";
+                          }
+                        }
+                      }}
+                    />
+                    <span style={{ margin: "0 0.5rem", color: "#666" }}>or</span>
+                    <label className={styles.fileUploadLabel}>
+                      Upload File
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files) {
+                            Array.from(files).forEach(file => {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const base64 = event.target?.result as string;
+                                setFormData(prev => ({
+                                  ...prev,
+                                  userImages: [...prev.userImages, { id: Date.now().toString() + Math.random(), url: base64 }]
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            });
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Image Preview Grid */}
+                  {formData.userImages.length > 0 && (
+                    <div className={styles.imagePreviewGrid}>
+                      {formData.userImages.map((img, index) => (
+                        <div key={img.id} className={styles.imagePreviewItem}>
+                          <img src={img.url} alt={`User image ${index + 1}`} />
+                          <button
+                            type="button"
+                            className={styles.removeImageBtn}
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              userImages: prev.userImages.filter(i => i.id !== img.id)
+                            }))}
+                          >
+                            ×
+                          </button>
+                          <span className={styles.imageIndex}>{index === 0 ? "Hero" : `#${index}`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <small className={styles.hint}>
+                    First image will be the hero/featured image. Add {formData.numberOfSections} images for best results.
+                    {formData.imageMode === "enhance" && " AI will enhance colors, lighting, and composition."}
+                  </small>
+                </div>
               </div>
             )}
 

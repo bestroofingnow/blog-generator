@@ -21,6 +21,14 @@ interface SEOData {
   metaDescription: string;
 }
 
+type ImageMode = "auto" | "manual" | "enhance";
+
+interface UserImage {
+  id: string;
+  url: string; // Can be URL or base64 data URI
+  caption?: string;
+}
+
 function sendProgress(res: NextApiResponse, step: string, message: string) {
   res.write(`data: ${JSON.stringify({ type: "progress", step, message })}\n\n`);
 }
@@ -139,7 +147,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     metaDescription,
     imageThemes,
     wordpress,
-  } = req.body;
+    imageMode = "auto",
+    userImages = [],
+  } = req.body as {
+    topic: string;
+    location: string;
+    blogType: string;
+    numberOfSections: number;
+    tone: string;
+    companyName?: string;
+    primaryKeyword?: string;
+    secondaryKeywords?: string[];
+    metaTitle?: string;
+    metaDescription?: string;
+    imageThemes?: string[];
+    wordpress?: WordPressCredentials;
+    imageMode: ImageMode;
+    userImages: UserImage[];
+  };
 
   try {
     // STEP 1: Generate outline with Archie
@@ -170,45 +195,78 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metaDescription: metaDescription || outline.seo?.metaDescription || `Discover the best ${topic.toLowerCase()} solutions in ${location}.`,
     };
 
-    // STEP 2: Generate images with Picasso
-    sendProgress(res, "images", "Picasso is creating stunning images...");
-
+    // STEP 2: Handle images based on imageMode
     const generatedImages: GeneratedImage[] = [];
-    const imagePrompts: { prompt: string; index: number }[] = [];
 
-    // Hero image
-    imagePrompts.push({
-      prompt: outline.introduction?.imagePrompt || `Professional photography of ${topic} in ${location}`,
-      index: 0,
-    });
+    if (imageMode === "manual" && userImages.length > 0) {
+      // Manual mode: Use user-provided images directly
+      sendProgress(res, "images", "Processing your uploaded images...");
 
-    // Section images (only 2 to save time)
-    const sectionIndices = [0, Math.min(2, outline.sections.length - 1)];
-    sectionIndices.forEach((sectionIdx, i) => {
-      const section = outline.sections[sectionIdx];
-      imagePrompts.push({
-        prompt: section?.imagePrompt || `Professional photography for ${section?.title || topic}`,
-        index: i + 1,
-      });
-    });
-
-    // Generate images in parallel
-    const imageResults = await Promise.allSettled(
-      imagePrompts.map((p) => generateBlogImage(p))
-    );
-
-    imageResults.forEach((result, idx) => {
-      if (result.status === "fulfilled" && result.value) {
-        generatedImages.push(result.value);
-      } else {
+      userImages.forEach((img, index) => {
         generatedImages.push({
-          index: idx,
-          prompt: imagePrompts[idx].prompt,
-          base64: "",
+          index,
+          prompt: img.caption || `User image ${index + 1}`,
+          base64: img.url.startsWith("data:") ? img.url.split(",")[1] || "" : "",
           mimeType: "image/png",
+          url: img.url.startsWith("data:") ? undefined : img.url, // External URL
         });
-      }
-    });
+      });
+    } else if (imageMode === "enhance" && userImages.length > 0) {
+      // Enhance mode: Use user images but mark for potential AI enhancement
+      // For now, treat similar to manual but with different messaging
+      sendProgress(res, "images", "Enhancing your images with AI...");
+
+      // TODO: Add actual AI enhancement logic here in the future
+      // For now, use images as-is with enhanced metadata
+      userImages.forEach((img, index) => {
+        generatedImages.push({
+          index,
+          prompt: img.caption || `Enhanced image ${index + 1}`,
+          base64: img.url.startsWith("data:") ? img.url.split(",")[1] || "" : "",
+          mimeType: "image/png",
+          url: img.url.startsWith("data:") ? undefined : img.url,
+        });
+      });
+    } else {
+      // Auto mode: Generate images with AI (default behavior)
+      sendProgress(res, "images", "Picasso is creating stunning images...");
+
+      const imagePrompts: { prompt: string; index: number }[] = [];
+
+      // Hero image
+      imagePrompts.push({
+        prompt: outline.introduction?.imagePrompt || `Professional photography of ${topic} in ${location}`,
+        index: 0,
+      });
+
+      // Section images (only 2 to save time)
+      const sectionIndices = [0, Math.min(2, outline.sections.length - 1)];
+      sectionIndices.forEach((sectionIdx, i) => {
+        const section = outline.sections[sectionIdx];
+        imagePrompts.push({
+          prompt: section?.imagePrompt || `Professional photography for ${section?.title || topic}`,
+          index: i + 1,
+        });
+      });
+
+      // Generate images in parallel
+      const imageResults = await Promise.allSettled(
+        imagePrompts.map((p) => generateBlogImage(p))
+      );
+
+      imageResults.forEach((result, idx) => {
+        if (result.status === "fulfilled" && result.value) {
+          generatedImages.push(result.value);
+        } else {
+          generatedImages.push({
+            index: idx,
+            prompt: imagePrompts[idx].prompt,
+            base64: "",
+            mimeType: "image/png",
+          });
+        }
+      });
+    }
 
     // STEP 3: Generate content with Penelope
     sendProgress(res, "content", "Penelope is writing engaging content...");
@@ -224,11 +282,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // STEP 4: Format content with Felix
     sendProgress(res, "format", "Felix is formatting the HTML...");
 
-    // STEP 5: Upload to WordPress (if configured)
+    // STEP 5: Upload to WordPress (if configured) or use external URLs
     let imageUrls: string[] = [];
     const uploadedImageIds: number[] = [];
 
-    if (wordpress && generatedImages.some((img) => img.base64)) {
+    // First, populate imageUrls with any external URLs from user-provided images
+    generatedImages.forEach((img, i) => {
+      if (img.url) {
+        imageUrls[i] = img.url;
+      }
+    });
+
+    // Upload base64 images to WordPress if connected
+    const hasBase64Images = generatedImages.some((img, i) => !imageUrls[i] && img.base64 && img.base64.length > 0);
+
+    if (wordpress && hasBase64Images) {
       sendProgress(res, "upload", "Uploading images to WordPress...");
 
       try {
@@ -239,7 +307,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .substring(0, 50);
 
         const imagesToUpload = generatedImages
-          .filter((img) => img.base64 && img.base64.length > 0)
+          .filter((img, i) => !imageUrls[i] && img.base64 && img.base64.length > 0)
           .map((img, index) => {
             let base64Data = img.base64;
             if (base64Data.includes(",")) {
@@ -259,6 +327,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               filename: `${primaryKeywordSlug}-${sectionTitle}.png`,
               altText: `${seoData.primaryKeyword} - ${outline.sections[index - 1]?.title || "Featured Image"}`,
               caption: `${topic} in ${location}`,
+              originalIndex: img.index,
             };
           });
 
@@ -271,8 +340,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           if (uploadResponse.success && uploadResponse.images) {
             uploadResponse.images.forEach((uploaded, i) => {
-              if (uploaded.url) imageUrls[i] = uploaded.url;
-              if (uploaded.id) uploadedImageIds[i] = uploaded.id;
+              const originalIndex = imagesToUpload[i]?.originalIndex ?? i;
+              if (uploaded.url) imageUrls[originalIndex] = uploaded.url;
+              if (uploaded.id) uploadedImageIds[originalIndex] = uploaded.id;
             });
           }
         }
@@ -327,12 +397,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Final fallback - use base64 or placeholders for any remaining
+    // Final fallback - use external URL, base64, or placeholders for any remaining
     for (let i = 0; i < generatedImages.length; i++) {
       if (!imageUrls[i]) {
         const img = generatedImages[i];
-        if (img.base64 && img.base64.length > 0) {
-          // Use base64 data URL as last resort
+        if (img.url) {
+          // Use external URL from user-provided image
+          imageUrls[i] = img.url;
+        } else if (img.base64 && img.base64.length > 0) {
+          // Use base64 data URL as fallback
           imageUrls[i] = img.base64.startsWith("data:") ? img.base64 : `data:${img.mimeType || "image/png"};base64,${img.base64}`;
         } else {
           const placeholderText = encodeURIComponent(`${topic} Image ${i + 1}`);
