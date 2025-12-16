@@ -25,6 +25,26 @@ interface WordPressSettings {
   isConnected: boolean;
 }
 
+interface GoHighLevelSettings {
+  apiToken: string;
+  locationId: string;
+  blogId: string;
+  isConnected: boolean;
+}
+
+interface GHLBlog {
+  id: string;
+  name: string;
+}
+
+interface GHLCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+type PublishPlatform = "none" | "wordpress" | "gohighlevel";
+
 interface SEOData {
   primaryKeyword: string;
   secondaryKeywords: string[];
@@ -49,10 +69,11 @@ interface WordPressCategory {
 }
 
 interface PublishSettings {
+  platform: PublishPlatform;
   action: "none" | "draft" | "publish" | "schedule";
   scheduledDate: string;
   scheduledTime: string;
-  categoryId: number | null;
+  categoryId: number | string | null; // number for WP, string for GHL
 }
 
 interface GenerationState {
@@ -67,7 +88,7 @@ interface GenerationState {
     message: string;
   };
   publishedPost: {
-    id: number;
+    id: number | string;
     link: string;
     status: string;
   } | null;
@@ -98,14 +119,26 @@ export default function Home() {
   });
 
   const [publishSettings, setPublishSettings] = useState<PublishSettings>({
+    platform: "none",
     action: "none",
     scheduledDate: "",
     scheduledTime: "09:00",
     categoryId: null,
   });
 
+  const [gohighlevel, setGoHighLevel] = useState<GoHighLevelSettings>({
+    apiToken: "",
+    locationId: "",
+    blogId: "",
+    isConnected: false,
+  });
+
+  const [ghlBlogs, setGhlBlogs] = useState<GHLBlog[]>([]);
+  const [ghlCategories, setGhlCategories] = useState<GHLCategory[]>([]);
+
   const [categories, setCategories] = useState<WordPressCategory[]>([]);
   const [showWordPressSettings, setShowWordPressSettings] = useState(false);
+  const [showGHLSettings, setShowGHLSettings] = useState(false);
   const [showSEOSettings, setShowSEOSettings] = useState(false);
   const [showPublishSettings, setShowPublishSettings] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
@@ -137,9 +170,27 @@ export default function Home() {
     }
   }, []);
 
+  // Load GoHighLevel settings from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("gohighlevelSettings");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setGoHighLevel(parsed);
+      } catch {
+        // Invalid saved data
+      }
+    }
+  }, []);
+
   // Save WordPress settings to localStorage
   const saveWordPressSettings = () => {
     localStorage.setItem("wordpressSettings", JSON.stringify(wordpress));
+  };
+
+  // Save GoHighLevel settings to localStorage
+  const saveGHLSettings = () => {
+    localStorage.setItem("gohighlevelSettings", JSON.stringify(gohighlevel));
   };
 
   // Fetch categories when WordPress is connected
@@ -231,6 +282,73 @@ export default function Home() {
     setTestingConnection(false);
   };
 
+  const handleGHLChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setGoHighLevel((prev) => ({
+      ...prev,
+      [name]: value,
+      isConnected: false,
+    }));
+  };
+
+  const testGHLConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const response = await fetch("/api/gohighlevel-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "test",
+          credentials: gohighlevel,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setGoHighLevel((prev) => ({ ...prev, isConnected: true }));
+        setGhlBlogs(data.blogs || []);
+        saveGHLSettings();
+        alert(`Connected successfully! Found ${data.blogs?.length || 0} blog(s)`);
+      } else {
+        alert(`Connection failed: ${data.error}`);
+      }
+    } catch {
+      alert("Connection test failed");
+    }
+    setTestingConnection(false);
+  };
+
+  // Fetch GHL categories when blog is selected
+  const fetchGHLCategories = async () => {
+    if (!gohighlevel.isConnected || !gohighlevel.blogId) return;
+
+    try {
+      const response = await fetch("/api/gohighlevel-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "getCategories",
+          credentials: gohighlevel,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success && data.categories) {
+        setGhlCategories(data.categories);
+      }
+    } catch {
+      // Silently fail
+    }
+  };
+
+  useEffect(() => {
+    if (gohighlevel.isConnected && gohighlevel.blogId) {
+      fetchGHLCategories();
+      saveGHLSettings();
+    }
+  }, [gohighlevel.blogId]);
+
   const handleResearchKeywords = async () => {
     setIsResearching(true);
     try {
@@ -274,6 +392,17 @@ export default function Home() {
       alert("Keyword research failed");
     }
     setIsResearching(false);
+  };
+
+  const handlePublish = async () => {
+    if (!state.htmlContent || !state.seoData) return;
+
+    // Determine which platform to publish to
+    if (publishSettings.platform === "wordpress") {
+      await handlePublishToWordPress();
+    } else if (publishSettings.platform === "gohighlevel") {
+      await handlePublishToGHL();
+    }
   };
 
   const handlePublishToWordPress = async () => {
@@ -340,6 +469,64 @@ export default function Home() {
       }
     } catch (error) {
       alert("Failed to publish to WordPress");
+    }
+    setIsPublishing(false);
+  };
+
+  const handlePublishToGHL = async () => {
+    if (!state.htmlContent || !state.seoData || !gohighlevel.isConnected || !gohighlevel.blogId) return;
+
+    setIsPublishing(true);
+    setState((prev) => ({
+      ...prev,
+      progress: { step: "publishing", message: "Publishing to GoHighLevel..." },
+    }));
+
+    try {
+      // Extract title from HTML content
+      const titleMatch = state.htmlContent.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, "") : state.seoData.metaTitle;
+
+      const response = await fetch("/api/gohighlevel-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "createPost",
+          credentials: gohighlevel,
+          post: {
+            title,
+            content: state.htmlContent,
+            metaTitle: state.seoData.metaTitle,
+            metaDescription: state.seoData.metaDescription,
+            published: publishSettings.action === "publish",
+            categoryIds: publishSettings.categoryId ? [publishSettings.categoryId] : [],
+            tags: state.seoData.secondaryKeywords.slice(0, 5), // Use secondary keywords as tags
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.post) {
+        setState((prev) => ({
+          ...prev,
+          publishedPost: {
+            id: data.post.id,
+            link: data.post.url,
+            status: data.post.status,
+          },
+          progress: { step: "complete", message: "Published to GoHighLevel!" },
+        }));
+
+        const statusMessage = data.post.status === "draft"
+          ? "Draft saved successfully!"
+          : "Post published successfully!";
+        alert(`${statusMessage}\n\nView: ${data.post.url}`);
+      } else {
+        alert(`Failed to publish: ${data.error}`);
+      }
+    } catch (error) {
+      alert("Failed to publish to GoHighLevel");
     }
     setIsPublishing(false);
   };
@@ -622,6 +809,86 @@ export default function Home() {
                 >
                   {testingConnection ? "Testing..." : wordpress.isConnected ? "Connected" : "Test Connection"}
                 </button>
+              </div>
+            )}
+
+            {/* GoHighLevel Settings Toggle */}
+            <div className={styles.settingsToggle}>
+              <button
+                type="button"
+                onClick={() => setShowGHLSettings(!showGHLSettings)}
+                className={styles.settingsButton}
+              >
+                {showGHLSettings ? "Hide" : "Show"} GoHighLevel Settings
+                {gohighlevel.isConnected && " (Connected)"}
+              </button>
+            </div>
+
+            {/* GoHighLevel Settings Panel */}
+            {showGHLSettings && (
+              <div className={styles.wordpressSettings}>
+                <h3>GoHighLevel Connection</h3>
+                <p className={styles.settingsHelp}>
+                  Connect to your GoHighLevel/KynexPro account to publish blogs directly.
+                </p>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="ghlApiToken">API Token</label>
+                  <input
+                    type="password"
+                    id="ghlApiToken"
+                    name="apiToken"
+                    value={gohighlevel.apiToken}
+                    onChange={handleGHLChange}
+                    placeholder="Your Private Integration API Token"
+                  />
+                  <small>
+                    Settings → Integrations → Private Integrations (needs blogs/post.write scope)
+                  </small>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="ghlLocationId">Location ID</label>
+                  <input
+                    type="text"
+                    id="ghlLocationId"
+                    name="locationId"
+                    value={gohighlevel.locationId}
+                    onChange={handleGHLChange}
+                    placeholder="e.g., abc123XYZ..."
+                  />
+                  <small>
+                    Found in Settings → Business Profile → Location ID
+                  </small>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={testGHLConnection}
+                  disabled={testingConnection || !gohighlevel.apiToken || !gohighlevel.locationId}
+                  className={styles.testButton}
+                >
+                  {testingConnection ? "Testing..." : gohighlevel.isConnected ? "Connected" : "Test Connection"}
+                </button>
+
+                {gohighlevel.isConnected && ghlBlogs.length > 0 && (
+                  <div className={styles.formGroup} style={{ marginTop: "1rem" }}>
+                    <label htmlFor="ghlBlogId">Select Blog</label>
+                    <select
+                      id="ghlBlogId"
+                      name="blogId"
+                      value={gohighlevel.blogId}
+                      onChange={handleGHLChange}
+                    >
+                      <option value="">Select a blog...</option>
+                      {ghlBlogs.map((blog) => (
+                        <option key={blog.id} value={blog.id}>
+                          {blog.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             )}
 
@@ -941,101 +1208,151 @@ export default function Home() {
               </div>
             </div>
 
-            {/* WordPress Publish Section */}
-            {wordpress.isConnected && (
+            {/* Publish Section - Shows when either platform is connected */}
+            {(wordpress.isConnected || (gohighlevel.isConnected && gohighlevel.blogId)) && (
               <div className={styles.publishSection}>
                 <div className={styles.publishHeader}>
-                  <h3>Publish to WordPress</h3>
-                  {state.featuredImageId && (
+                  <h3>Publish Blog</h3>
+                  {state.featuredImageId && publishSettings.platform === "wordpress" && (
                     <span className={styles.featuredImageBadge}>Featured image set</span>
                   )}
                 </div>
 
-                <div className={styles.publishOptions}>
+                {/* Platform Selector */}
+                <div className={styles.formGroup}>
+                  <label>Publish To:</label>
                   <div className={styles.publishActionButtons}>
-                    <button
-                      type="button"
-                      onClick={() => setPublishSettings(prev => ({ ...prev, action: "draft" }))}
-                      className={`${styles.publishActionBtn} ${publishSettings.action === "draft" ? styles.active : ""}`}
-                    >
-                      Save Draft
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPublishSettings(prev => ({ ...prev, action: "publish" }))}
-                      className={`${styles.publishActionBtn} ${publishSettings.action === "publish" ? styles.active : ""}`}
-                    >
-                      Publish Now
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPublishSettings(prev => ({ ...prev, action: "schedule" }))}
-                      className={`${styles.publishActionBtn} ${publishSettings.action === "schedule" ? styles.active : ""}`}
-                    >
-                      Schedule
-                    </button>
-                  </div>
-
-                  {publishSettings.action === "schedule" && (
-                    <div className={styles.scheduleInputs}>
-                      <div className={styles.formGroup}>
-                        <label htmlFor="scheduledDate">Date</label>
-                        <input
-                          type="date"
-                          id="scheduledDate"
-                          name="scheduledDate"
-                          value={publishSettings.scheduledDate}
-                          onChange={handlePublishSettingsChange}
-                          min={getMinDate()}
-                        />
-                      </div>
-                      <div className={styles.formGroup}>
-                        <label htmlFor="scheduledTime">Time</label>
-                        <input
-                          type="time"
-                          id="scheduledTime"
-                          name="scheduledTime"
-                          value={publishSettings.scheduledTime}
-                          onChange={handlePublishSettingsChange}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {categories.length > 0 && (
-                    <div className={styles.formGroup}>
-                      <label htmlFor="categoryId">Category</label>
-                      <select
-                        id="categoryId"
-                        name="categoryId"
-                        value={publishSettings.categoryId || ""}
-                        onChange={handlePublishSettingsChange}
+                    {wordpress.isConnected && (
+                      <button
+                        type="button"
+                        onClick={() => setPublishSettings(prev => ({ ...prev, platform: "wordpress", categoryId: null }))}
+                        className={`${styles.publishActionBtn} ${publishSettings.platform === "wordpress" ? styles.active : ""}`}
                       >
-                        <option value="">No category</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                        WordPress
+                      </button>
+                    )}
+                    {gohighlevel.isConnected && gohighlevel.blogId && (
+                      <button
+                        type="button"
+                        onClick={() => setPublishSettings(prev => ({ ...prev, platform: "gohighlevel", categoryId: null }))}
+                        className={`${styles.publishActionBtn} ${publishSettings.platform === "gohighlevel" ? styles.active : ""}`}
+                      >
+                        GoHighLevel
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {publishSettings.action !== "none" && (
+                {publishSettings.platform !== "none" && (
+                  <div className={styles.publishOptions}>
+                    <div className={styles.publishActionButtons}>
+                      <button
+                        type="button"
+                        onClick={() => setPublishSettings(prev => ({ ...prev, action: "draft" }))}
+                        className={`${styles.publishActionBtn} ${publishSettings.action === "draft" ? styles.active : ""}`}
+                      >
+                        Save Draft
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPublishSettings(prev => ({ ...prev, action: "publish" }))}
+                        className={`${styles.publishActionBtn} ${publishSettings.action === "publish" ? styles.active : ""}`}
+                      >
+                        Publish Now
+                      </button>
+                      {publishSettings.platform === "wordpress" && (
+                        <button
+                          type="button"
+                          onClick={() => setPublishSettings(prev => ({ ...prev, action: "schedule" }))}
+                          className={`${styles.publishActionBtn} ${publishSettings.action === "schedule" ? styles.active : ""}`}
+                        >
+                          Schedule
+                        </button>
+                      )}
+                    </div>
+
+                    {publishSettings.action === "schedule" && publishSettings.platform === "wordpress" && (
+                      <div className={styles.scheduleInputs}>
+                        <div className={styles.formGroup}>
+                          <label htmlFor="scheduledDate">Date</label>
+                          <input
+                            type="date"
+                            id="scheduledDate"
+                            name="scheduledDate"
+                            value={publishSettings.scheduledDate}
+                            onChange={handlePublishSettingsChange}
+                            min={getMinDate()}
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label htmlFor="scheduledTime">Time</label>
+                          <input
+                            type="time"
+                            id="scheduledTime"
+                            name="scheduledTime"
+                            value={publishSettings.scheduledTime}
+                            onChange={handlePublishSettingsChange}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* WordPress Categories */}
+                    {publishSettings.platform === "wordpress" && categories.length > 0 && (
+                      <div className={styles.formGroup}>
+                        <label htmlFor="categoryId">Category</label>
+                        <select
+                          id="categoryId"
+                          name="categoryId"
+                          value={publishSettings.categoryId || ""}
+                          onChange={handlePublishSettingsChange}
+                        >
+                          <option value="">No category</option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* GoHighLevel Categories */}
+                    {publishSettings.platform === "gohighlevel" && ghlCategories.length > 0 && (
+                      <div className={styles.formGroup}>
+                        <label htmlFor="ghlCategoryId">Category</label>
+                        <select
+                          id="ghlCategoryId"
+                          name="categoryId"
+                          value={publishSettings.categoryId || ""}
+                          onChange={(e) => setPublishSettings(prev => ({ ...prev, categoryId: e.target.value || null }))}
+                        >
+                          <option value="">No category</option>
+                          {ghlCategories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {publishSettings.platform !== "none" && publishSettings.action !== "none" && (
                   <button
                     type="button"
-                    onClick={handlePublishToWordPress}
+                    onClick={handlePublish}
                     disabled={isPublishing || (publishSettings.action === "schedule" && !publishSettings.scheduledDate)}
                     className={styles.publishButton}
                   >
                     {isPublishing
                       ? "Publishing..."
                       : publishSettings.action === "draft"
-                      ? "Save Draft to WordPress"
+                      ? `Save Draft to ${publishSettings.platform === "wordpress" ? "WordPress" : "GoHighLevel"}`
                       : publishSettings.action === "schedule"
                       ? `Schedule for ${publishSettings.scheduledDate || "..."}`
-                      : "Publish Now to WordPress"}
+                      : `Publish Now to ${publishSettings.platform === "wordpress" ? "WordPress" : "GoHighLevel"}`}
                   </button>
                 )}
 
