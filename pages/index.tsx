@@ -345,7 +345,7 @@ export default function Home() {
       seoData: null,
       featuredImageId: null,
       copiedToClipboard: false,
-      progress: { step: "outline", message: "Creating outline with Llama 4 Maverick..." },
+      progress: { step: "outline", message: "Archie is designing your blog structure..." },
       publishedPost: null,
     });
     // Auto-show publish settings when WordPress is connected
@@ -647,9 +647,9 @@ export default function Home() {
                 disabled={isResearching || !formData.topic || !formData.location}
                 className={styles.researchButton}
               >
-                {isResearching ? "Researching..." : "Research Keywords & SEO (Perplexity)"}
+                {isResearching ? "Sherlock is investigating..." : "Research Keywords & SEO"}
               </button>
-              <small>Uses Perplexity Sonar Pro to analyze competitors and suggest optimal keywords</small>
+              <small>Sherlock analyzes competitors and suggests optimal keywords</small>
             </div>
 
             {/* SEO Settings Toggle */}
@@ -791,8 +791,8 @@ export default function Home() {
               </label>
               <small className={styles.hint}>
                 {formData.useOrchestration
-                  ? "Llama 4 Maverick (conductor) + Imagen 4.0 (images) + Claude 4.5 (content) + Kimi 2 (formatting)"
-                  : "Claude-only mode (faster, no image generation)"}
+                  ? "Archie (outlines) + Picasso (images) + Penelope (content) + Felix (formatting)"
+                  : "Single AI mode (faster, no image generation)"}
               </small>
             </div>
 
@@ -805,10 +805,10 @@ export default function Home() {
                     checked={formData.enableQualityReview}
                     onChange={handleInputChange}
                   />
-                  <span>Enable Image Quality Review (Kimi 2 + Claude)</span>
+                  <span>Enable Image Quality Review</span>
                 </label>
                 <small className={styles.hint}>
-                  Kimi 2 and Claude both review images, Gemini 3 Pro remakes any that don't meet quality standards (slower but better results)
+                  Felix and Penelope review images, Mona remakes any that don't meet quality standards (slower but better results)
                 </small>
               </div>
             )}
@@ -829,12 +829,12 @@ export default function Home() {
                 <div className={`${styles.progressStep} ${["research", "outline", "images", "upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>1</span>
                   <span>Outline</span>
-                  <small>Llama 4</small>
+                  <small>Archie</small>
                 </div>
                 <div className={`${styles.progressStep} ${["images", "upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>2</span>
                   <span>Images</span>
-                  <small>Imagen</small>
+                  <small>Picasso</small>
                 </div>
                 <div className={`${styles.progressStep} ${["upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>3</span>
@@ -844,12 +844,12 @@ export default function Home() {
                 <div className={`${styles.progressStep} ${["content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>4</span>
                   <span>Content</span>
-                  <small>Claude 4.5</small>
+                  <small>Penelope</small>
                 </div>
                 <div className={`${styles.progressStep} ${["format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>5</span>
                   <span>Format</span>
-                  <small>Kimi 2</small>
+                  <small>Felix</small>
                 </div>
               </div>
               <p className={styles.progressMessage}>{state.progress.message}</p>
@@ -1035,16 +1035,16 @@ export default function Home() {
           <div className={styles.placeholderSection}>
             <p>Fill in the form above and click "Generate Blog"</p>
             <div className={styles.featuresList}>
-              <h3>Multi-AI Orchestration via Vercel AI Gateway:</h3>
+              <h3>Meet Your AI Content Team:</h3>
               <ul>
-                <li><strong>Perplexity Sonar Pro</strong> - Deep SEO research and competitor analysis</li>
-                <li><strong>Llama 4 Maverick</strong> - AI Conductor creates structured, SEO-optimized outlines</li>
-                <li><strong>Google Imagen 4.0</strong> - Generates context-aware images for each section</li>
-                <li><strong>Kimi 2 + Claude</strong> - Dual AI image quality review</li>
-                <li><strong>Gemini 3 Pro</strong> - Remakes images that don't pass review</li>
-                <li><strong>Claude Sonnet 4.5</strong> - Writes polished, engaging blog content</li>
-                <li><strong>Kimi 2</strong> - Formats final HTML code for WordPress</li>
-                <li><strong>WordPress Integration</strong> - Publish, schedule, or save drafts directly</li>
+                <li><strong>🔍 Sherlock</strong> - Deep SEO research and competitor analysis</li>
+                <li><strong>📐 Archie</strong> - The Architect designs structured, SEO-optimized outlines</li>
+                <li><strong>🎨 Picasso</strong> - Creates stunning, context-aware images for each section</li>
+                <li><strong>👁️ Felix + Penelope</strong> - Dual quality review for images</li>
+                <li><strong>🖼️ Mona</strong> - Remakes images that don't meet quality standards</li>
+                <li><strong>✍️ Penelope</strong> - The Writer crafts polished, engaging blog content</li>
+                <li><strong>🔧 Felix</strong> - The Fixer formats clean HTML code for WordPress</li>
+                <li><strong>📤 WordPress</strong> - Publish, schedule, or save drafts directly</li>
               </ul>
             </div>
           </div>
@@ -1052,7 +1052,7 @@ export default function Home() {
       </main>
 
       <footer className={styles.footer}>
-        <p>Powered by Vercel AI Gateway | Llama 4 + Claude 4.5 + Imagen 4.0 + Gemini 3 + Kimi 2 + Perplexity</p>
+        <p>Powered by Vercel AI Gateway | Archie + Picasso + Penelope + Felix + Mona + Sherlock</p>
       </footer>
     </div>
   );

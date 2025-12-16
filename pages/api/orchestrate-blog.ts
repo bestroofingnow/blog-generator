@@ -101,8 +101,8 @@ export default async function handler(
       });
     }
 
-    // STEP 1: Generate outline with Llama 4 Maverick (AI Conductor)
-    console.log("Step 1: Generating outline with Llama 4 Maverick (Conductor)...");
+    // STEP 1: Generate outline with Archie (the Architect)
+    console.log("Step 1: Archie is designing the blog structure...");
     let outline: BlogOutline;
 
     try {
@@ -137,8 +137,8 @@ export default async function handler(
       metaDescription: request.metaDescription || outline.seo?.metaDescription || `Discover the best ${request.topic.toLowerCase()} solutions in ${request.location}.`,
     };
 
-    // STEP 2: Generate images with Gemini 2.5 Flash (with optional Gemini 3 Pro review)
-    console.log("Step 2: Generating images with Gemini 2.5 Flash...");
+    // STEP 2: Generate images with Picasso (the Artist)
+    console.log("Step 2: Picasso is painting your images...");
     let generatedImages: GeneratedImage[] = [];
 
     try {
@@ -257,8 +257,8 @@ export default async function handler(
       }
     }
 
-    // STEP 4: Generate content with Claude Sonnet 4.5
-    console.log("Step 4: Writing content with Claude Sonnet 4.5...");
+    // STEP 4: Generate content with Penelope (the Writer)
+    console.log("Step 4: Penelope is writing your content...");
 
     const rawContent = await generateContent({
       outline,
@@ -269,8 +269,8 @@ export default async function handler(
     });
     steps.content = true;
 
-    // STEP 5: Format final blog HTML with Kimi 2
-    console.log("Step 5: Formatting blog code with Kimi 2...");
+    // STEP 5: Format final blog HTML with Felix (the Fixer)
+    console.log("Step 5: Felix is formatting your blog code...");
 
     // Prepare images with URLs for Kimi to format
     const imagesWithUrls = generatedImages.map((img, index) => ({
@@ -287,7 +287,7 @@ export default async function handler(
       });
       steps.format = true;
     } catch (error) {
-      console.error("Kimi formatting failed, using Claude's output:", error);
+      console.error("Felix formatting failed, using Penelope's output:", error);
       // Fall back to Claude's raw content with simple image insertion
       htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
     }

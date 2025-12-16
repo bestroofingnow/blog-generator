@@ -421,7 +421,7 @@ Respond in JSON:
       };
     }
   } catch (error) {
-    console.error("Claude review error:", error);
+    console.error("Penelope review error:", error);
   }
   return { approved: true };
 }
@@ -476,7 +476,7 @@ Respond ONLY in JSON format:
       };
     }
   } catch (error) {
-    console.error("Kimi review error:", error);
+    console.error("Felix review error:", error);
   }
   return { approved: true };
 }
@@ -496,8 +496,8 @@ export async function reviewImageQuality(params: {
     reviewWithKimi({ imageBase64, originalPrompt, sectionContext }),
   ]);
 
-  console.log(`Claude review: ${claudeReview.approved ? "APPROVED" : "REJECTED"}`);
-  console.log(`Kimi review: ${kimiReview.approved ? "APPROVED" : "REJECTED"}`);
+  console.log(`Penelope review: ${claudeReview.approved ? "APPROVED" : "REJECTED"}`);
+  console.log(`Felix review: ${kimiReview.approved ? "APPROVED" : "REJECTED"}`);
 
   // If EITHER reviewer rejects, the image needs to be remade
   if (!claudeReview.approved || !kimiReview.approved) {
@@ -507,11 +507,11 @@ export async function reviewImageQuality(params: {
     let remakePrompt = "";
 
     if (!claudeReview.approved && claudeReview.feedback) {
-      combinedFeedback += `Claude: ${claudeReview.feedback}. `;
+      combinedFeedback += `Penelope: ${claudeReview.feedback}. `;
       remakePrompt = claudeReview.remakePrompt || "";
     }
     if (!kimiReview.approved && kimiReview.feedback) {
-      combinedFeedback += `Kimi: ${kimiReview.feedback}. `;
+      combinedFeedback += `Felix: ${kimiReview.feedback}. `;
       if (!remakePrompt && kimiReview.remakePrompt) {
         remakePrompt = kimiReview.remakePrompt;
       }
@@ -600,8 +600,8 @@ export async function remakeBlogImage(params: {
   const { improvedPrompt, index } = params;
 
   try {
-    // First, use Gemini 3 Pro to enhance the prompt
-    console.log(`Using Gemini 3 Pro to enhance prompt for image ${index}...`);
+    // First, use Mona to enhance the prompt
+    console.log(`Mona is enhancing the prompt for image ${index}...`);
     const enhancementResult = await generateText({
       model: MODELS.geminiPro,
       prompt: `You are an expert image prompt engineer. Enhance this image prompt to produce a better, more professional marketing photograph:

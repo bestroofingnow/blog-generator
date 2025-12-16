@@ -59,7 +59,7 @@ export default async function handler(
         });
 
         if (!review.approved && review.remakePrompt) {
-          console.log(`Image ${i + 1} not approved, remaking with Gemini 3 Pro...`);
+          console.log(`Image ${i + 1} not approved, Mona is remaking it...`);
           const remadeImage = await remakeBlogImage({
             improvedPrompt: review.remakePrompt,
             index: i,
