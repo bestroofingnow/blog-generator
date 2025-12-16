@@ -322,62 +322,26 @@ export default async function handler(
   }
 }
 
-// Simple image insertion fallback with interactive styling
+// Simple image insertion - replaces [IMAGE:X] placeholders with actual URLs
 function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
-  // Add interactive styles at the beginning
-  const interactiveStyles = `<style>
-  .blog-article { --primary: #2563eb; --accent: #3b82f6; font-family: system-ui, -apple-system, sans-serif; }
-  .blog-section { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
-  .blog-section.visible { opacity: 1; transform: translateY(0); }
-  .blog-figure { margin: 2rem 0; text-align: center; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-  .blog-figure img { width: 100%; height: auto; transition: transform 0.3s ease; display: block; }
-  .blog-figure:hover img { transform: scale(1.02); }
-  .blog-figure figcaption { padding: 1rem; background: #f8fafc; color: #64748b; font-size: 0.9rem; }
-  .blog-cta { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 1.5rem 2rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
-  .blog-cta a { color: white; font-weight: 600; text-decoration: none; }
-  blockquote { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin: 1.5rem 0; font-style: italic; color: #475569; }
-  h2 { color: #1e293b; margin-top: 2.5rem; }
-  .back-to-top { position: fixed; bottom: 2rem; right: 2rem; background: var(--primary); color: white; width: 50px; height: 50px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(37,99,235,0.3); z-index: 1000; }
-  .back-to-top.show { display: flex; }
-</style>`;
+  let result = content;
 
-  const interactiveScript = `<script>
-  // Scroll reveal animation
-  document.addEventListener('DOMContentLoaded', function() {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) entry.target.classList.add('visible');
-      });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.blog-section').forEach(el => observer.observe(el));
-
-    // Back to top button
-    const backToTop = document.querySelector('.back-to-top');
-    if (backToTop) {
-      window.addEventListener('scroll', () => {
-        backToTop.classList.toggle('show', window.scrollY > 300);
-      });
-      backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-    }
+  // Replace image placeholders in src attributes (new format: src="[IMAGE:X]")
+  imageUrls.forEach((url, index) => {
+    const srcPlaceholder = `src="[IMAGE:${index}]"`;
+    result = result.replace(new RegExp(srcPlaceholder, 'g'), `src="${url}"`);
   });
-</script>
-<button class="back-to-top" aria-label="Back to top">↑</button>`;
 
-  let result = `<article class="blog-article">\n${interactiveStyles}\n${content}`;
-
+  // Also handle standalone placeholders (old format: [IMAGE:X])
   imageUrls.forEach((url, index) => {
     const placeholder = `[IMAGE:${index}]`;
     const altText = index === 0
       ? `${seoData.primaryKeyword} - Featured Image`
       : `${seoData.primaryKeyword} - Image ${index}`;
-    const imgTag = `<figure class="blog-figure blog-section">
-      <img src="${url}" alt="${altText}" loading="lazy" />
-      <figcaption>${altText}</figcaption>
-    </figure>`;
-    result = result.replace(placeholder, imgTag);
+    const imgTag = `<img src="${url}" alt="${altText}" width="800" height="600" />`;
+    result = result.replace(new RegExp(placeholder.replace(/[[\]]/g, '\\$&'), 'g'), imgTag);
   });
 
-  result += `\n${interactiveScript}\n</article>`;
   return result;
 }
 

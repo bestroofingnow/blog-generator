@@ -354,20 +354,74 @@ REQUIREMENTS:
 - Include the primary keyword "${outline.seo.primaryKeyword}" naturally throughout
 - Include secondary keywords where appropriate
 - Write engaging, informative content for each section
-- Use HTML formatting (h1, h2, p, ul, li tags)
-- Include [IMAGE:X] placeholders where images should be inserted (X = 0 for hero, 1-N for sections)
 - Write approximately 1500-2000 words total
 - Make content locally relevant to ${location}
 - Include a strong call-to-action in the conclusion
+- DO NOT include <header> or <footer> elements
+- DO NOT include navigation elements
 
-FORMAT YOUR RESPONSE AS HTML:
-<h1>Title</h1>
-<p>Introduction...</p>
-[IMAGE:0]
-<h2>Section Title</h2>
-<p>Content...</p>
-[IMAGE:1]
-...and so on`;
+USE THIS EXACT HTML STRUCTURE (no header, no footer, no navigation):
+
+<section class="hero">
+  <div class="hero-content">
+    <p><img class="featured-image" src="[IMAGE:0]" alt="${outline.seo.primaryKeyword} - featured" width="800" height="600" /></p>
+    <p>Introduction paragraph 1...</p>
+    <p>Introduction paragraph 2...</p>
+  </div>
+</section>
+
+<div class="toc">
+  <h2>What You'll Learn</h2>
+  <ul>
+    <li>Section 1 Title</li>
+    <li>Section 2 Title</li>
+    <!-- etc -->
+  </ul>
+</div>
+
+<article id="section-slug" class="content-section">
+  <h2>Section Title</h2>
+  <p>Content paragraphs...</p>
+  <h3>Subsection if needed</h3>
+  <p>More content...</p>
+  <ul>
+    <li><strong>Point:</strong> explanation</li>
+  </ul>
+  <p><img class="content-image" src="[IMAGE:1]" alt="${outline.seo.primaryKeyword} description" width="800" height="600" /></p>
+</article>
+
+<!-- Repeat for each section with [IMAGE:2], [IMAGE:3] etc -->
+
+<div class="key-takeaways">
+  <h2>Key Takeaways</h2>
+  <ul>
+    <li>Takeaway 1</li>
+    <li>Takeaway 2</li>
+  </ul>
+</div>
+
+<div class="cta-section">
+  <h2>Call to Action Title</h2>
+  <p>CTA description</p>
+  <p><a class="cta-button" href="/contact">Contact Button Text</a></p>
+</div>
+
+<section class="faq-section">
+  <h2>Frequently Asked Questions</h2>
+  <div class="faq-item">
+    <div class="faq-question">Question here?</div>
+    <div class="faq-answer">
+      <p>Answer here...</p>
+    </div>
+  </div>
+  <!-- Add 5-8 FAQs -->
+</section>
+
+IMPORTANT:
+- Use [IMAGE:0] for hero, [IMAGE:1] and [IMAGE:2] for section images
+- Only use 3 image placeholders total (hero + 2 sections)
+- Include 5-8 relevant FAQ items
+- Do NOT wrap in any header or footer tags`;
 
   try {
     console.log("[Penelope] Generating content with anthropic/claude-sonnet-4.5...");
