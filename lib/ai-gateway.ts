@@ -174,27 +174,40 @@ Respond with ONLY valid JSON in this exact format:
 
 Generate exactly ${numberOfSections} sections.`;
 
-  const result = await generateText({
-    model: MODELS.conductor,
-    system: "You are an expert content strategist. Always respond with valid JSON only, no markdown formatting or code blocks.",
-    prompt,
-    maxOutputTokens: 4000,
-    temperature: 0.7,
-  });
+  try {
+    console.log("[Archie] Generating outline with meta/llama-4-maverick...");
+    const result = await generateText({
+      model: MODELS.conductor,
+      system: "You are an expert content strategist. Always respond with valid JSON only, no markdown formatting or code blocks.",
+      prompt,
+      maxOutputTokens: 4000,
+      temperature: 0.7,
+    });
 
-  // Clean and parse the response
-  let cleanedResponse = result.text.trim();
-  if (cleanedResponse.startsWith("```json")) {
-    cleanedResponse = cleanedResponse.slice(7);
-  }
-  if (cleanedResponse.startsWith("```")) {
-    cleanedResponse = cleanedResponse.slice(3);
-  }
-  if (cleanedResponse.endsWith("```")) {
-    cleanedResponse = cleanedResponse.slice(0, -3);
-  }
+    // Clean and parse the response
+    let cleanedResponse = result.text.trim();
+    console.log("[Archie] Raw response length:", cleanedResponse.length);
 
-  return JSON.parse(cleanedResponse.trim());
+    if (cleanedResponse.startsWith("```json")) {
+      cleanedResponse = cleanedResponse.slice(7);
+    }
+    if (cleanedResponse.startsWith("```")) {
+      cleanedResponse = cleanedResponse.slice(3);
+    }
+    if (cleanedResponse.endsWith("```")) {
+      cleanedResponse = cleanedResponse.slice(0, -3);
+    }
+
+    try {
+      return JSON.parse(cleanedResponse.trim());
+    } catch (parseError) {
+      console.error("[Archie] JSON parse error. Response starts with:", cleanedResponse.substring(0, 200));
+      throw new Error(`Archie (Llama) returned invalid JSON: ${cleanedResponse.substring(0, 100)}...`);
+    }
+  } catch (error) {
+    console.error("[Archie] Error calling meta/llama-4-maverick:", error);
+    throw new Error(`Archie (meta/llama-4-maverick) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
 }
 
 // Research keywords using Perplexity Sonar Reasoning Pro
@@ -247,60 +260,75 @@ Respond in this exact JSON format:
   ]
 }`;
 
-  const result = await generateText({
-    model: MODELS.researcher,
-    prompt,
-    maxOutputTokens: 2000,
-    temperature: 0.5,
-  });
-
-  // Clean and parse response
-  let cleanedText = result.text.trim();
-  if (cleanedText.startsWith("```json")) {
-    cleanedText = cleanedText.slice(7);
-  }
-  if (cleanedText.startsWith("```")) {
-    cleanedText = cleanedText.slice(3);
-  }
-  if (cleanedText.endsWith("```")) {
-    cleanedText = cleanedText.slice(0, -3);
-  }
-
   try {
-    return JSON.parse(cleanedText.trim());
-  } catch {
-    // Return fallback if parsing fails
-    return {
-      primaryKeyword: `${topic.toLowerCase()} ${location.toLowerCase()}`,
-      secondaryKeywords: [
-        `${topic.toLowerCase()} services`,
-        `best ${topic.toLowerCase()} near me`,
-        `${location} ${topic.toLowerCase()} company`,
-        `professional ${topic.toLowerCase()}`,
-        `${topic.toLowerCase()} installation`,
-      ],
-      metaTitle: `${topic} in ${location} | Expert Guide`,
-      metaDescription: `Discover the best ${topic.toLowerCase()} solutions in ${location}. Expert tips, local insights, and professional services. Contact us today!`,
-      competitorInsights: [
-        "Focus on local expertise and knowledge",
-        "Highlight quality and professionalism",
-        "Emphasize customer service and support",
-      ],
-      contentAngles: [
-        "Local neighborhood-specific recommendations",
-        "Before and after transformations",
-        "Expert tips from industry professionals",
-      ],
-      imageThemes: [
-        `Hero: Beautiful ${location} home showcasing professional ${topic.toLowerCase()}, golden hour lighting`,
-        `Section 1: Close-up of ${topic.toLowerCase()} details showing quality craftsmanship`,
-        `Section 2: Before and after comparison of ${topic.toLowerCase()} project`,
-        `Section 3: Professional team working on ${topic.toLowerCase()} installation`,
-        `Section 4: Finished ${topic.toLowerCase()} project from multiple angles`,
-        `Section 5: Happy homeowner enjoying their new ${topic.toLowerCase()}`,
-      ],
-    };
+    console.log("[Sherlock] Researching keywords with perplexity/sonar...");
+    const result = await generateText({
+      model: MODELS.researcher,
+      prompt,
+      maxOutputTokens: 2000,
+      temperature: 0.5,
+    });
+
+    console.log("[Sherlock] Research complete, response length:", result.text.length);
+
+    // Clean and parse response
+    let cleanedText = result.text.trim();
+    if (cleanedText.startsWith("```json")) {
+      cleanedText = cleanedText.slice(7);
+    }
+    if (cleanedText.startsWith("```")) {
+      cleanedText = cleanedText.slice(3);
+    }
+    if (cleanedText.endsWith("```")) {
+      cleanedText = cleanedText.slice(0, -3);
+    }
+
+    try {
+      return JSON.parse(cleanedText.trim());
+    } catch (parseError) {
+      console.error("[Sherlock] JSON parse error. Response starts with:", cleanedText.substring(0, 200));
+      // Return fallback if parsing fails
+      return createFallbackKeywordResearch(topic, location);
+    }
+  } catch (error) {
+    console.error("[Sherlock] Error calling perplexity/sonar:", error);
+    // Return fallback on API error
+    return createFallbackKeywordResearch(topic, location);
   }
+}
+
+// Fallback keyword research when API fails
+function createFallbackKeywordResearch(topic: string, location: string): KeywordResearch {
+  return {
+    primaryKeyword: `${topic.toLowerCase()} ${location.toLowerCase()}`,
+    secondaryKeywords: [
+      `${topic.toLowerCase()} services`,
+      `best ${topic.toLowerCase()} near me`,
+      `${location} ${topic.toLowerCase()} company`,
+      `professional ${topic.toLowerCase()}`,
+      `${topic.toLowerCase()} installation`,
+    ],
+    metaTitle: `${topic} in ${location} | Expert Guide`,
+    metaDescription: `Discover the best ${topic.toLowerCase()} solutions in ${location}. Expert tips, local insights, and professional services. Contact us today!`,
+    competitorInsights: [
+      "Focus on local expertise and knowledge",
+      "Highlight quality and professionalism",
+      "Emphasize customer service and support",
+    ],
+    contentAngles: [
+      "Local neighborhood-specific recommendations",
+      "Before and after transformations",
+      "Expert tips from industry professionals",
+    ],
+    imageThemes: [
+      `Hero: Beautiful ${location} home showcasing professional ${topic.toLowerCase()}, golden hour lighting`,
+      `Section 1: Close-up of ${topic.toLowerCase()} details showing quality craftsmanship`,
+      `Section 2: Before and after comparison of ${topic.toLowerCase()} project`,
+      `Section 3: Professional team working on ${topic.toLowerCase()} installation`,
+      `Section 4: Finished ${topic.toLowerCase()} project from multiple angles`,
+      `Section 5: Happy homeowner enjoying their new ${topic.toLowerCase()}`,
+    ],
+  };
 }
 
 // Generate blog content using Claude Sonnet 4.5
@@ -341,15 +369,22 @@ FORMAT YOUR RESPONSE AS HTML:
 [IMAGE:1]
 ...and so on`;
 
-  const result = await generateText({
-    model: MODELS.contentWriter,
-    system: "You are an expert blog content writer. Write engaging, SEO-optimized content in HTML format.",
-    prompt,
-    maxOutputTokens: 8000,
-    temperature: 0.7,
-  });
+  try {
+    console.log("[Penelope] Generating content with anthropic/claude-sonnet-4.5...");
+    const result = await generateText({
+      model: MODELS.contentWriter,
+      system: "You are an expert blog content writer. Write engaging, SEO-optimized content in HTML format.",
+      prompt,
+      maxOutputTokens: 8000,
+      temperature: 0.7,
+    });
 
-  return result.text;
+    console.log("[Penelope] Content generated, length:", result.text.length);
+    return result.text;
+  } catch (error) {
+    console.error("[Penelope] Error calling anthropic/claude-sonnet-4.5:", error);
+    throw new Error(`Penelope (anthropic/claude-sonnet-4.5) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
 }
 
 // Helper to parse JSON from AI response
@@ -709,13 +744,20 @@ EXAMPLE INTERACTIVE ELEMENTS TO INCLUDE:
 
 Return ONLY the formatted HTML with embedded styles and scripts, no explanations.`;
 
-  const result = await generateText({
-    model: MODELS.codeWriter,
-    system: "You are an expert web developer. Return only clean HTML code with inline CSS and JavaScript for interactive effects. No explanations.",
-    prompt,
-    maxOutputTokens: 12000,
-    temperature: 0.4,
-  });
+  try {
+    console.log("[Felix] Formatting blog code with moonshotai/kimi-k2...");
+    const result = await generateText({
+      model: MODELS.codeWriter,
+      system: "You are an expert web developer. Return only clean HTML code with inline CSS and JavaScript for interactive effects. No explanations.",
+      prompt,
+      maxOutputTokens: 12000,
+      temperature: 0.4,
+    });
 
-  return result.text;
+    console.log("[Felix] Code formatted, length:", result.text.length);
+    return result.text;
+  } catch (error) {
+    console.error("[Felix] Error calling moonshotai/kimi-k2:", error);
+    throw new Error(`Felix (moonshotai/kimi-k2) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
 }
