@@ -179,6 +179,13 @@ export default async function handler(
 
     if (request.wordpress && generatedImages.length > 0) {
       try {
+        // Create SEO-friendly filename from primary keyword
+        const primaryKeywordSlug = (seoData.primaryKeyword || request.topic)
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .substring(0, 50);
+
         // Filter images that have base64 data and strip the data URI prefix
         const imagesToUpload = generatedImages
           .filter((img) => img.base64 && img.base64.length > 0)
@@ -189,11 +196,22 @@ export default async function handler(
               base64Data = base64Data.split(",")[1];
             }
 
+            // Create descriptive, SEO-friendly filename based on section
+            const sectionTitle = index === 0
+              ? "hero"
+              : (outline.sections[index - 1]?.title || `section-${index}`)
+                  .toLowerCase()
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .replace(/\s+/g, "-")
+                  .substring(0, 30);
+
+            const filename = `${primaryKeywordSlug}-${sectionTitle}.png`;
+
             return {
               base64: base64Data,
-              filename: `${request.topic.replace(/\s+/g, "-").toLowerCase()}-${request.location.replace(/\s+/g, "-").toLowerCase()}-${index + 1}-${Date.now()}.png`,
-              altText: img.prompt.substring(0, 100),
-              caption: `${request.topic} - ${outline.sections[index - 1]?.title || "Hero Image"}`,
+              filename,
+              altText: `${seoData.primaryKeyword || request.topic} - ${outline.sections[index - 1]?.title || "Featured Image"}`,
+              caption: `${request.topic} in ${request.location} - ${outline.sections[index - 1]?.title || "Hero Image"}`,
             };
           });
 
@@ -271,7 +289,7 @@ export default async function handler(
     } catch (error) {
       console.error("Kimi formatting failed, using Claude's output:", error);
       // Fall back to Claude's raw content with simple image insertion
-      htmlContent = insertImagesIntoContent(rawContent, imageUrls);
+      htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
     }
 
     return res.status(200).json({
@@ -291,16 +309,62 @@ export default async function handler(
   }
 }
 
-// Simple image insertion fallback
-function insertImagesIntoContent(content: string, imageUrls: string[]): string {
-  let result = content;
+// Simple image insertion fallback with interactive styling
+function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
+  // Add interactive styles at the beginning
+  const interactiveStyles = `<style>
+  .blog-article { --primary: #2563eb; --accent: #3b82f6; font-family: system-ui, -apple-system, sans-serif; }
+  .blog-section { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+  .blog-section.visible { opacity: 1; transform: translateY(0); }
+  .blog-figure { margin: 2rem 0; text-align: center; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+  .blog-figure img { width: 100%; height: auto; transition: transform 0.3s ease; display: block; }
+  .blog-figure:hover img { transform: scale(1.02); }
+  .blog-figure figcaption { padding: 1rem; background: #f8fafc; color: #64748b; font-size: 0.9rem; }
+  .blog-cta { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 1.5rem 2rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+  .blog-cta a { color: white; font-weight: 600; text-decoration: none; }
+  blockquote { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin: 1.5rem 0; font-style: italic; color: #475569; }
+  h2 { color: #1e293b; margin-top: 2.5rem; }
+  .back-to-top { position: fixed; bottom: 2rem; right: 2rem; background: var(--primary); color: white; width: 50px; height: 50px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(37,99,235,0.3); z-index: 1000; }
+  .back-to-top.show { display: flex; }
+</style>`;
+
+  const interactiveScript = `<script>
+  // Scroll reveal animation
+  document.addEventListener('DOMContentLoaded', function() {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.blog-section').forEach(el => observer.observe(el));
+
+    // Back to top button
+    const backToTop = document.querySelector('.back-to-top');
+    if (backToTop) {
+      window.addEventListener('scroll', () => {
+        backToTop.classList.toggle('show', window.scrollY > 300);
+      });
+      backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }
+  });
+</script>
+<button class="back-to-top" aria-label="Back to top">↑</button>`;
+
+  let result = `<article class="blog-article">\n${interactiveStyles}\n${content}`;
+
   imageUrls.forEach((url, index) => {
     const placeholder = `[IMAGE:${index}]`;
-    const imgTag = `<figure style="margin: 2rem 0; text-align: center;">
-      <img src="${url}" alt="Blog image ${index + 1}" style="max-width: 100%; height: auto; border-radius: 8px;" />
+    const altText = index === 0
+      ? `${seoData.primaryKeyword} - Featured Image`
+      : `${seoData.primaryKeyword} - Image ${index}`;
+    const imgTag = `<figure class="blog-figure blog-section">
+      <img src="${url}" alt="${altText}" loading="lazy" />
+      <figcaption>${altText}</figcaption>
     </figure>`;
     result = result.replace(placeholder, imgTag);
   });
+
+  result += `\n${interactiveScript}\n</article>`;
   return result;
 }
 

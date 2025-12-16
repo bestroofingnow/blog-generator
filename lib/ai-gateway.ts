@@ -648,7 +648,7 @@ Return ONLY the enhanced prompt text, nothing else.`,
   }
 }
 
-// Format final blog HTML using Kimi 2
+// Format final blog HTML using Kimi 2 with interactive JS design elements
 export async function formatBlogCode(params: {
   content: string;
   images: GeneratedImage[];
@@ -656,13 +656,13 @@ export async function formatBlogCode(params: {
 }): Promise<string> {
   const { content, images, outline } = params;
 
-  const prompt = `You are an expert web developer. Take this blog content and images and format it as clean, semantic HTML ready for WordPress.
+  const prompt = `You are an expert web developer specializing in engaging blog designs. Take this blog content and images and format it as beautiful, interactive HTML ready for WordPress.
 
 BLOG CONTENT:
 ${content}
 
 IMAGES AVAILABLE:
-${images.map((img, i) => `[IMAGE:${i}] - ${img.prompt}`).join("\n")}
+${images.map((img, i) => `[IMAGE:${i}] - URL: ${img.base64.startsWith("http") ? img.base64 : "[base64-image]"} - Alt: ${img.prompt.substring(0, 80)}`).join("\n")}
 
 SEO DATA:
 - Title: ${outline.seo.metaTitle}
@@ -670,22 +670,51 @@ SEO DATA:
 - Primary Keyword: ${outline.seo.primaryKeyword}
 
 REQUIREMENTS:
-1. Replace [IMAGE:X] placeholders with proper <figure> elements
+1. Replace [IMAGE:X] placeholders with proper <figure> elements using the actual image URLs/data
 2. Use semantic HTML (article, section, figure, figcaption)
-3. Add proper alt text to images using the prompts
+3. Add proper alt text to images
 4. Ensure proper heading hierarchy (h1, h2, h3)
-5. Add schema.org structured data if appropriate
-6. Make the HTML clean and WordPress-compatible
-7. Do not include <html>, <head>, or <body> tags - just the article content
+5. Make the HTML clean and WordPress-compatible
+6. Do NOT include <html>, <head>, or <body> tags - just the article content
 
-Return ONLY the formatted HTML, no explanations.`;
+INTERACTIVE DESIGN ELEMENTS - Include these inline styles and scripts:
+1. Add smooth scroll-reveal animations for sections (use IntersectionObserver)
+2. Add hover zoom effect on images (transform: scale(1.02) on hover)
+3. Add a floating "Back to Top" button that appears after scrolling
+4. Add subtle box shadows and rounded corners on content blocks
+5. Add a reading progress bar at the top of the article
+6. Style blockquotes with left border accent and italic styling
+7. Add smooth transitions (0.3s ease) on all interactive elements
+8. Use CSS variables for consistent theming (--primary-color: #2563eb, --accent: #3b82f6)
+
+EXAMPLE INTERACTIVE ELEMENTS TO INCLUDE:
+<style>
+  .blog-article { --primary: #2563eb; --accent: #3b82f6; }
+  .blog-section { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+  .blog-section.visible { opacity: 1; transform: translateY(0); }
+  .blog-figure img { transition: transform 0.3s ease; border-radius: 12px; }
+  .blog-figure:hover img { transform: scale(1.02); }
+  .blog-cta { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+</style>
+
+<script>
+  // Scroll reveal animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.blog-section').forEach(el => observer.observe(el));
+</script>
+
+Return ONLY the formatted HTML with embedded styles and scripts, no explanations.`;
 
   const result = await generateText({
     model: MODELS.codeWriter,
-    system: "You are an expert web developer. Return only clean HTML code, no explanations.",
+    system: "You are an expert web developer. Return only clean HTML code with inline CSS and JavaScript for interactive effects. No explanations.",
     prompt,
-    maxOutputTokens: 10000,
-    temperature: 0.3,
+    maxOutputTokens: 12000,
+    temperature: 0.4,
   });
 
   return result.text;
