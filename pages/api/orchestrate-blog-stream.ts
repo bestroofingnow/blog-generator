@@ -1,7 +1,12 @@
 // pages/api/orchestrate-blog-stream.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { generateOutline, generateContent } from "../../lib/ai-gateway";
-import { generateImagesWithImagen } from "../../lib/imagen-client";
+import {
+  generateOutline,
+  generateContent,
+  generateBlogImage,
+  BlogOutline,
+  GeneratedImage,
+} from "../../lib/ai-gateway";
 
 interface WordPressCredentials {
   siteUrl: string;
@@ -9,10 +14,11 @@ interface WordPressCredentials {
   appPassword: string;
 }
 
-interface ImageData {
-  base64: string;
-  mimeType: string;
-  description: string;
+interface SEOData {
+  primaryKeyword: string;
+  secondaryKeywords: string[];
+  metaTitle: string;
+  metaDescription: string;
 }
 
 function sendProgress(res: NextApiResponse, step: string, message: string) {
@@ -27,50 +33,86 @@ function sendComplete(res: NextApiResponse, data: Record<string, unknown>) {
   res.write(`data: ${JSON.stringify({ type: "complete", ...data })}\n\n`);
 }
 
-async function uploadImageToWordPress(
-  credentials: WordPressCredentials,
-  imageBase64: string,
-  filename: string,
-  mimeType: string
-): Promise<{ id: number; url: string } | null> {
+// Helper to call internal APIs
+async function callInternalApi(endpoint: string, body: unknown): Promise<unknown> {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const responseText = await response.text();
   try {
-    const imageBuffer = Buffer.from(imageBase64, "base64");
-    const auth = Buffer.from(`${credentials.username}:${credentials.appPassword}`).toString("base64");
-
-    const response = await fetch(`${credentials.siteUrl}/wp-json/wp/v2/media`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": mimeType,
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      },
-      body: imageBuffer,
-    });
-
-    if (!response.ok) {
-      console.error("WordPress upload failed:", response.status, await response.text());
-      return null;
-    }
-
-    const data = await response.json();
-    return { id: data.id, url: data.source_url };
-  } catch (error) {
-    console.error("WordPress upload error:", error);
-    return null;
+    return JSON.parse(responseText);
+  } catch {
+    throw new Error(`Internal API ${endpoint} returned invalid response`);
   }
 }
 
-function insertImagesIntoContent(content: string, imageUrls: string[]): string {
+function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
   let result = content;
+
+  // Replace image placeholders in src attributes (new format: src="[IMAGE:X]")
   imageUrls.forEach((url, index) => {
-    if (url) {
-      const imgTag = `<img src="${url}" alt="Blog section image ${index + 1}" class="${index === 0 ? 'featured-image' : 'content-image'}" width="800" height="600" />`;
-      result = result.replace(`[IMAGE:${index}]`, imgTag);
-    }
+    const srcPlaceholder = `src="[IMAGE:${index}]"`;
+    result = result.replace(new RegExp(srcPlaceholder, 'g'), `src="${url}"`);
   });
-  // Remove any remaining placeholders
-  result = result.replace(/\[IMAGE:\d+\]/g, "");
+
+  // Also handle standalone placeholders (old format: [IMAGE:X])
+  imageUrls.forEach((url, index) => {
+    const placeholder = `[IMAGE:${index}]`;
+    const altText = index === 0
+      ? `${seoData.primaryKeyword} - Featured Image`
+      : `${seoData.primaryKeyword} - Image ${index}`;
+    const imgTag = `<img src="${url}" alt="${altText}" width="800" height="600" />`;
+    result = result.replace(new RegExp(placeholder.replace(/[[\]]/g, '\\$&'), 'g'), imgTag);
+  });
+
   return result;
+}
+
+function createFallbackOutline(topic: string, location: string, numberOfSections: number): BlogOutline {
+  const sections = [];
+  const sectionTitles = [
+    `Why ${topic} Matters in ${location}`,
+    `Top ${topic} Trends for ${location} Homes`,
+    `Choosing the Right ${topic} Solution`,
+    `Professional Installation vs DIY`,
+    `Maximizing Your Investment`,
+  ];
+
+  for (let i = 0; i < numberOfSections; i++) {
+    sections.push({
+      title: sectionTitles[i] || `Section ${i + 1}`,
+      keyPoints: ["Key benefit", "Local considerations", "Expert tips"],
+      imagePrompt: `Professional photography showing ${topic.toLowerCase()} in ${location}`,
+      imagePlacement: "after" as const,
+    });
+  }
+
+  return {
+    blogTitle: `Complete Guide to ${topic} in ${location}`,
+    introduction: {
+      hook: `Transform your ${location} property with professional ${topic.toLowerCase()}.`,
+      keyPoints: ["Enhance curb appeal", "Improve safety", "Create stunning spaces"],
+      imagePrompt: `Hero image of beautiful ${location} home with ${topic.toLowerCase()}`,
+    },
+    sections,
+    conclusion: {
+      summary: `${topic} is one of the best investments for your ${location} property.`,
+      callToAction: "Contact us today for a free consultation.",
+    },
+    seo: {
+      primaryKeyword: `${topic.toLowerCase()} ${location.toLowerCase()}`,
+      secondaryKeywords: [topic.toLowerCase(), `${location} ${topic.toLowerCase()}`],
+      metaTitle: `${topic} in ${location} | Expert Guide`,
+      metaDescription: `Discover the best ${topic.toLowerCase()} solutions for ${location} homes.`,
+    },
+  };
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -88,10 +130,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     topic,
     location,
     blogType,
-    numberOfSections,
-    tone,
+    numberOfSections = 5,
+    tone = "professional yet friendly",
     companyName,
-    companyWebsite,
     primaryKeyword,
     secondaryKeywords,
     metaTitle,
@@ -100,110 +141,167 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     wordpress,
   } = req.body;
 
-  const imageCount = Math.min(numberOfSections + 1, 3); // Hero + up to 2 section images
-
   try {
-    // Step 1: Generate outline
+    // STEP 1: Generate outline with Archie
     sendProgress(res, "outline", "Archie is designing your blog structure...");
 
-    const outline = await generateOutline({
-      topic,
-      location,
-      blogType,
-      numberOfSections,
-      tone,
-      companyName,
-      companyWebsite,
-      primaryKeyword,
-      secondaryKeywords: secondaryKeywords || [],
-      metaTitle,
-      metaDescription,
-      imageThemes: imageThemes || [],
-    });
-
-    if (!outline) {
-      sendError(res, "Failed to generate outline");
-      res.end();
-      return;
+    let outline: BlogOutline;
+    try {
+      outline = await generateOutline({
+        topic,
+        location,
+        blogType,
+        numberOfSections,
+        tone,
+        primaryKeyword,
+        secondaryKeywords: secondaryKeywords || [],
+        imageThemes: imageThemes || [],
+      });
+    } catch (error) {
+      console.error("Outline generation failed:", error);
+      outline = createFallbackOutline(topic, location, numberOfSections);
     }
 
-    // Step 2: Generate images
+    // Build SEO data
+    const seoData: SEOData = {
+      primaryKeyword: primaryKeyword || outline.seo?.primaryKeyword || `${topic.toLowerCase()} ${location.toLowerCase()}`,
+      secondaryKeywords: secondaryKeywords?.length ? secondaryKeywords : outline.seo?.secondaryKeywords || [],
+      metaTitle: metaTitle || outline.seo?.metaTitle || `${topic} in ${location} | Expert Guide`,
+      metaDescription: metaDescription || outline.seo?.metaDescription || `Discover the best ${topic.toLowerCase()} solutions in ${location}.`,
+    };
+
+    // STEP 2: Generate images with Picasso
     sendProgress(res, "images", "Picasso is creating stunning images...");
 
-    let imageUrls: string[] = [];
-    let featuredImageId: number | null = null;
-    const generatedImages: ImageData[] = [];
+    const generatedImages: GeneratedImage[] = [];
+    const imagePrompts: { prompt: string; index: number }[] = [];
 
-    try {
-      const imagePrompts = outline.sections.slice(0, imageCount).map((section, index) => {
-        if (index === 0) {
-          return `Professional photograph of ${topic} in ${location}, beautiful lighting, high quality`;
-        }
-        return `Professional photograph showing ${section.title}, ${topic} theme, high quality`;
+    // Hero image
+    imagePrompts.push({
+      prompt: outline.introduction?.imagePrompt || `Professional photography of ${topic} in ${location}`,
+      index: 0,
+    });
+
+    // Section images (only 2 to save time)
+    const sectionIndices = [0, Math.min(2, outline.sections.length - 1)];
+    sectionIndices.forEach((sectionIdx, i) => {
+      const section = outline.sections[sectionIdx];
+      imagePrompts.push({
+        prompt: section?.imagePrompt || `Professional photography for ${section?.title || topic}`,
+        index: i + 1,
       });
+    });
 
-      const images = await generateImagesWithImagen(imagePrompts);
+    // Generate images in parallel
+    const imageResults = await Promise.allSettled(
+      imagePrompts.map((p) => generateBlogImage(p))
+    );
 
-      for (const img of images) {
-        if (img) {
-          generatedImages.push(img);
-        }
+    imageResults.forEach((result, idx) => {
+      if (result.status === "fulfilled" && result.value) {
+        generatedImages.push(result.value);
+      } else {
+        generatedImages.push({
+          index: idx,
+          prompt: imagePrompts[idx].prompt,
+          base64: "",
+          mimeType: "image/png",
+        });
       }
-    } catch (imgError) {
-      console.error("Image generation failed:", imgError);
-    }
+    });
 
-    // Step 3: Generate content
+    // STEP 3: Generate content with Penelope
     sendProgress(res, "content", "Penelope is writing engaging content...");
 
-    const rawContent = await generateContent(outline, location);
+    const rawContent = await generateContent({
+      outline,
+      topic,
+      location,
+      tone,
+      companyName,
+    });
 
-    if (!rawContent) {
-      sendError(res, "Failed to generate content");
-      res.end();
-      return;
-    }
-
-    // Step 4: Format content
+    // STEP 4: Format content with Felix
     sendProgress(res, "format", "Felix is formatting the HTML...");
 
-    // Step 5: Upload to WordPress (if configured)
-    if (wordpress && generatedImages.length > 0) {
+    // STEP 5: Upload to WordPress (if configured)
+    let imageUrls: string[] = [];
+    const uploadedImageIds: number[] = [];
+
+    if (wordpress && generatedImages.some((img) => img.base64)) {
       sendProgress(res, "upload", "Uploading images to WordPress...");
 
-      for (let i = 0; i < generatedImages.length; i++) {
-        const img = generatedImages[i];
-        const ext = img.mimeType.split("/")[1] || "png";
-        const filename = `blog-${topic.replace(/\s+/g, "-")}-${i + 1}-${Date.now()}.${ext}`;
+      try {
+        const primaryKeywordSlug = (seoData.primaryKeyword || topic)
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .substring(0, 50);
 
-        const uploaded = await uploadImageToWordPress(wordpress, img.base64, filename, img.mimeType);
-        if (uploaded) {
-          imageUrls.push(uploaded.url);
-          if (i === 0) {
-            featuredImageId = uploaded.id;
+        const imagesToUpload = generatedImages
+          .filter((img) => img.base64 && img.base64.length > 0)
+          .map((img, index) => {
+            let base64Data = img.base64;
+            if (base64Data.includes(",")) {
+              base64Data = base64Data.split(",")[1];
+            }
+
+            const sectionTitle = index === 0
+              ? "hero"
+              : (outline.sections[index - 1]?.title || `section-${index}`)
+                  .toLowerCase()
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .replace(/\s+/g, "-")
+                  .substring(0, 30);
+
+            return {
+              base64: base64Data,
+              filename: `${primaryKeywordSlug}-${sectionTitle}.png`,
+              altText: `${seoData.primaryKeyword} - ${outline.sections[index - 1]?.title || "Featured Image"}`,
+              caption: `${topic} in ${location}`,
+            };
+          });
+
+        if (imagesToUpload.length > 0) {
+          const uploadResponse = await callInternalApi("/api/wordpress-upload", {
+            action: "uploadMultiple",
+            credentials: wordpress,
+            images: imagesToUpload,
+          }) as { success: boolean; images?: Array<{ id: number; url: string }> };
+
+          if (uploadResponse.success && uploadResponse.images) {
+            uploadResponse.images.forEach((uploaded, i) => {
+              if (uploaded.url) imageUrls[i] = uploaded.url;
+              if (uploaded.id) uploadedImageIds[i] = uploaded.id;
+            });
           }
         }
+      } catch (error) {
+        console.error("WordPress upload failed:", error);
       }
-    } else if (generatedImages.length > 0) {
-      // Use base64 data URLs as fallback
-      imageUrls = generatedImages.map((img) => `data:${img.mimeType};base64,${img.base64}`);
+    }
+
+    // Fill missing URLs with base64 or placeholders
+    for (let i = 0; i < generatedImages.length; i++) {
+      if (!imageUrls[i]) {
+        const img = generatedImages[i];
+        if (img.base64 && img.base64.length > 0) {
+          imageUrls[i] = img.base64;
+        } else {
+          const placeholderText = encodeURIComponent(`${topic} Image ${i + 1}`);
+          imageUrls[i] = `https://placehold.co/800x400/667eea/ffffff?text=${placeholderText}`;
+        }
+      }
     }
 
     // Insert images into content
-    const htmlContent = insertImagesIntoContent(rawContent, imageUrls);
-
-    const seoData = {
-      primaryKeyword: outline.seo.primaryKeyword,
-      secondaryKeywords: outline.seo.secondaryKeywords,
-      metaTitle: outline.seo.metaTitle,
-      metaDescription: outline.seo.metaDescription,
-    };
+    const htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
 
     sendComplete(res, {
       success: true,
       htmlContent,
       seoData,
-      featuredImageId,
+      featuredImageId: uploadedImageIds[0] || null,
     });
 
     res.end();
@@ -213,3 +311,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.end();
   }
 }
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "50mb",
+    },
+    responseLimit: false,
+  },
+  maxDuration: 180,
+};
