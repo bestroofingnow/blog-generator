@@ -363,7 +363,8 @@ export default function Home() {
 
     try {
       if (formData.useOrchestration) {
-        const response = await fetch("/api/orchestrate-blog", {
+        // Use streaming endpoint for real-time progress
+        const response = await fetch("/api/orchestrate-blog-stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -375,26 +376,59 @@ export default function Home() {
           }),
         });
 
-        // Get response text first to handle non-JSON errors
-        const responseText = await response.text();
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch {
-          console.error("API returned non-JSON response:", responseText.substring(0, 500));
-          throw new Error(`Server error: ${responseText.substring(0, 200)}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
         }
 
-        if (!data.success) {
-          throw new Error(data.error || "Failed to generate blog");
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) {
+          throw new Error("No response body");
+        }
+
+        let buffer = "";
+        let finalData: { success?: boolean; htmlContent?: string; seoData?: SEOData; featuredImageId?: number; error?: string } = {};
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.type === "progress") {
+                  setState((prev) => ({
+                    ...prev,
+                    progress: { step: data.step, message: data.message },
+                  }));
+                } else if (data.type === "complete") {
+                  finalData = data;
+                } else if (data.type === "error") {
+                  throw new Error(data.error);
+                }
+              } catch (parseError) {
+                // Ignore parse errors for incomplete data
+              }
+            }
+          }
+        }
+
+        if (!finalData.success) {
+          throw new Error(finalData.error || "Failed to generate blog");
         }
 
         setState({
           isLoading: false,
           error: null,
-          htmlContent: data.htmlContent,
-          seoData: data.seoData,
-          featuredImageId: data.featuredImageId || null,
+          htmlContent: finalData.htmlContent || null,
+          seoData: finalData.seoData || null,
+          featuredImageId: finalData.featuredImageId || null,
           copiedToClipboard: false,
           progress: { step: "complete", message: "Blog generated successfully!" },
           publishedPost: null,
@@ -850,30 +884,30 @@ export default function Home() {
           {state.isLoading && (
             <div className={styles.progressSection}>
               <div className={styles.progressSteps}>
-                <div className={`${styles.progressStep} ${["research", "outline", "images", "upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["research", "outline", "images", "content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>1</span>
                   <span>Outline</span>
                   <small>Archie</small>
                 </div>
-                <div className={`${styles.progressStep} ${["images", "upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["images", "content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>2</span>
                   <span>Images</span>
                   <small>Picasso</small>
                 </div>
-                <div className={`${styles.progressStep} ${["upload", "content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                <div className={`${styles.progressStep} ${["content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>3</span>
-                  <span>Upload</span>
-                  <small>WordPress</small>
-                </div>
-                <div className={`${styles.progressStep} ${["content", "format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
-                  <span className={styles.stepNumber}>4</span>
                   <span>Content</span>
                   <small>Penelope</small>
                 </div>
-                <div className={`${styles.progressStep} ${["format", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
-                  <span className={styles.stepNumber}>5</span>
+                <div className={`${styles.progressStep} ${["format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                  <span className={styles.stepNumber}>4</span>
                   <span>Format</span>
                   <small>Felix</small>
+                </div>
+                <div className={`${styles.progressStep} ${["upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
+                  <span className={styles.stepNumber}>5</span>
+                  <span>Upload</span>
+                  <small>WordPress</small>
                 </div>
               </div>
               <p className={styles.progressMessage}>{state.progress.message}</p>
