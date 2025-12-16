@@ -8,25 +8,25 @@ const gateway = createGateway({
 });
 
 // Language Model assignments based on user specification
-// Using correct Vercel AI Gateway model IDs (no provider prefix needed)
+// Using correct Vercel AI Gateway model IDs with provider prefix
 export const MODELS = {
-  // Llama 4 Maverick - AI Conductor/Orchestrator
-  conductor: gateway("llama-4-maverick"),
+  // Llama 4 Maverick - AI Conductor/Orchestrator (Archie)
+  conductor: gateway("meta/llama-4-maverick"),
 
-  // Claude Sonnet 4.5 - Content writer
-  contentWriter: gateway("claude-sonnet-4.5"),
+  // Claude Sonnet 4.5 - Content writer (Penelope)
+  contentWriter: gateway("anthropic/claude-sonnet-4.5"),
 
-  // Kimi 2 - Code writer for blog posts and image review
-  codeWriter: gateway("kimi-k2"),
+  // Kimi K2 - Code writer for blog posts and image review (Felix)
+  codeWriter: gateway("moonshotai/kimi-k2"),
 
   // Gemini 2.5 Flash - For image generation prompts
-  geminiFlash: gateway("gemini-2.5-flash"),
+  geminiFlash: gateway("google/gemini-2.5-flash"),
 
-  // Gemini 3 Pro - For image editing/remaking
-  geminiPro: gateway("gemini-3-pro-preview"),
+  // Gemini 3 Pro - For image editing/remaking (Mona)
+  geminiPro: gateway("google/gemini-3-pro-preview"),
 
-  // Perplexity Sonar Reasoning Pro - Deep SEO research
-  researcher: gateway("sonar-reasoning-pro"),
+  // Perplexity Sonar - Deep SEO research (Sherlock)
+  researcher: gateway("perplexity/sonar"),
 };
 
 // Image Model assignments - using Gateway's imageModel method
