@@ -302,6 +302,10 @@ export default function Home() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState<string>("");
 
+  // Sidebar navigation state
+  type SidebarSection = "create" | "setup" | "profile" | "research" | "library";
+  const [activeSection, setActiveSection] = useState<SidebarSection>("create");
+
   // Load WordPress settings from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("wordpressSettings");
@@ -1395,7 +1399,80 @@ export default function Home() {
       </header>
 
       <main className={styles.main}>
+        {/* Sidebar Navigation */}
+        <nav className={styles.sidebar}>
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "create" ? styles.active : ""}`}
+            onClick={() => setActiveSection("create")}
+            title="Create Content"
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            <span className={styles.tooltip}>Create</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "setup" ? styles.active : ""}`}
+            onClick={() => setActiveSection("setup")}
+            title="Integrations"
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span className={styles.tooltip}>Setup</span>
+            {(wordpress.isConnected || gohighlevel.isConnected) && <span className={styles.sidebarBadge} />}
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "profile" ? styles.active : ""}`}
+            onClick={() => setActiveSection("profile")}
+            title="Company Profile"
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/>
+            </svg>
+            <span className={styles.tooltip}>Profile</span>
+            {companyProfile.name && <span className={styles.sidebarBadge} />}
+          </button>
+
+          <div className={styles.sidebarDivider} />
+
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "research" ? styles.active : ""}`}
+            onClick={() => setActiveSection("research")}
+            title="Research Tools"
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <span className={styles.tooltip}>Research</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "library" ? styles.active : ""}`}
+            onClick={() => setActiveSection("library")}
+            title="Page Library"
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span className={styles.tooltip}>Library</span>
+            {pageLibrary.length > 0 && <span className={styles.sidebarBadge}>{pageLibrary.length}</span>}
+          </button>
+        </nav>
+
         <div className={styles.formSection}>
+          {/* Show the original form when "create" is selected */}
+          {activeSection === "create" && (
+          <>
           <form onSubmit={handleGenerateBlog} className={styles.form}>
             {/* WordPress Settings Toggle */}
             <div className={styles.settingsToggle}>
@@ -2649,6 +2726,358 @@ export default function Home() {
                 </div>
               </div>
               <p className={styles.progressMessage}>{state.progress.message}</p>
+            </div>
+          )}
+          </>
+          )}
+          {/* End of Create section */}
+
+          {/* Setup Section - Integrations */}
+          {activeSection === "setup" && (
+            <div className={styles.sectionContent}>
+              <h2 className={styles.sectionTitle}>Integrations</h2>
+              <p className={styles.sectionDescription}>
+                Configure your publishing platforms to directly publish generated content.
+              </p>
+
+              <div className={styles.formCard}>
+                <h4 className={styles.formCardTitle}>
+                  WordPress
+                  {wordpress.isConnected && <span className={styles.connectedBadge}>Connected</span>}
+                </h4>
+                <div className={styles.formGroup}>
+                  <label htmlFor="setupSiteUrl">Site URL</label>
+                  <input
+                    type="url"
+                    id="setupSiteUrl"
+                    name="siteUrl"
+                    value={wordpress.siteUrl}
+                    onChange={handleWordPressChange}
+                    placeholder="https://yoursite.com"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="setupWpUsername">Username</label>
+                  <input
+                    type="text"
+                    id="setupWpUsername"
+                    name="username"
+                    value={wordpress.username}
+                    onChange={handleWordPressChange}
+                    placeholder="admin"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="setupAppPassword">Application Password</label>
+                  <input
+                    type="password"
+                    id="setupAppPassword"
+                    name="appPassword"
+                    value={wordpress.appPassword}
+                    onChange={handleWordPressChange}
+                    placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                  />
+                  <small>Generate in WordPress Admin → Users → Profile → Application Passwords</small>
+                </div>
+                <button
+                  type="button"
+                  onClick={testWordPressConnection}
+                  disabled={testingConnection || !wordpress.siteUrl || !wordpress.username || !wordpress.appPassword}
+                  className={styles.testButton}
+                >
+                  {testingConnection ? "Testing..." : wordpress.isConnected ? "Connected" : "Test Connection"}
+                </button>
+              </div>
+
+              <div className={styles.formCard}>
+                <h4 className={styles.formCardTitle}>
+                  GoHighLevel
+                  {gohighlevel.isConnected && <span className={styles.connectedBadge}>Connected</span>}
+                </h4>
+                <div className={styles.formGroup}>
+                  <label htmlFor="setupGhlApiToken">API Token</label>
+                  <input
+                    type="password"
+                    id="setupGhlApiToken"
+                    name="apiToken"
+                    value={gohighlevel.apiToken}
+                    onChange={handleGHLChange}
+                    placeholder="Your Private Integration API Token"
+                  />
+                  <small>Settings → Integrations → Private Integrations</small>
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="setupGhlLocationId">Location ID</label>
+                  <input
+                    type="text"
+                    id="setupGhlLocationId"
+                    name="locationId"
+                    value={gohighlevel.locationId}
+                    onChange={handleGHLChange}
+                    placeholder="e.g., abc123XYZ..."
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={testGHLConnection}
+                  disabled={testingConnection || !gohighlevel.apiToken || !gohighlevel.locationId}
+                  className={styles.testButton}
+                >
+                  {testingConnection ? "Testing..." : gohighlevel.isConnected ? "Connected" : "Test Connection"}
+                </button>
+                {gohighlevel.isConnected && ghlBlogs.length > 0 && (
+                  <div className={styles.formGroup} style={{ marginTop: "1rem" }}>
+                    <label htmlFor="setupGhlBlogId">Select Blog</label>
+                    <select
+                      id="setupGhlBlogId"
+                      name="blogId"
+                      value={gohighlevel.blogId}
+                      onChange={handleGHLChange}
+                    >
+                      <option value="">Select a blog...</option>
+                      {ghlBlogs.map((blog) => (
+                        <option key={blog.id} value={blog.id}>{blog.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Profile Section */}
+          {activeSection === "profile" && (
+            <div className={styles.sectionContent}>
+              <h2 className={styles.sectionTitle}>Company Profile</h2>
+              <p className={styles.sectionDescription}>
+                Your company information is used to generate relevant, branded content.
+              </p>
+
+              <div className={styles.formCard}>
+                <h4 className={styles.formCardTitle}>Business Information</h4>
+                <div className={styles.formCardGrid}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileCompanyName">Company Name</label>
+                    <input
+                      type="text"
+                      id="profileCompanyName"
+                      value={companyProfile.name}
+                      onChange={(e) => setCompanyProfile(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Your Company Name"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileWebsite">Website</label>
+                    <input
+                      type="url"
+                      id="profileWebsite"
+                      value={companyProfile.website}
+                      onChange={(e) => setCompanyProfile(prev => ({ ...prev, website: e.target.value }))}
+                      placeholder="https://yourcompany.com"
+                    />
+                  </div>
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="profileIndustry">Industry</label>
+                  <select
+                    id="profileIndustry"
+                    value={companyProfile.industryType}
+                    onChange={(e) => {
+                      const industry = e.target.value;
+                      setCompanyProfile(prev => ({
+                        ...prev,
+                        industryType: industry,
+                        services: industry && industry !== "other" ? getDefaultServices(industry) : prev.services,
+                        usps: industry && industry !== "other" ? getDefaultUSPs(industry) : prev.usps,
+                      }));
+                    }}
+                  >
+                    <option value="">Select Industry...</option>
+                    {getIndustryOptions().map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.formCard}>
+                <h4 className={styles.formCardTitle}>Location</h4>
+                <div className={styles.formCardGrid}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileHeadquarters">Headquarters</label>
+                    <input
+                      type="text"
+                      id="profileHeadquarters"
+                      value={companyProfile.headquarters}
+                      onChange={(e) => setCompanyProfile(prev => ({ ...prev, headquarters: e.target.value }))}
+                      placeholder="e.g., Charlotte, NC"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileState">State</label>
+                    <input
+                      type="text"
+                      id="profileState"
+                      value={companyProfile.state}
+                      onChange={(e) => setCompanyProfile(prev => ({ ...prev, state: e.target.value }))}
+                      placeholder="e.g., North Carolina"
+                    />
+                  </div>
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="profileCities">Service Areas (Cities)</label>
+                  <textarea
+                    id="profileCities"
+                    value={citiesInput}
+                    onChange={(e) => {
+                      setCitiesInput(e.target.value);
+                      const cities = e.target.value.split(",").map(c => c.trim()).filter(Boolean);
+                      setCompanyProfile(prev => ({ ...prev, cities }));
+                    }}
+                    placeholder="Charlotte, Concord, Huntersville, Matthews..."
+                    rows={2}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem("companyProfile", JSON.stringify(companyProfile));
+                  setFormData(prev => ({ ...prev, companyName: companyProfile.name, companyWebsite: companyProfile.website }));
+                  alert("Company profile saved!");
+                }}
+                className={styles.testButton}
+                style={{ width: "100%" }}
+              >
+                Save Profile
+              </button>
+            </div>
+          )}
+
+          {/* Research Section */}
+          {activeSection === "research" && (
+            <div className={styles.sectionContent}>
+              <h2 className={styles.sectionTitle}>Research Tools</h2>
+              <p className={styles.sectionDescription}>
+                Use AI-powered research to find keywords and content strategies.
+              </p>
+
+              <div className={styles.formCard}>
+                <h4 className={styles.formCardTitle}>Perplexity Deep Research</h4>
+                <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem" }}>
+                  Enter a topic in the Create section first, then use these tools to research.
+                </p>
+                <div className={styles.researchButtons}>
+                  <button
+                    type="button"
+                    onClick={() => runPerplexityResearch("keyword")}
+                    disabled={isResearchingPerplexity || (!formData.topic && !formData.primaryKeyword)}
+                    className={styles.researchTypeBtn}
+                  >
+                    Keywords
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runPerplexityResearch("competitor")}
+                    disabled={isResearchingPerplexity || (!formData.topic && !formData.primaryKeyword)}
+                    className={styles.researchTypeBtn}
+                  >
+                    Competitors
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runPerplexityResearch("content")}
+                    disabled={isResearchingPerplexity || (!formData.topic && !formData.primaryKeyword)}
+                    className={styles.researchTypeBtn}
+                  >
+                    Content Ideas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runPerplexityResearch("local")}
+                    disabled={isResearchingPerplexity || (!formData.topic && !formData.primaryKeyword)}
+                    className={styles.researchTypeBtn}
+                  >
+                    Local SEO
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runPerplexityResearch("comprehensive")}
+                    disabled={isResearchingPerplexity || (!formData.topic && !formData.primaryKeyword)}
+                    className={`${styles.researchTypeBtn} ${styles.primary}`}
+                  >
+                    Full Analysis
+                  </button>
+                </div>
+                {isResearchingPerplexity && (
+                  <p style={{ marginTop: "1rem", color: "#667eea" }}>Researching with Perplexity AI...</p>
+                )}
+              </div>
+
+              {perplexityResearch && (
+                <div className={styles.formCard}>
+                  <h4 className={styles.formCardTitle}>Research Results Available</h4>
+                  <button
+                    type="button"
+                    onClick={() => setShowResearchModal(true)}
+                    className={styles.testButton}
+                    style={{ width: "100%" }}
+                  >
+                    View Full Research Report
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Library Section */}
+          {activeSection === "library" && (
+            <div className={styles.sectionContent}>
+              <h2 className={styles.sectionTitle}>Page Library</h2>
+              <p className={styles.sectionDescription}>
+                Your saved generated pages and content.
+              </p>
+
+              {pageLibrary.length === 0 ? (
+                <div className={styles.formCard}>
+                  <p style={{ color: "#666", textAlign: "center", padding: "2rem 0" }}>
+                    No pages saved yet. Generated pages will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className={styles.libraryList}>
+                  {pageLibrary.map((page) => (
+                    <div key={page.id} className={styles.libraryItem}>
+                      <div className={styles.libraryItemHeader}>
+                        <h4>{page.title}</h4>
+                        <span className={styles.libraryItemType}>{page.type}</span>
+                      </div>
+                      <p className={styles.libraryItemMeta}>
+                        {page.primaryKeyword} • {new Date(page.createdAt).toLocaleDateString()}
+                      </p>
+                      <p className={styles.libraryItemMeta}>
+                        Status: {page.status} {page.publishedUrl && <a href={page.publishedUrl} target="_blank" rel="noreferrer">View</a>}
+                      </p>
+                      <div className={styles.libraryItemActions}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm("Delete this page?")) {
+                              const updated = pageLibrary.filter(p => p.id !== page.id);
+                              setPageLibrary(updated);
+                              localStorage.setItem("pageLibrary", JSON.stringify(updated));
+                            }
+                          }}
+                          className={`${styles.actionButton} ${styles.danger}`}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
