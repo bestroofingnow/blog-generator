@@ -323,6 +323,7 @@ export interface CompanyProfile {
 
   // Industry
   industryType: string;
+  customIndustryName?: string; // Used when industryType is "custom"
   services: string[];
   usps: string[];
 

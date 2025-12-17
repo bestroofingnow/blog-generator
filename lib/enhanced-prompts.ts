@@ -59,6 +59,14 @@ export function getWritingStyleDescription(style: WritingStyle | undefined): str
   return style ? styleDescriptions[style] : styleDescriptions.conversational;
 }
 
+// Helper to get effective industry display name
+function getIndustryDisplayName(companyProfile: CompanyProfile): string {
+  if (companyProfile.industryType === "custom" && companyProfile.customIndustryName) {
+    return companyProfile.customIndustryName;
+  }
+  return companyProfile.industryType;
+}
+
 // Generate the master blog post prompt
 export function generateEnhancedBlogPrompt(params: EnhancedPromptParams): string {
   const {
@@ -75,6 +83,7 @@ export function generateEnhancedBlogPrompt(params: EnhancedPromptParams): string
   const brandVoiceDesc = getBrandVoiceDescription(companyProfile.brandVoice);
   const writingStyleDesc = getWritingStyleDescription(companyProfile.writingStyle);
   const targetLocation = location || companyProfile.headquarters;
+  const industryName = getIndustryDisplayName(companyProfile);
   const socialLinksStr = companyProfile.socialLinks
     ? Object.entries(companyProfile.socialLinks)
         .filter(([, v]) => v)
@@ -83,14 +92,14 @@ export function generateEnhancedBlogPrompt(params: EnhancedPromptParams): string
     : "N/A";
 
   return `# TASK
-Create an exceptional, SEO-optimized blog post that ranks #1 on Google, drives organic traffic, generates qualified leads, and positions ${companyProfile.name} as the definitive authority in ${companyProfile.industryType}. This content must achieve award-winning quality while seamlessly integrating conversion elements.
+Create an exceptional, SEO-optimized blog post that ranks #1 on Google, drives organic traffic, generates qualified leads, and positions ${companyProfile.name} as the definitive authority in ${industryName}. This content must achieve award-winning quality while seamlessly integrating conversion elements.
 
 # ROLE
 You are an elite SEO copywriting specialist and content strategist with 15+ years of experience creating viral, conversion-focused content. You combine the analytical precision of an SEO technical expert with the creative genius of an award-winning journalist.
 
 # CONTEXT
 Company: ${companyProfile.name}
-Industry: ${companyProfile.industryType}
+Industry: ${industryName}
 Target Location: ${targetLocation}, ${companyProfile.stateAbbr}
 Target Audience: ${companyProfile.targetAudienceDescription || companyProfile.audience}
 Content Length: ${wordCount} words (EXACT - this is critical for SEO)
@@ -174,7 +183,7 @@ Each section should be 200-300 words with subheading. Include:
 - Measurable results
 
 ### Section 6: Future Trends & Prevention
-- Emerging solutions in ${companyProfile.industryType}
+- Emerging solutions in ${industryName}
 - Preventative measures
 - Long-term maintenance tips
 
@@ -302,12 +311,13 @@ export function generateEnhancedOutlinePrompt(params: EnhancedPromptParams): str
 
   const targetLocation = location || companyProfile.headquarters;
   const keywordReqs = calculateKeywordRequirements(wordCount);
+  const industryName = getIndustryDisplayName(companyProfile);
 
   return `You are an elite SEO content strategist. Create a detailed outline for an SEO-optimized blog post.
 
 # CONTEXT
 Company: ${companyProfile.name}
-Industry: ${companyProfile.industryType}
+Industry: ${industryName}
 Location: ${targetLocation}, ${companyProfile.stateAbbr}
 Topic: ${topic}
 Primary Keyword: "${primaryKeyword}"
@@ -389,13 +399,14 @@ export function generateImagePrompt(
     concrete: ["concrete work", "driveway", "patio", "professional finish"],
   };
 
+  const industryName = getIndustryDisplayName(companyProfile);
   const visuals = industryVisuals[companyProfile.industryType] || ["professional service", "quality work"];
   const visual = visuals[index % visuals.length];
 
   return `Professional, high-quality photograph showing ${visual} related to ${primaryKeyword}.
 Scene: ${section} in ${companyProfile.headquarters}, ${companyProfile.stateAbbr}.
 Style: Clean, modern, trustworthy. Natural lighting, no text overlays.
-Business context: ${companyProfile.industryType} services.
+Business context: ${industryName} services.
 Must look authentic and professional, suitable for a top-tier business website.`;
 }
 
@@ -434,9 +445,10 @@ export function generateCTAText(
 ): string {
   const templates = CTA_TEMPLATES[type];
   const template = templates[Math.floor(Math.random() * templates.length)];
+  const industryName = getIndustryDisplayName(companyProfile);
 
   return template
-    .replace("{industry}", companyProfile.industryType)
+    .replace("{industry}", industryName)
     .replace("{phone}", companyProfile.phone)
     .replace("{city}", companyProfile.headquarters)
     .replace("{count}", String(companyProfile.projectsCompleted || 500))

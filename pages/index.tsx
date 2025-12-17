@@ -189,6 +189,7 @@ export default function Home() {
   });
 
   const [citiesInput, setCitiesInput] = useState("");
+  const [customIndustryName, setCustomIndustryName] = useState("");
 
   // Page Generation Mode
   const [generationMode, setGenerationMode] = useState<"blog" | "page">("blog");
@@ -1379,6 +1380,30 @@ export default function Home() {
                     ))}
                   </select>
                 </div>
+
+                {/* Custom Industry Name - shown when "custom" is selected */}
+                {companyProfile.industryType === "custom" && (
+                  <div className={styles.formGroup}>
+                    <label htmlFor="customIndustryName">Custom Industry Name</label>
+                    <input
+                      type="text"
+                      id="customIndustryName"
+                      value={customIndustryName}
+                      onChange={(e) => {
+                        setCustomIndustryName(e.target.value);
+                        // Update the company profile with custom industry name
+                        setCompanyProfile(prev => ({
+                          ...prev,
+                          customIndustryName: e.target.value,
+                        }));
+                      }}
+                      placeholder="e.g., Auto Detailing, Pet Grooming, etc."
+                    />
+                    <span className={styles.fieldHint}>
+                      Enter your specific industry or trade type
+                    </span>
+                  </div>
+                )}
 
                 {/* Basic Company Info */}
                 <div className={styles.formRow}>
