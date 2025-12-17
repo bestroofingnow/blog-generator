@@ -89,6 +89,26 @@ interface ResearchData {
   imageThemes: string[];
 }
 
+interface SuggestedContent {
+  type: "blog" | "service_page" | "location_page";
+  title: string;
+  primaryKeyword: string;
+  priority: "high" | "medium" | "low";
+  reason: string;
+}
+
+interface CompanyResearchData {
+  keywords?: string[];
+  suggestedContent?: SuggestedContent[];
+  seoInsights?: {
+    missingPages: string[];
+    contentGaps: string[];
+    localSEOOpportunities: string[];
+  };
+  researchedAt?: string;
+  pagesAnalyzed?: string[];
+}
+
 interface WordPressCategory {
   id: number;
   name: string;
@@ -215,6 +235,11 @@ export default function Home() {
   const [isGeneratingSEOPlan, setIsGeneratingSEOPlan] = useState(false);
   const [seoPlanTab, setSeoPlanTab] = useState<"pillar" | "blogs" | "keywords" | "calendar" | "recommendations">("pillar");
 
+  // Company Research & Content Hub state
+  const [companyResearch, setCompanyResearch] = useState<CompanyResearchData | null>(null);
+  const [showContentHub, setShowContentHub] = useState(false);
+  const [contentFilter, setContentFilter] = useState<"all" | "blog" | "service_page" | "location_page">("all");
+
   // Page Library state
   const [pageLibrary, setPageLibrary] = useState<PageEntry[]>([]);
   const [showPageLibrary, setShowPageLibrary] = useState(false);
@@ -290,6 +315,19 @@ export default function Home() {
       try {
         const parsed = JSON.parse(saved);
         setPageLibrary(parsed);
+      } catch {
+        // Invalid saved data
+      }
+    }
+  }, []);
+
+  // Load Company Research from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("companyResearch");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setCompanyResearch(parsed);
       } catch {
         // Invalid saved data
       }
@@ -909,7 +947,20 @@ export default function Home() {
           }));
         }
 
-        alert(`Successfully researched ${research.name || "company"}! Review the auto-filled fields.`);
+        // Store deep research data for Content Hub
+        const researchData: CompanyResearchData = {
+          keywords: research.keywords || [],
+          suggestedContent: research.suggestedContent || [],
+          seoInsights: research.seoInsights,
+          researchedAt: research.researchedAt || new Date().toISOString(),
+          pagesAnalyzed: research.pagesAnalyzed || data.pagesAnalyzed || [],
+        };
+        setCompanyResearch(researchData);
+        localStorage.setItem("companyResearch", JSON.stringify(researchData));
+
+        const pagesCount = researchData.pagesAnalyzed?.length || 1;
+        const suggestedCount = researchData.suggestedContent?.length || 0;
+        alert(`Successfully researched ${research.name || "company"}! Analyzed ${pagesCount} pages and found ${suggestedCount} content suggestions. Check the Content Hub for recommendations.`);
       } else {
         alert(`Research failed: ${data.error || "Unknown error"}`);
       }
@@ -1617,6 +1668,24 @@ export default function Home() {
                   </select>
                 </div>
 
+                {/* Custom Target Audience - shown when "custom" is selected */}
+                {companyProfile.targetAudience === "custom" && (
+                  <div className={styles.formGroup}>
+                    <label htmlFor="customTargetAudience">Custom Target Audience</label>
+                    <input
+                      type="text"
+                      id="customTargetAudience"
+                      name="customTargetAudience"
+                      value={companyProfile.customTargetAudience || ""}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="e.g., New parents, Senior citizens, First-time homebuyers"
+                    />
+                    <span className={styles.fieldHint}>
+                      Describe your specific target audience
+                    </span>
+                  </div>
+                )}
+
                 {/* Brand Voice & Writing Style */}
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
@@ -1652,6 +1721,44 @@ export default function Home() {
                     </select>
                   </div>
                 </div>
+
+                {/* Custom Brand Voice & Writing Style inputs */}
+                {(companyProfile.brandVoice === "custom" || companyProfile.writingStyle === "custom") && (
+                  <div className={styles.formRow}>
+                    {companyProfile.brandVoice === "custom" && (
+                      <div className={styles.formGroup}>
+                        <label htmlFor="customBrandVoice">Custom Brand Voice</label>
+                        <input
+                          type="text"
+                          id="customBrandVoice"
+                          name="customBrandVoice"
+                          value={companyProfile.customBrandVoice || ""}
+                          onChange={handleCompanyProfileChange}
+                          placeholder="e.g., Empathetic and caring, Bold and energetic"
+                        />
+                        <span className={styles.fieldHint}>
+                          Describe how your brand should sound
+                        </span>
+                      </div>
+                    )}
+                    {companyProfile.writingStyle === "custom" && (
+                      <div className={styles.formGroup}>
+                        <label htmlFor="customWritingStyle">Custom Writing Style</label>
+                        <input
+                          type="text"
+                          id="customWritingStyle"
+                          name="customWritingStyle"
+                          value={companyProfile.customWritingStyle || ""}
+                          onChange={handleCompanyProfileChange}
+                          placeholder="e.g., Technical with examples, Q&A format"
+                        />
+                        <span className={styles.fieldHint}>
+                          Describe your preferred writing approach
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Credibility Fields */}
                 <div className={styles.formRow}>
@@ -1780,6 +1887,17 @@ export default function Home() {
                     className={styles.seoPlanButton}
                   >
                     {isGeneratingSEOPlan ? "Generating..." : "Generate SEO Plan"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowContentHub(true)}
+                    disabled={!companyResearch?.suggestedContent?.length}
+                    className={styles.contentHubButton}
+                  >
+                    Content Hub
+                    {companyResearch?.suggestedContent?.length ? (
+                      <span className={styles.hubBadge}>{companyResearch.suggestedContent.length}</span>
+                    ) : null}
                   </button>
                 </div>
 
@@ -2938,6 +3056,191 @@ export default function Home() {
               <p className={styles.libraryHelp}>
                 Tip: Use the Page Library to maintain internal linking consistency across your website.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content Hub Modal */}
+      {showContentHub && (
+        <div className={styles.modalOverlay} onClick={() => setShowContentHub(false)}>
+          <div className={styles.contentHubModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Content Hub - Suggested Content</h2>
+              <div className={styles.modalActions}>
+                <button onClick={() => setShowContentHub(false)} className={styles.closeButton}>
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.contentHubContent}>
+              {!companyResearch || !companyResearch.suggestedContent?.length ? (
+                <div className={styles.emptyContentHub}>
+                  <div className={styles.emptyIcon}>🔍</div>
+                  <p><strong>No research data available</strong></p>
+                  <p>Use the Research button in the Company Profile section to analyze your website and get content suggestions.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Research Summary */}
+                  <div className={styles.researchSummary}>
+                    <div className={styles.summaryCard}>
+                      <h4>Pages Analyzed</h4>
+                      <div className={styles.summaryValue}>{companyResearch.pagesAnalyzed?.length || 0}</div>
+                    </div>
+                    <div className={styles.summaryCard}>
+                      <h4>Keywords Found</h4>
+                      <div className={styles.summaryValue}>{companyResearch.keywords?.length || 0}</div>
+                    </div>
+                    <div className={styles.summaryCard}>
+                      <h4>Content Ideas</h4>
+                      <div className={styles.summaryValue}>{companyResearch.suggestedContent?.length || 0}</div>
+                    </div>
+                    <div className={styles.summaryCard}>
+                      <h4>Last Updated</h4>
+                      <div className={styles.summaryValue}>
+                        {companyResearch.researchedAt
+                          ? new Date(companyResearch.researchedAt).toLocaleDateString()
+                          : "N/A"}
+                      </div>
+                      <div className={styles.summarySubtext}>
+                        {companyResearch.researchedAt
+                          ? (() => {
+                              const days = Math.floor(
+                                (Date.now() - new Date(companyResearch.researchedAt).getTime()) / (1000 * 60 * 60 * 24)
+                              );
+                              return days > 30 ? "Consider refreshing" : `${days} days ago`;
+                            })()
+                          : ""}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SEO Insights */}
+                  {companyResearch.seoInsights && (
+                    <div className={styles.seoInsightsSection}>
+                      <h3>SEO Insights</h3>
+                      <div className={styles.insightsGrid}>
+                        {companyResearch.seoInsights.missingPages?.length > 0 && (
+                          <div className={styles.insightCard}>
+                            <h4>Missing Pages</h4>
+                            <ul>
+                              {companyResearch.seoInsights.missingPages.slice(0, 5).map((page, i) => (
+                                <li key={i}>{page}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {companyResearch.seoInsights.contentGaps?.length > 0 && (
+                          <div className={styles.insightCard}>
+                            <h4>Content Gaps</h4>
+                            <ul>
+                              {companyResearch.seoInsights.contentGaps.slice(0, 5).map((gap, i) => (
+                                <li key={i}>{gap}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {companyResearch.seoInsights.localSEOOpportunities?.length > 0 && (
+                          <div className={styles.insightCard}>
+                            <h4>Local SEO Opportunities</h4>
+                            <ul>
+                              {companyResearch.seoInsights.localSEOOpportunities.slice(0, 5).map((opp, i) => (
+                                <li key={i}>{opp}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suggested Content */}
+                  <div className={styles.suggestedContentSection}>
+                    <h3>Suggested Content ({companyResearch.suggestedContent?.length || 0})</h3>
+
+                    {/* Filter Buttons */}
+                    <div className={styles.contentFilterRow}>
+                      <button
+                        className={`${styles.filterBtn} ${contentFilter === "all" ? styles.active : ""}`}
+                        onClick={() => setContentFilter("all")}
+                      >
+                        All
+                      </button>
+                      <button
+                        className={`${styles.filterBtn} ${contentFilter === "blog" ? styles.active : ""}`}
+                        onClick={() => setContentFilter("blog")}
+                      >
+                        Blogs
+                      </button>
+                      <button
+                        className={`${styles.filterBtn} ${contentFilter === "service_page" ? styles.active : ""}`}
+                        onClick={() => setContentFilter("service_page")}
+                      >
+                        Service Pages
+                      </button>
+                      <button
+                        className={`${styles.filterBtn} ${contentFilter === "location_page" ? styles.active : ""}`}
+                        onClick={() => setContentFilter("location_page")}
+                      >
+                        Location Pages
+                      </button>
+                    </div>
+
+                    {/* Content List */}
+                    <div className={styles.suggestedContentList}>
+                      {companyResearch.suggestedContent
+                        ?.filter((item) => contentFilter === "all" || item.type === contentFilter)
+                        .map((item, index) => (
+                          <div
+                            key={index}
+                            className={`${styles.suggestedContentItem} ${styles[`priority${item.priority}`]}`}
+                          >
+                            <div className={`${styles.contentTypeIcon} ${styles[item.type]}`}>
+                              {item.type === "blog" ? "📝" : item.type === "service_page" ? "🔧" : "📍"}
+                            </div>
+                            <div className={styles.contentInfo}>
+                              <h4>{item.title}</h4>
+                              <div className={styles.contentKeyword}>Keyword: {item.primaryKeyword}</div>
+                              <div className={styles.contentReason}>{item.reason}</div>
+                            </div>
+                            <span className={`${styles.contentPriority} ${styles[item.priority]}`}>
+                              {item.priority}
+                            </span>
+                            <button
+                              className={styles.generateContentBtn}
+                              onClick={() => {
+                                // Set up form for generation
+                                if (item.type === "blog") {
+                                  setGenerationMode("blog");
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    topic: item.title,
+                                    primaryKeyword: item.primaryKeyword,
+                                    secondaryKeywords: "",
+                                  }));
+                                } else {
+                                  setGenerationMode("page");
+                                  setSelectedPageType(item.type as PageType);
+                                  setPageConfig((prev) => ({
+                                    ...prev,
+                                    title: item.title,
+                                    primaryKeyword: item.primaryKeyword,
+                                    secondaryKeywords: [],
+                                  }));
+                                }
+                                setShowContentHub(false);
+                              }}
+                            >
+                              Generate
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

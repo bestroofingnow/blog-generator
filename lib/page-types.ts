@@ -270,9 +270,10 @@ export const BRAND_VOICE_OPTIONS = [
   { value: "local", label: "Local/Community", description: "Neighborhood-focused, community-oriented" },
   { value: "luxury", label: "Premium/Luxury", description: "High-end, exclusive, sophisticated" },
   { value: "value", label: "Value-Focused", description: "Budget-conscious, practical, ROI-focused" },
+  { value: "custom", label: "Custom", description: "Define your own brand voice" },
 ] as const;
 
-export type BrandVoice = typeof BRAND_VOICE_OPTIONS[number]["value"];
+export type BrandVoice = typeof BRAND_VOICE_OPTIONS[number]["value"] | string;
 
 // Writing Style Options
 export const WRITING_STYLE_OPTIONS = [
@@ -282,9 +283,10 @@ export const WRITING_STYLE_OPTIONS = [
   { value: "data-driven", label: "Data-Driven", description: "Facts, statistics, research-based" },
   { value: "actionable", label: "Actionable", description: "Step-by-step, how-to, practical" },
   { value: "persuasive", label: "Persuasive", description: "Sales-focused, compelling, benefit-oriented" },
+  { value: "custom", label: "Custom", description: "Define your own writing style" },
 ] as const;
 
-export type WritingStyle = typeof WRITING_STYLE_OPTIONS[number]["value"];
+export type WritingStyle = typeof WRITING_STYLE_OPTIONS[number]["value"] | string;
 
 // Target Audience Options
 export const TARGET_AUDIENCE_OPTIONS = [
@@ -296,9 +298,10 @@ export const TARGET_AUDIENCE_OPTIONS = [
   { value: "facilities", label: "Facilities Managers", description: "Corporate facilities teams" },
   { value: "hoa", label: "HOA Boards", description: "Homeowner association decision makers" },
   { value: "mixed", label: "Mixed Audience", description: "Both residential and commercial" },
+  { value: "custom", label: "Custom", description: "Define your own target audience" },
 ] as const;
 
-export type TargetAudienceType = typeof TARGET_AUDIENCE_OPTIONS[number]["value"];
+export type TargetAudienceType = typeof TARGET_AUDIENCE_OPTIONS[number]["value"] | string;
 
 // Company Profile interface
 export interface CompanyProfile {
@@ -337,7 +340,10 @@ export interface CompanyProfile {
 
   // Branding & Content Style
   brandVoice?: BrandVoice;
+  customBrandVoice?: string; // Used when brandVoice is "custom"
   writingStyle?: WritingStyle;
+  customWritingStyle?: string; // Used when writingStyle is "custom"
+  customTargetAudience?: string; // Used when targetAudience is "custom"
   competitors?: string[];
 
   // Social & Online Presence

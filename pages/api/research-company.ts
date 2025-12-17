@@ -5,6 +5,14 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { generateText } from "ai";
 import { MODELS } from "../../lib/ai-gateway";
 
+interface SuggestedContent {
+  type: "blog" | "service_page" | "location_page";
+  title: string;
+  primaryKeyword: string;
+  priority: "high" | "medium" | "low";
+  reason: string;
+}
+
 interface ResearchResult {
   success: boolean;
   data?: {
@@ -31,10 +39,28 @@ interface ResearchResult {
       youtube?: string;
       yelp?: string;
       googleBusiness?: string;
+      tiktok?: string;
+      pinterest?: string;
+      nextdoor?: string;
+      bbb?: string;
+      angieslist?: string;
+      homeadvisor?: string;
+      thumbtack?: string;
     };
     audience?: "homeowners" | "commercial" | "both" | "property";
     brandVoice?: string;
     writingStyle?: string;
+    // Deep research additions
+    competitors?: string[];
+    keywords?: string[];
+    suggestedContent?: SuggestedContent[];
+    seoInsights?: {
+      missingPages: string[];
+      contentGaps: string[];
+      localSEOOpportunities: string[];
+    };
+    researchedAt?: string;
+    pagesAnalyzed?: string[];
   };
   error?: string;
   pagesAnalyzed?: string[];
@@ -120,6 +146,24 @@ const INDUSTRY_MAPPINGS: Record<string, string> = {
   "horse": "equestrian",
 };
 
+// Social media patterns to extract from HTML
+const SOCIAL_PATTERNS: Record<string, RegExp> = {
+  facebook: /(?:https?:\/\/)?(?:www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?/gi,
+  instagram: /(?:https?:\/\/)?(?:www\.)?instagram\.com\/[a-zA-Z0-9._-]+\/?/gi,
+  linkedin: /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:company|in)\/[a-zA-Z0-9._-]+\/?/gi,
+  twitter: /(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/[a-zA-Z0-9._-]+\/?/gi,
+  youtube: /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:channel|c|user|@)[a-zA-Z0-9._-]+\/?/gi,
+  yelp: /(?:https?:\/\/)?(?:www\.)?yelp\.com\/biz\/[a-zA-Z0-9._-]+\/?/gi,
+  tiktok: /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[a-zA-Z0-9._-]+\/?/gi,
+  pinterest: /(?:https?:\/\/)?(?:www\.)?pinterest\.com\/[a-zA-Z0-9._-]+\/?/gi,
+  nextdoor: /(?:https?:\/\/)?(?:www\.)?nextdoor\.com\/[a-zA-Z0-9._/-]+\/?/gi,
+  bbb: /(?:https?:\/\/)?(?:www\.)?bbb\.org\/[a-zA-Z0-9._/-]+\/?/gi,
+  angieslist: /(?:https?:\/\/)?(?:www\.)?angi\.com\/[a-zA-Z0-9._/-]+\/?/gi,
+  homeadvisor: /(?:https?:\/\/)?(?:www\.)?homeadvisor\.com\/[a-zA-Z0-9._/-]+\/?/gi,
+  thumbtack: /(?:https?:\/\/)?(?:www\.)?thumbtack\.com\/[a-zA-Z0-9._/-]+\/?/gi,
+  googleBusiness: /(?:https?:\/\/)?(?:www\.)?(?:google\.com\/maps|g\.page|maps\.app\.goo\.gl)\/[a-zA-Z0-9._/-]+\/?/gi,
+};
+
 function detectIndustry(text: string): { industryType: string; customIndustryName?: string } {
   const lowerText = text.toLowerCase();
 
@@ -132,7 +176,63 @@ function detectIndustry(text: string): { industryType: string; customIndustryNam
   return { industryType: "custom", customIndustryName: undefined };
 }
 
-async function fetchWebsiteContent(url: string): Promise<string> {
+// Extract social links from raw HTML
+function extractSocialLinks(html: string): Record<string, string> {
+  const socialLinks: Record<string, string> = {};
+
+  for (const [platform, pattern] of Object.entries(SOCIAL_PATTERNS)) {
+    const matches = html.match(pattern);
+    if (matches && matches.length > 0) {
+      // Get the first match and ensure it has https://
+      let url = matches[0];
+      if (!url.startsWith("http")) {
+        url = "https://" + url;
+      }
+      socialLinks[platform] = url;
+    }
+  }
+
+  return socialLinks;
+}
+
+// Find internal page links
+function findInternalPages(html: string, baseUrl: string): string[] {
+  const pagePatterns = [
+    /href=["']([^"']*(?:about|about-us|company|who-we-are)[^"']*)["']/gi,
+    /href=["']([^"']*(?:services|our-services|what-we-do)[^"']*)["']/gi,
+    /href=["']([^"']*(?:contact|contact-us|get-in-touch)[^"']*)["']/gi,
+    /href=["']([^"']*(?:areas|locations|service-areas|cities)[^"']*)["']/gi,
+    /href=["']([^"']*(?:testimonials|reviews|customers)[^"']*)["']/gi,
+  ];
+
+  const foundPages = new Set<string>();
+  const baseUrlObj = new URL(baseUrl);
+
+  for (const pattern of pagePatterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      let href = match[1];
+      // Skip external links, anchors, javascript, etc.
+      if (href.startsWith("#") || href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+        continue;
+      }
+      // Convert relative URLs to absolute
+      try {
+        const fullUrl = new URL(href, baseUrl);
+        // Only include same-domain pages
+        if (fullUrl.hostname === baseUrlObj.hostname) {
+          foundPages.add(fullUrl.href);
+        }
+      } catch {
+        // Skip invalid URLs
+      }
+    }
+  }
+
+  return Array.from(foundPages).slice(0, 5); // Limit to 5 additional pages
+}
+
+async function fetchWebsiteContent(url: string): Promise<{ text: string; html: string }> {
   try {
     // Normalize URL
     let normalizedUrl = url.trim();
@@ -175,12 +275,7 @@ async function fetchWebsiteContent(url: string): Promise<string> {
       .replace(/\s+/g, " ")
       .trim();
 
-    // Limit content length for AI processing
-    if (text.length > 15000) {
-      text = text.substring(0, 15000) + "...";
-    }
-
-    return text;
+    return { text, html };
   } catch (error) {
     console.error("Error fetching website:", error);
     throw error;
@@ -192,35 +287,70 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
-  const { url } = req.body;
+  const { url, deepResearch = true } = req.body;
 
   if (!url) {
     return res.status(400).json({ success: false, error: "URL is required" });
   }
 
   try {
-    // Fetch website content
-    const websiteContent = await fetchWebsiteContent(url);
+    // Normalize base URL
+    let baseUrl = url.trim();
+    if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
+      baseUrl = "https://" + baseUrl;
+    }
 
-    if (!websiteContent || websiteContent.length < 100) {
+    // Fetch homepage content
+    const homePageData = await fetchWebsiteContent(baseUrl);
+
+    if (!homePageData.text || homePageData.text.length < 100) {
       return res.status(400).json({
         success: false,
         error: "Could not extract enough content from the website. The site may be blocking automated access."
       });
     }
 
-    // Use AI to analyze the content
-    const analysisPrompt = `You are an expert at analyzing business websites and extracting company information.
+    // Extract social links from HTML
+    const extractedSocialLinks = extractSocialLinks(homePageData.html);
 
-Analyze the following website content and extract as much information as possible about this business.
+    // Find and crawl additional pages if deep research is enabled
+    const pagesAnalyzed: string[] = [baseUrl];
+    let allContent = homePageData.text;
 
-WEBSITE CONTENT:
-${websiteContent}
+    if (deepResearch) {
+      const additionalPages = findInternalPages(homePageData.html, baseUrl);
+
+      for (const pageUrl of additionalPages) {
+        try {
+          const pageData = await fetchWebsiteContent(pageUrl);
+          if (pageData.text && pageData.text.length > 100) {
+            allContent += `\n\n--- PAGE: ${pageUrl} ---\n\n${pageData.text}`;
+            pagesAnalyzed.push(pageUrl);
+            // Also extract social links from additional pages
+            const pageSocialLinks = extractSocialLinks(pageData.html);
+            Object.assign(extractedSocialLinks, pageSocialLinks);
+          }
+        } catch {
+          // Skip pages that fail to load
+        }
+      }
+    }
+
+    // Limit total content for AI processing
+    if (allContent.length > 30000) {
+      allContent = allContent.substring(0, 30000) + "...";
+    }
+
+    // Use AI to analyze all collected content
+    const analysisPrompt = `You are an expert SEO analyst and business researcher. Analyze the following website content from multiple pages and extract comprehensive information about this business.
+
+WEBSITE CONTENT FROM ${pagesAnalyzed.length} PAGES:
+${allContent}
 
 Extract and return a JSON object with the following fields (use null for any fields you cannot determine):
 
 {
-  "name": "Company name",
+  "name": "Company name (official business name)",
   "tagline": "Company tagline or slogan if mentioned",
   "phone": "Main phone number (format: (XXX) XXX-XXXX)",
   "email": "Main contact email",
@@ -228,36 +358,45 @@ Extract and return a JSON object with the following fields (use null for any fie
   "city": "City/headquarters location",
   "state": "Full state name (e.g., 'California')",
   "stateAbbr": "State abbreviation (e.g., 'CA')",
-  "serviceCities": ["Array of cities/areas they serve"],
-  "industry": "Primary industry/trade (e.g., 'Roofing', 'HVAC', 'Plumbing', 'Electrical', 'Landscaping', etc.)",
-  "services": ["Array of specific services offered - be detailed"],
-  "usps": ["Array of unique selling points, certifications, or differentiators mentioned (e.g., 'Licensed & Insured', '24/7 Emergency Service', 'Family Owned Since 1985')"],
-  "certifications": ["Array of certifications, licenses, or memberships mentioned"],
+  "serviceCities": ["Array of ALL cities/areas they explicitly mention serving"],
+  "industry": "Primary industry/trade (e.g., 'Roofing', 'HVAC', 'Plumbing')",
+  "services": ["Array of ALL specific services offered - be comprehensive and detailed"],
+  "usps": ["Array of unique selling points, guarantees, differentiators (e.g., 'Licensed & Insured', '24/7 Emergency Service', 'Family Owned Since 1985', 'Satisfaction Guaranteed')"],
+  "certifications": ["Array of ALL certifications, licenses, memberships, manufacturer certifications"],
   "yearsInBusiness": "Number of years in business if mentioned (as integer)",
-  "socialLinks": {
-    "facebook": "Facebook URL if found",
-    "instagram": "Instagram URL if found",
-    "linkedin": "LinkedIn URL if found",
-    "twitter": "Twitter/X URL if found",
-    "youtube": "YouTube URL if found",
-    "yelp": "Yelp URL if found"
-  },
   "targetAudience": "One of: 'homeowners', 'commercial', 'both', or 'property'",
   "brandVoice": "Detected tone: 'professional', 'friendly', 'authoritative', 'educational', 'innovative', 'local', 'luxury', or 'value'",
-  "writingStyle": "Detected style: 'conversational', 'formal', 'storytelling', 'data-driven', 'actionable', or 'persuasive'"
+  "writingStyle": "Detected style: 'conversational', 'formal', 'storytelling', 'data-driven', 'actionable', or 'persuasive'",
+  "competitors": ["Names of any competitors mentioned or implied"],
+  "keywords": ["Top 10 relevant SEO keywords this business should target based on their services and location"],
+  "suggestedContent": [
+    {
+      "type": "blog or service_page or location_page",
+      "title": "Suggested page/blog title",
+      "primaryKeyword": "Target keyword for this content",
+      "priority": "high or medium or low",
+      "reason": "Brief explanation of why this content would help their SEO"
+    }
+  ],
+  "seoInsights": {
+    "missingPages": ["Pages they should have but don't seem to (e.g., 'Individual service pages', 'City-specific landing pages')"],
+    "contentGaps": ["Topics they should cover but haven't (based on common industry content)"],
+    "localSEOOpportunities": ["Local SEO improvements they could make"]
+  }
 }
 
-Important:
-- Extract REAL information from the content, don't make things up
-- For services, list specific services mentioned (e.g., "Roof Repair", "AC Installation")
-- For USPs, look for guarantees, certifications, awards, years in business, etc.
-- If you can't find information for a field, use null
-- Return ONLY the JSON object, no other text`;
+CRITICAL INSTRUCTIONS:
+1. Extract REAL information from the content - don't make things up
+2. For services, be COMPREHENSIVE - list every specific service mentioned
+3. For cities, include ALL areas/neighborhoods/cities mentioned
+4. For USPs, look for guarantees, warranties, certifications, awards, response times, etc.
+5. For suggestedContent, provide 5-10 actionable content ideas based on their services and location
+6. Return ONLY the JSON object, no other text`;
 
     const analysisResult = await generateText({
       model: MODELS.conductor,
       prompt: analysisPrompt,
-      temperature: 0.3, // Lower temperature for more accurate extraction
+      temperature: 0.3,
     });
 
     // Parse the AI response
@@ -281,6 +420,16 @@ Important:
     const industryName = extractedData.industry || "";
     const { industryType, customIndustryName } = detectIndustry(industryName);
 
+    // Merge AI-extracted social links with regex-extracted ones (prefer AI if it found valid URLs)
+    const mergedSocialLinks = { ...extractedSocialLinks };
+    if (extractedData.socialLinks) {
+      for (const [key, value] of Object.entries(extractedData.socialLinks)) {
+        if (value && typeof value === "string" && value !== "null" && value.includes("http")) {
+          mergedSocialLinks[key] = value as string;
+        }
+      }
+    }
+
     // Build the response data
     const responseData: ResearchResult["data"] = {
       name: extractedData.name || undefined,
@@ -298,34 +447,34 @@ Important:
       usps: extractedData.usps || [],
       certifications: extractedData.certifications || [],
       yearsInBusiness: extractedData.yearsInBusiness ? parseInt(extractedData.yearsInBusiness) : undefined,
-      socialLinks: {
-        facebook: extractedData.socialLinks?.facebook || undefined,
-        instagram: extractedData.socialLinks?.instagram || undefined,
-        linkedin: extractedData.socialLinks?.linkedin || undefined,
-        twitter: extractedData.socialLinks?.twitter || undefined,
-        youtube: extractedData.socialLinks?.youtube || undefined,
-        yelp: extractedData.socialLinks?.yelp || undefined,
-      },
+      socialLinks: Object.keys(mergedSocialLinks).length > 0 ? mergedSocialLinks : undefined,
       audience: extractedData.targetAudience || "both",
       brandVoice: extractedData.brandVoice || undefined,
       writingStyle: extractedData.writingStyle || undefined,
+      // Deep research data
+      competitors: extractedData.competitors || [],
+      keywords: extractedData.keywords || [],
+      suggestedContent: extractedData.suggestedContent || [],
+      seoInsights: extractedData.seoInsights || undefined,
+      researchedAt: new Date().toISOString(),
+      pagesAnalyzed: pagesAnalyzed,
     };
 
-    // Clean up undefined social links
+    // Clean up undefined/null values in socialLinks
     if (responseData.socialLinks) {
-      const cleanedSocial: typeof responseData.socialLinks = {};
+      const cleanedSocial: Record<string, string> = {};
       for (const [key, value] of Object.entries(responseData.socialLinks)) {
-        if (value && value !== "null") {
-          cleanedSocial[key as keyof typeof responseData.socialLinks] = value;
+        if (value && value !== "null" && typeof value === "string") {
+          cleanedSocial[key] = value;
         }
       }
-      responseData.socialLinks = Object.keys(cleanedSocial).length > 0 ? cleanedSocial : undefined;
+      responseData.socialLinks = Object.keys(cleanedSocial).length > 0 ? cleanedSocial as typeof responseData.socialLinks : undefined;
     }
 
     return res.status(200).json({
       success: true,
       data: responseData,
-      pagesAnalyzed: [url],
+      pagesAnalyzed: pagesAnalyzed,
     });
 
   } catch (error) {
@@ -343,5 +492,5 @@ export const config = {
       sizeLimit: "1mb",
     },
   },
-  maxDuration: 60,
+  maxDuration: 120, // Increased for deep research
 };

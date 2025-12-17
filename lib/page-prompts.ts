@@ -8,6 +8,7 @@ import {
   calculateKeywordRequirements,
   getBrandVoiceDescription,
   getWritingStyleDescription,
+  getTargetAudienceDescription,
   EnhancedPromptParams,
 } from "./enhanced-prompts";
 
@@ -634,8 +635,8 @@ function getEnhancedBlogContentPrompt(
   const pageTypeConfig = PAGE_TYPES.blog_post;
   const wordCount = companyProfile.preferredWordCount || pageTypeConfig.wordCountRange[1];
   const keywordReqs = calculateKeywordRequirements(wordCount);
-  const brandVoiceDesc = getBrandVoiceDescription(companyProfile.brandVoice);
-  const writingStyleDesc = getWritingStyleDescription(companyProfile.writingStyle);
+  const brandVoiceDesc = getBrandVoiceDescription(companyProfile.brandVoice, companyProfile.customBrandVoice);
+  const writingStyleDesc = getWritingStyleDescription(companyProfile.writingStyle, companyProfile.customWritingStyle);
   const targetLocation = pageConfig.city || companyProfile.headquarters;
 
   return `You are an elite SEO copywriting specialist creating a complete, award-winning blog post.

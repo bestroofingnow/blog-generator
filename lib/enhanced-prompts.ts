@@ -30,8 +30,8 @@ export function calculateKeywordRequirements(wordCount: number): {
 }
 
 // Get brand voice description
-export function getBrandVoiceDescription(voice: BrandVoice | undefined): string {
-  const voiceDescriptions: Record<BrandVoice, string> = {
+export function getBrandVoiceDescription(voice: BrandVoice | undefined, customVoice?: string): string {
+  const voiceDescriptions: Record<string, string> = {
     professional: "Formal, authoritative, and industry expert. Use precise language and demonstrate deep expertise.",
     friendly: "Warm, approachable, and conversational. Write like you're talking to a neighbor who needs help.",
     authoritative: "Expert and confident thought leader. Assert positions based on experience and data.",
@@ -40,23 +40,41 @@ export function getBrandVoiceDescription(voice: BrandVoice | undefined): string 
     local: "Community-focused and neighborhood-oriented. Emphasize local knowledge and relationships.",
     luxury: "Premium, exclusive, and sophisticated. Appeal to discerning clients who value quality.",
     value: "Budget-conscious and practical. Focus on ROI, savings, and smart investments.",
+    custom: customVoice || "Custom brand voice as defined by the company.",
   };
 
-  return voice ? voiceDescriptions[voice] : voiceDescriptions.professional;
+  if (voice === "custom" && customVoice) {
+    return `Custom: ${customVoice}. Adapt the tone and language to match this specific brand voice.`;
+  }
+
+  return voice ? (voiceDescriptions[voice] || voiceDescriptions.professional) : voiceDescriptions.professional;
 }
 
 // Get writing style description
-export function getWritingStyleDescription(style: WritingStyle | undefined): string {
-  const styleDescriptions: Record<WritingStyle, string> = {
+export function getWritingStyleDescription(style: WritingStyle | undefined, customStyle?: string): string {
+  const styleDescriptions: Record<string, string> = {
     conversational: "Natural flow, easy to read, and engaging. Use contractions and direct address (you/your).",
     formal: "Business-like structure and professional language. Avoid colloquialisms.",
     storytelling: "Narrative-driven with emotional hooks. Use anecdotes, case studies, and relatable scenarios.",
     "data-driven": "Facts, statistics, and research-based. Include specific numbers, percentages, and citations.",
     actionable: "Step-by-step and practical. Include clear instructions, checklists, and how-to guidance.",
     persuasive: "Benefit-oriented and compelling. Focus on transformation and outcomes.",
+    custom: customStyle || "Custom writing style as defined by the company.",
   };
 
-  return style ? styleDescriptions[style] : styleDescriptions.conversational;
+  if (style === "custom" && customStyle) {
+    return `Custom: ${customStyle}. Structure and format the content to match this specific writing style.`;
+  }
+
+  return style ? (styleDescriptions[style] || styleDescriptions.conversational) : styleDescriptions.conversational;
+}
+
+// Get effective target audience description
+export function getTargetAudienceDescription(companyProfile: CompanyProfile): string {
+  if (companyProfile.targetAudience === "custom" && companyProfile.customTargetAudience) {
+    return companyProfile.customTargetAudience;
+  }
+  return companyProfile.targetAudienceDescription || companyProfile.targetAudience || companyProfile.audience;
 }
 
 // Helper to get effective industry display name
@@ -80,10 +98,11 @@ export function generateEnhancedBlogPrompt(params: EnhancedPromptParams): string
   } = params;
 
   const keywordReqs = calculateKeywordRequirements(wordCount);
-  const brandVoiceDesc = getBrandVoiceDescription(companyProfile.brandVoice);
-  const writingStyleDesc = getWritingStyleDescription(companyProfile.writingStyle);
+  const brandVoiceDesc = getBrandVoiceDescription(companyProfile.brandVoice, companyProfile.customBrandVoice);
+  const writingStyleDesc = getWritingStyleDescription(companyProfile.writingStyle, companyProfile.customWritingStyle);
   const targetLocation = location || companyProfile.headquarters;
   const industryName = getIndustryDisplayName(companyProfile);
+  const targetAudience = getTargetAudienceDescription(companyProfile);
   const socialLinksStr = companyProfile.socialLinks
     ? Object.entries(companyProfile.socialLinks)
         .filter(([, v]) => v)
@@ -101,7 +120,7 @@ You are an elite SEO copywriting specialist and content strategist with 15+ year
 Company: ${companyProfile.name}
 Industry: ${industryName}
 Target Location: ${targetLocation}, ${companyProfile.stateAbbr}
-Target Audience: ${companyProfile.targetAudienceDescription || companyProfile.audience}
+Target Audience: ${targetAudience}
 Content Length: ${wordCount} words (EXACT - this is critical for SEO)
 Website: ${companyProfile.website || "N/A"}
 Social Presence: ${socialLinksStr}
