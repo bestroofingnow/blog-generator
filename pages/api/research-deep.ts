@@ -21,6 +21,37 @@ interface DeepResearchRequest {
   includeCompetitors?: boolean;
 }
 
+interface BrightDataResults {
+  serp?: {
+    results: Array<{
+      position: number;
+      title: string;
+      url: string;
+      domain: string;
+      snippet: string;
+    }>;
+    paaQuestions?: string[];
+    relatedSearches?: string[];
+  };
+  competitors?: Array<{
+    url: string;
+    title?: string;
+    description?: string;
+    socialLinks?: Record<string, string>;
+  }>;
+  social?: Array<{
+    platform: string;
+    followers?: number;
+    posts?: number;
+    engagement?: number;
+  }>;
+  reviews?: {
+    rating: number;
+    reviewCount: number;
+    recentReviews: Array<{ rating: number; text: string }>;
+  };
+}
+
 interface DeepResearchResult {
   success: boolean;
   data?: {
@@ -42,36 +73,7 @@ interface DeepResearchResult {
       recommendations: string[];
     };
     // Bright Data real-time data
-    brightData?: {
-      serp?: {
-        results: Array<{
-          position: number;
-          title: string;
-          url: string;
-          domain: string;
-          snippet: string;
-        }>;
-        paaQuestions?: string[];
-        relatedSearches?: string[];
-      };
-      competitors?: Array<{
-        url: string;
-        title?: string;
-        description?: string;
-        socialLinks?: Record<string, string>;
-      }>;
-      social?: Array<{
-        platform: string;
-        followers?: number;
-        posts?: number;
-        engagement?: number;
-      }>;
-      reviews?: {
-        rating: number;
-        reviewCount: number;
-        recentReviews: Array<{ rating: number; text: string }>;
-      };
-    };
+    brightData?: BrightDataResults;
     // Combined insights
     insights: {
       topOpportunities: string[];
@@ -114,7 +116,7 @@ export default async function handler(
   try {
     // Phase 1: Fetch Bright Data (real-time data) in parallel
     const brightDataPromises: Promise<unknown>[] = [];
-    const brightDataResults: DeepResearchResult["data"]["brightData"] = {};
+    const brightDataResults: BrightDataResults = {};
 
     if (BrightData.isConfigured()) {
       // SERP data
@@ -181,9 +183,10 @@ export default async function handler(
 
     if (brightDataResults.serp?.results?.length) {
       enrichedContext += "\n\nREAL SERP DATA:\n";
-      brightDataResults.serp.results.slice(0, 5).forEach((r, i) => {
+      for (let i = 0; i < Math.min(5, brightDataResults.serp.results.length); i++) {
+        const r = brightDataResults.serp.results[i];
         enrichedContext += `${i + 1}. ${r.title} (${r.domain}): ${r.snippet}\n`;
-      });
+      }
       if (brightDataResults.serp.paaQuestions?.length) {
         enrichedContext += `\nPeople Also Ask: ${brightDataResults.serp.paaQuestions.slice(0, 5).join("; ")}`;
       }
@@ -191,9 +194,9 @@ export default async function handler(
 
     if (brightDataResults.competitors?.length) {
       enrichedContext += "\n\nCOMPETITOR DATA:\n";
-      brightDataResults.competitors.forEach((c) => {
+      for (const c of brightDataResults.competitors) {
         enrichedContext += `- ${c.url}: ${c.title || "N/A"}\n`;
-      });
+      }
     }
 
     if (brightDataResults.reviews) {
@@ -261,7 +264,7 @@ Analyze and provide strategic recommendations. Return JSON:
     // Extract opportunities from SERP PAA questions
     if (brightDataResults.serp?.paaQuestions) {
       insights.topOpportunities.push(
-        ...brightDataResults.serp.paaQuestions.slice(0, 3).map((q) => `Answer: "${q}"`)
+        ...brightDataResults.serp.paaQuestions.slice(0, 3).map((q: string) => `Answer: "${q}"`)
       );
     }
 

@@ -48,33 +48,37 @@ interface BusinessData {
   categories?: string[];
 }
 
+interface SERPData {
+  keyword: string;
+  results: SERPResult[];
+  totalResults?: string;
+  features?: string[];
+  paaQuestions?: string[];
+  relatedSearches?: string[];
+}
+
+interface MarketIntelligence {
+  competitorStrengths: string[];
+  contentGaps: string[];
+  keywordOpportunities: string[];
+  marketTrends: string[];
+  recommendations: string[];
+}
+
 interface ResearchResult {
   success: boolean;
   data?: {
-    serp?: {
-      keyword: string;
-      results: SERPResult[];
-      totalResults?: string;
-      features?: string[];
-      paaQuestions?: string[];
-      relatedSearches?: string[];
-    };
+    serp?: SERPData;
     competitors?: CompetitorData[];
     businessData?: BusinessData;
-    marketIntelligence?: {
-      competitorStrengths: string[];
-      contentGaps: string[];
-      keywordOpportunities: string[];
-      marketTrends: string[];
-      recommendations: string[];
-    };
+    marketIntelligence?: MarketIntelligence;
     researchedAt: string;
   };
   error?: string;
 }
 
 // SERP search using Bright Data
-async function searchSERP(keyword: string, location?: string): Promise<ResearchResult["data"]["serp"]> {
+async function searchSERP(keyword: string, location?: string): Promise<SERPData | null> {
   try {
     const params = new URLSearchParams({
       query: keyword,
@@ -113,8 +117,8 @@ async function searchSERP(keyword: string, location?: string): Promise<ResearchR
       results,
       totalResults: data.total_results as string,
       features: data.serp_features as string[] || [],
-      paaQuestions: (data.people_also_ask || []).map((q: Record<string, unknown>) => q.question as string),
-      relatedSearches: (data.related_searches || []).map((s: Record<string, unknown>) => s.query as string || s as string),
+      paaQuestions: (data.people_also_ask || []).map((q: Record<string, unknown>) => String(q.question || "")),
+      relatedSearches: (data.related_searches || []).map((s: Record<string, unknown> | string) => typeof s === "string" ? s : String(s.query || "")),
     };
   } catch (error) {
     console.error("SERP search error:", error);
@@ -123,7 +127,7 @@ async function searchSERP(keyword: string, location?: string): Promise<ResearchR
 }
 
 // Fallback SERP search using scraping
-async function searchSERPFallback(keyword: string): Promise<ResearchResult["data"]["serp"]> {
+async function searchSERPFallback(keyword: string): Promise<SERPData> {
   try {
     const response = await fetch(`${BRIGHT_DATA_BASE_URL}/datasets/v3/trigger?dataset_id=gd_l1viktl72bvl7bjv10`, {
       method: "POST",
@@ -288,7 +292,7 @@ async function analyzeMarketIntelligence(
   serpResults: SERPResult[],
   competitors: CompetitorData[],
   businessData: BusinessData
-): Promise<ResearchResult["data"]["marketIntelligence"]> {
+): Promise<MarketIntelligence> {
   try {
     const competitorInfo = competitors
       .filter(c => c.content)
@@ -388,7 +392,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (includeSerp) {
       promises.push(
         searchSERP(keyword, location).then(serp => {
-          researchData.serp = serp;
+          researchData.serp = serp || undefined;
         })
       );
     }

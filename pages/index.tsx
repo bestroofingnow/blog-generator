@@ -21,6 +21,8 @@ import {
   WritingStyle,
   TargetAudienceType,
 } from "../lib/page-types";
+import { getRandomContent, getRandomLoadingMessage, ContentType } from "../lib/loading-content";
+import { useAuth } from "../lib/auth-context";
 
 type ImageMode = "auto" | "manual" | "enhance";
 
@@ -174,6 +176,8 @@ interface GenerationState {
 }
 
 export default function Home() {
+  const { user, signOutUser } = useAuth();
+
   const [formData, setFormData] = useState<FormData>({
     topic: "",
     location: "",
@@ -277,6 +281,132 @@ export default function Home() {
   const [isResearchingPerplexity, setIsResearchingPerplexity] = useState(false);
   const [showResearchModal, setShowResearchModal] = useState(false);
 
+  // SERP Analysis state - Full featured
+  interface SerpOrganicResult {
+    title: string;
+    link: string;
+    domain: string;
+    snippet: string;
+    position: number;
+    sitelinks?: { title: string; link: string }[];
+    rating?: { value: number; count: number };
+  }
+  interface SerpLocalResult {
+    title: string;
+    address: string;
+    rating?: number;
+    reviews?: number;
+    phone?: string;
+    category?: string;
+  }
+  interface SerpShoppingResult {
+    title: string;
+    price: string;
+    source: string;
+    link: string;
+    rating?: number;
+  }
+  interface SerpNewsResult {
+    title: string;
+    source: string;
+    link: string;
+    date: string;
+    snippet: string;
+  }
+  interface SerpVideoResult {
+    title: string;
+    link: string;
+    source: string;
+    duration?: string;
+    views?: string;
+  }
+  interface SerpAnalysis {
+    keyword: string;
+    location?: string;
+    country: string;
+    language: string;
+    device: string;
+    searchType: string;
+    serpData: {
+      organic: SerpOrganicResult[];
+      featuredSnippet?: {
+        type: string;
+        title: string;
+        content: string;
+        source: string;
+        link: string;
+      };
+      knowledgePanel?: {
+        title: string;
+        type: string;
+        description: string;
+        source: string;
+      };
+      localPack: SerpLocalResult[];
+      peopleAlsoAsk: { question: string; answer?: string }[];
+      relatedSearches: { query: string }[];
+      shopping: SerpShoppingResult[];
+      news: SerpNewsResult[];
+      videos: SerpVideoResult[];
+      ads: {
+        top: SerpOrganicResult[];
+        bottom: SerpOrganicResult[];
+      };
+    };
+    analysis: {
+      searchIntent?: {
+        primary: string;
+        signals: string[];
+        recommendation: string;
+      };
+      difficulty?: {
+        score: number;
+        level: string;
+        factors: string[];
+      };
+      competitors?: {
+        topDomains: { domain: string; position: number; strength: string; weakness: string }[];
+        domainAuthorityMix: string;
+        contentTypes: string[];
+      };
+      serpFeatures?: {
+        present: string[];
+        opportunities: string[];
+        featuredSnippetStrategy?: string;
+      };
+      contentStrategy?: {
+        recommendedType: string;
+        targetWordCount: string;
+        mustIncludeTopics: string[];
+        uniqueAngles: string[];
+        titleSuggestions: string[];
+        metaDescriptionTemplate?: string;
+      };
+      keywordStrategy?: {
+        primaryKeyword: string;
+        secondaryKeywords: string[];
+        longTailOpportunities: string[];
+        localKeywords: string[];
+        semanticKeywords: string[];
+      };
+      technicalSEO?: {
+        schemaMarkupRecommended: string[];
+        pageSpeedImportance: string;
+        mobileOptimization: string;
+      };
+      quickWins?: string[];
+      estimatedTimeToRank?: string;
+      riskFactors?: string[];
+    };
+  }
+  const [serpAnalysis, setSerpAnalysis] = useState<SerpAnalysis | null>(null);
+  const [isAnalyzingSerp, setIsAnalyzingSerp] = useState(false);
+  const [serpKeyword, setSerpKeyword] = useState("");
+  const [serpSearchType, setSerpSearchType] = useState<"web" | "images" | "news" | "shopping" | "videos">("web");
+  const [serpCountry, setSerpCountry] = useState("us");
+  const [serpDevice, setSerpDevice] = useState<"desktop" | "mobile" | "tablet">("desktop");
+  const [serpResultsExpanded, setSerpResultsExpanded] = useState<string | null>(null);
+
   // Page Library state
   const [pageLibrary, setPageLibrary] = useState<PageEntry[]>([]);
   const [showPageLibrary, setShowPageLibrary] = useState(false);
@@ -305,6 +435,90 @@ export default function Home() {
   // Sidebar navigation state
   type SidebarSection = "create" | "setup" | "profile" | "research" | "library";
   const [activeSection, setActiveSection] = useState<SidebarSection>("create");
+  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebarExpanded") === "true";
+    }
+    return false;
+  });
+
+  // Persist sidebar state
+  useEffect(() => {
+    localStorage.setItem("sidebarExpanded", String(sidebarExpanded));
+  }, [sidebarExpanded]);
+
+  // Loading entertainment state
+  interface EntertainmentState {
+    type: ContentType;
+    content: string;
+    author?: string;
+    key: number;
+  }
+  const [entertainment, setEntertainment] = useState<EntertainmentState>(() => {
+    const initial = getRandomContent();
+    return { ...initial, key: 0 };
+  });
+  const [loadingMessage, setLoadingMessage] = useState(getRandomLoadingMessage());
+
+  // Rotate entertainment content every 8 seconds while generating
+  useEffect(() => {
+    if (state.isLoading || isGeneratingPage) {
+      const interval = setInterval(() => {
+        const newContent = getRandomContent();
+        setEntertainment({ ...newContent, key: Date.now() });
+        setLoadingMessage(getRandomLoadingMessage());
+      }, 8000);
+      return () => clearInterval(interval);
+    }
+  }, [state.isLoading, isGeneratingPage]);
+
+  // Get new entertainment content manually
+  const refreshEntertainment = () => {
+    const newContent = getRandomContent();
+    setEntertainment({ ...newContent, key: Date.now() });
+    setLoadingMessage(getRandomLoadingMessage());
+  };
+
+  // Library filter and sort state
+  type LibraryFilter = "all" | "blog_post" | "service_page" | "location_page";
+  type LibrarySort = "newest" | "oldest" | "title";
+  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
+  const [librarySort, setLibrarySort] = useState<LibrarySort>("newest");
+
+  // Toast notification state
+  type ToastType = "success" | "error" | "info";
+  interface Toast {
+    id: number;
+    type: ToastType;
+    title: string;
+    message: string;
+  }
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // Add toast helper
+  const showToast = (type: ToastType, title: string, message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, type, title, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
+  };
+
+  const removeToast = (id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Settings tab state for Create section
+  type SettingsTab = "basic" | "seo" | "images" | "advanced";
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("basic");
+
+  // Setup Wizard state
+  type WizardStep = "welcome" | "researching" | "review";
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState<WizardStep>("welcome");
+  const [wizardWebsite, setWizardWebsite] = useState("");
+  const [wizardError, setWizardError] = useState<string | null>(null);
+  const [hasCheckedSetup, setHasCheckedSetup] = useState(false);
 
   // Load WordPress settings from localStorage
   useEffect(() => {
@@ -332,9 +546,11 @@ export default function Home() {
     }
   }, []);
 
-  // Load Company Profile from localStorage
+  // Load Company Profile from localStorage and check if setup wizard should show
   useEffect(() => {
     const saved = localStorage.getItem("companyProfile");
+    const wizardDismissed = localStorage.getItem("setupWizardDismissed");
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -348,9 +564,18 @@ export default function Home() {
           setFormData(prev => ({ ...prev, companyName: parsed.name, companyWebsite: parsed.website || "" }));
         }
       } catch {
-        // Invalid saved data
+        // Invalid saved data - show wizard
+        if (!wizardDismissed) {
+          setShowSetupWizard(true);
+        }
+      }
+    } else {
+      // No company profile saved - show wizard for new users
+      if (!wizardDismissed) {
+        setShowSetupWizard(true);
       }
     }
+    setHasCheckedSetup(true);
   }, []);
 
   // Load Page Library from localStorage
@@ -382,7 +607,7 @@ export default function Home() {
   // Perplexity Deep Research
   const runPerplexityResearch = async (researchType: string = "comprehensive") => {
     if (!formData.topic && !formData.primaryKeyword) {
-      alert("Please enter a topic or primary keyword first");
+      showToast("error", "Missing Input", "Please enter a topic or primary keyword first.");
       return;
     }
 
@@ -404,15 +629,59 @@ export default function Home() {
         const data = await response.json();
         setPerplexityResearch(data.research);
         setShowResearchModal(true);
+        showToast("success", "Research Complete", "Deep research results are ready.");
       } else {
         const error = await response.json();
-        alert(`Research failed: ${error.message || "Unknown error"}`);
+        showToast("error", "Research Failed", error.message || "Unknown error");
       }
     } catch (error) {
       console.error("Perplexity research error:", error);
-      alert("Research failed. Please try again.");
+      showToast("error", "Research Failed", "Research failed. Please try again.");
     } finally {
       setIsResearchingPerplexity(false);
+    }
+  };
+
+  // Run SERP Analysis using Bright Data - Full featured
+  const runSerpAnalysis = async () => {
+    const keyword = serpKeyword || formData.topic || formData.primaryKeyword;
+    if (!keyword) {
+      showToast("error", "Missing Keyword", "Please enter a keyword to analyze.");
+      return;
+    }
+
+    setIsAnalyzingSerp(true);
+    setSerpResultsExpanded(null);
+    try {
+      const response = await fetch("/api/serp-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keyword,
+          location: formData.location || companyProfile.headquarters,
+          country: serpCountry,
+          language: "en",
+          device: serpDevice,
+          searchType: serpSearchType,
+          numResults: 20,
+          industry: companyProfile.industryType || "general",
+          companyName: companyProfile.name,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSerpAnalysis(data);
+        showToast("success", "SERP Analysis Complete", `Analyzed ${data.serpData?.organic?.length || 0} results from Google ${serpSearchType} search.`);
+      } else {
+        const error = await response.json();
+        showToast("error", "Analysis Failed", error.message || "Unknown error");
+      }
+    } catch (error) {
+      console.error("SERP analysis error:", error);
+      showToast("error", "Analysis Failed", "SERP analysis failed. Please try again.");
+    } finally {
+      setIsAnalyzingSerp(false);
     }
   };
 
@@ -536,7 +805,7 @@ export default function Home() {
   // Generate page using the page stream API
   const handleGeneratePage = async () => {
     if (!companyProfile.name || !companyProfile.industryType) {
-      alert("Please set up your Company Profile first (click 'Show Company Profile')");
+      showToast("error", "Profile Required", "Please set up your Company Profile first.");
       return;
     }
 
@@ -617,7 +886,7 @@ export default function Home() {
         progress: { step: "complete", message: "Page generated successfully!" },
       }));
     } catch (error) {
-      alert(`Page generation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showToast("error", "Generation Failed", error instanceof Error ? error.message : "Page generation failed.");
       setState(prev => ({
         ...prev,
         progress: { step: "idle", message: "" },
@@ -630,12 +899,12 @@ export default function Home() {
   // Generate SEO Plan
   const handleGenerateSEOPlan = async () => {
     if (!companyProfile.name || !companyProfile.industryType) {
-      alert("Please set up your Company Profile first");
+      showToast("error", "Profile Required", "Please set up your Company Profile first.");
       return;
     }
 
     if (companyProfile.cities.length === 0) {
-      alert("Please add at least one service area (city) to your Company Profile");
+      showToast("error", "Service Areas Required", "Please add at least one service area (city) to your Company Profile.");
       return;
     }
 
@@ -658,11 +927,12 @@ export default function Home() {
       if (data.success && data.plan) {
         setSeoPlan(data.plan);
         setShowSEOPlanner(true);
+        showToast("success", "SEO Plan Ready", "Your content strategy is ready to view.");
       } else {
-        alert(`Failed to generate SEO plan: ${data.error}`);
+        showToast("error", "Generation Failed", data.error || "Failed to generate SEO plan.");
       }
     } catch (error) {
-      alert(`SEO Plan generation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showToast("error", "Generation Failed", error instanceof Error ? error.message : "SEO Plan generation failed.");
     }
 
     setIsGeneratingSEOPlan(false);
@@ -844,12 +1114,12 @@ export default function Home() {
       if (data.success) {
         setWordpress((prev) => ({ ...prev, isConnected: true }));
         saveWordPressSettings();
-        alert(`Connected successfully to ${data.siteName || wordpress.siteUrl}`);
+        showToast("success", "WordPress Connected", `Connected to ${data.siteName || wordpress.siteUrl}`);
       } else {
-        alert(`Connection failed: ${data.error}`);
+        showToast("error", "Connection Failed", data.error);
       }
     } catch {
-      alert("Connection test failed");
+      showToast("error", "Connection Failed", "Could not connect to WordPress");
     }
     setTestingConnection(false);
   };
@@ -881,12 +1151,12 @@ export default function Home() {
         setGoHighLevel((prev) => ({ ...prev, isConnected: true }));
         setGhlBlogs(data.blogs || []);
         saveGHLSettings();
-        alert(`Connected successfully! Found ${data.blogs?.length || 0} blog(s)`);
+        showToast("success", "GoHighLevel Connected", `Found ${data.blogs?.length || 0} blog(s)`);
       } else {
-        alert(`Connection failed: ${data.error}`);
+        showToast("error", "Connection Failed", data.error);
       }
     } catch {
-      alert("Connection test failed");
+      showToast("error", "Connection Failed", "Could not connect to GoHighLevel");
     }
     setTestingConnection(false);
   };
@@ -922,6 +1192,16 @@ export default function Home() {
   }, [gohighlevel.blogId]);
 
   const handleResearchKeywords = async () => {
+    // Validate required fields
+    if (!formData.topic) {
+      showToast("error", "Missing Topic", "Please enter a topic before researching keywords.");
+      return;
+    }
+    if (!formData.location) {
+      showToast("error", "Missing Location", "Please enter a location for local SEO research.");
+      return;
+    }
+
     setIsResearching(true);
     try {
       const response = await fetch("/api/research-keywords", {
@@ -930,8 +1210,8 @@ export default function Home() {
         body: JSON.stringify({
           topic: formData.topic,
           location: formData.location,
-          companyName: formData.companyName,
-          companyWebsite: formData.companyWebsite,
+          companyName: formData.companyName || companyProfile.name,
+          companyWebsite: formData.companyWebsite || companyProfile.website,
           blogType: formData.blogType,
         }),
       });
@@ -957,11 +1237,13 @@ export default function Home() {
           metaDescription: data.suggestions.metaDescription,
         }));
         setShowSEOSettings(true);
+        showToast("success", "Research Complete", "Keywords and SEO data have been populated.");
       } else {
-        alert(`Research failed: ${data.error}`);
+        showToast("error", "Research Failed", data.error || "Unknown error occurred");
       }
     } catch (error) {
-      alert("Keyword research failed");
+      console.error("Keyword research error:", error);
+      showToast("error", "Research Failed", error instanceof Error ? error.message : "Keyword research failed. Please try again.");
     }
     setIsResearching(false);
   };
@@ -969,7 +1251,7 @@ export default function Home() {
   // Deep research company website to auto-fill profile
   const handleResearchCompany = async () => {
     if (!companyProfile.website) {
-      alert("Please enter a website URL first");
+      showToast("error", "Website Required", "Please enter a website URL first.");
       return;
     }
 
@@ -1042,15 +1324,127 @@ export default function Home() {
 
         const pagesCount = researchData.pagesAnalyzed?.length || 1;
         const suggestedCount = researchData.suggestedContent?.length || 0;
-        alert(`Successfully researched ${research.name || "company"}! Analyzed ${pagesCount} pages and found ${suggestedCount} content suggestions. Check the Content Hub for recommendations.`);
+        showToast("success", "Research Complete", `Analyzed ${pagesCount} pages and found ${suggestedCount} content suggestions. Check the Content Hub for recommendations.`);
       } else {
-        alert(`Research failed: ${data.error || "Unknown error"}`);
+        showToast("error", "Research Failed", data.error || "Unknown error");
       }
     } catch (error) {
       console.error("Company research error:", error);
-      alert("Failed to research website. Please try again.");
+      showToast("error", "Research Failed", "Failed to research website. Please try again.");
     }
     setIsResearchingCompany(false);
+  };
+
+  // Setup Wizard - Research website and auto-fill
+  const handleWizardResearch = async () => {
+    if (!wizardWebsite) {
+      setWizardError("Please enter your website URL");
+      return;
+    }
+
+    // Validate URL format
+    let url = wizardWebsite.trim();
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+      setWizardWebsite(url);
+    }
+
+    setWizardError(null);
+    setWizardStep("researching");
+
+    try {
+      const response = await fetch("/api/research-company", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const research = data.data;
+
+        // Update company profile with researched data
+        setCompanyProfile(prev => ({
+          ...prev,
+          website: url,
+          name: research.name || prev.name,
+          tagline: research.tagline || prev.tagline,
+          phone: research.phone || prev.phone,
+          email: research.email || prev.email,
+          address: research.address || prev.address,
+          state: research.state || prev.state,
+          stateAbbr: research.stateAbbr || prev.stateAbbr,
+          headquarters: research.headquarters || prev.headquarters,
+          cities: research.cities?.length > 0 ? research.cities : prev.cities,
+          industryType: research.industryType || prev.industryType,
+          customIndustryName: research.customIndustryName || prev.customIndustryName,
+          services: research.services?.length > 0 ? research.services : prev.services,
+          usps: research.usps?.length > 0 ? research.usps : prev.usps,
+          certifications: research.certifications?.length > 0 ? research.certifications : prev.certifications,
+          yearsInBusiness: research.yearsInBusiness || prev.yearsInBusiness,
+          socialLinks: research.socialLinks || prev.socialLinks,
+          audience: research.audience || prev.audience,
+          brandVoice: research.brandVoice || prev.brandVoice,
+          writingStyle: research.writingStyle || prev.writingStyle,
+        }));
+
+        // Update cities input field
+        if (research.cities?.length > 0) {
+          setCitiesInput(research.cities.join(", "));
+        }
+
+        // Update custom industry name state if applicable
+        if (research.industryType === "custom" && research.customIndustryName) {
+          setCustomIndustryName(research.customIndustryName);
+        }
+
+        // Also sync with form data
+        if (research.name) {
+          setFormData(prev => ({
+            ...prev,
+            companyName: research.name,
+            companyWebsite: url,
+          }));
+        }
+
+        // Store deep research data for Content Hub
+        const researchData: CompanyResearchData = {
+          keywords: research.keywords || [],
+          suggestedContent: research.suggestedContent || [],
+          seoInsights: research.seoInsights,
+          researchedAt: research.researchedAt || new Date().toISOString(),
+          pagesAnalyzed: research.pagesAnalyzed || data.pagesAnalyzed || [],
+        };
+        setCompanyResearch(researchData);
+        localStorage.setItem("companyResearch", JSON.stringify(researchData));
+
+        // Move to review step
+        setWizardStep("review");
+        showToast("success", "Research Complete", `Found info for ${research.name || "your company"}`);
+      } else {
+        setWizardError(data.error || "Could not analyze website. Please try again.");
+        setWizardStep("welcome");
+      }
+    } catch (error) {
+      console.error("Wizard research error:", error);
+      setWizardError("Failed to research website. Please check the URL and try again.");
+      setWizardStep("welcome");
+    }
+  };
+
+  // Complete wizard setup
+  const handleWizardComplete = () => {
+    // Save the company profile
+    saveCompanyProfile();
+    setShowSetupWizard(false);
+    showToast("success", "Setup Complete", "Your company profile has been saved!");
+  };
+
+  // Skip wizard
+  const handleWizardSkip = () => {
+    localStorage.setItem("setupWizardDismissed", "true");
+    setShowSetupWizard(false);
   };
 
   const handlePublish = async () => {
@@ -1122,12 +1516,12 @@ export default function Home() {
           : data.post.status === "draft"
           ? "Draft saved successfully!"
           : "Post published successfully!";
-        alert(`${statusMessage}\n\nView: ${data.post.link}`);
+        showToast("success", statusMessage, `View your post: ${data.post.link}`);
       } else {
-        alert(`Failed to publish: ${data.error}`);
+        showToast("error", "Publish Failed", data.error || "Failed to publish to WordPress.");
       }
     } catch (error) {
-      alert("Failed to publish to WordPress");
+      showToast("error", "Publish Failed", "Failed to publish to WordPress.");
     }
     setIsPublishing(false);
   };
@@ -1180,12 +1574,12 @@ export default function Home() {
         const statusMessage = data.post.status === "draft"
           ? "Draft saved successfully!"
           : "Post published successfully!";
-        alert(`${statusMessage}\n\nView: ${data.post.url}`);
+        showToast("success", statusMessage, `View your post: ${data.post.url}`);
       } else {
-        alert(`Failed to publish: ${data.error}`);
+        showToast("error", "Publish Failed", data.error || "Failed to publish to GoHighLevel.");
       }
     } catch (error) {
-      alert("Failed to publish to GoHighLevel");
+      showToast("error", "Publish Failed", "Failed to publish to GoHighLevel.");
     }
     setIsPublishing(false);
   };
@@ -1279,6 +1673,7 @@ export default function Home() {
           progress: { step: "complete", message: "Blog generated successfully!" },
           publishedPost: null,
         });
+        showToast("success", "Blog Generated!", "Your content is ready for review and publishing.");
       } else {
         const response = await fetch("/api/generate-blog", {
           method: "POST",
@@ -1310,11 +1705,13 @@ export default function Home() {
           progress: { step: "complete", message: "Blog generated successfully!" },
           publishedPost: null,
         });
+        showToast("success", "Blog Generated!", "Your content is ready for review and publishing.");
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       setState({
         isLoading: false,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error: errorMessage,
         htmlContent: null,
         seoData: null,
         featuredImageId: null,
@@ -1322,6 +1719,7 @@ export default function Home() {
         progress: { step: "idle", message: "" },
         publishedPost: null,
       });
+      showToast("error", "Generation Failed", errorMessage);
     }
   };
 
@@ -1329,6 +1727,7 @@ export default function Home() {
     if (state.htmlContent) {
       navigator.clipboard.writeText(state.htmlContent);
       setState((prev) => ({ ...prev, copiedToClipboard: true }));
+      showToast("success", "Copied!", "HTML content copied to clipboard");
       setTimeout(() => {
         setState((prev) => ({ ...prev, copiedToClipboard: false }));
       }, 2000);
@@ -1398,61 +1797,24 @@ export default function Home() {
         <p>Multi-AI orchestrated blog creation with real images</p>
       </header>
 
-      <main className={styles.main}>
+      <main className={`${styles.main} ${activeSection === "create" ? styles.withPreview : ""}`} style={{ "--sidebar-width": sidebarExpanded ? "var(--sidebar-width-expanded)" : "var(--sidebar-width-collapsed)" } as React.CSSProperties}>
         {/* Sidebar Navigation */}
-        <nav className={styles.sidebar}>
+        <nav className={`${styles.sidebar} ${sidebarExpanded ? styles.expanded : ""}`}>
+          {/* Content Group */}
+          <span className={styles.sidebarGroup}>Content</span>
           <button
             type="button"
             className={`${styles.sidebarItem} ${activeSection === "create" ? styles.active : ""}`}
             onClick={() => setActiveSection("create")}
             title="Create Content"
           >
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>Create</span>
             <span className={styles.tooltip}>Create</span>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.sidebarItem} ${activeSection === "setup" ? styles.active : ""}`}
-            onClick={() => setActiveSection("setup")}
-            title="Integrations"
-          >
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            <span className={styles.tooltip}>Setup</span>
-            {(wordpress.isConnected || gohighlevel.isConnected) && <span className={styles.sidebarBadge} />}
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.sidebarItem} ${activeSection === "profile" ? styles.active : ""}`}
-            onClick={() => setActiveSection("profile")}
-            title="Company Profile"
-          >
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/>
-            </svg>
-            <span className={styles.tooltip}>Profile</span>
-            {companyProfile.name && <span className={styles.sidebarBadge} />}
-          </button>
-
-          <div className={styles.sidebarDivider} />
-
-          <button
-            type="button"
-            className={`${styles.sidebarItem} ${activeSection === "research" ? styles.active : ""}`}
-            onClick={() => setActiveSection("research")}
-            title="Research Tools"
-          >
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
-            <span className={styles.tooltip}>Research</span>
           </button>
 
           <button
@@ -1461,19 +1823,456 @@ export default function Home() {
             onClick={() => setActiveSection("library")}
             title="Page Library"
           >
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>Library</span>
             <span className={styles.tooltip}>Library</span>
             {pageLibrary.length > 0 && <span className={styles.sidebarBadge}>{pageLibrary.length}</span>}
           </button>
+
+          <div className={styles.sidebarDivider} />
+
+          {/* Configuration Group */}
+          <span className={styles.sidebarGroup}>Config</span>
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "profile" ? styles.active : ""}`}
+            onClick={() => setActiveSection("profile")}
+            title="Company Profile"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>Profile</span>
+            <span className={styles.tooltip}>Profile</span>
+            {companyProfile.name && <span className={styles.sidebarBadge} />}
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "setup" ? styles.active : ""}`}
+            onClick={() => setActiveSection("setup")}
+            title="Integrations"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>Setup</span>
+            <span className={styles.tooltip}>Setup</span>
+            {(wordpress.isConnected || gohighlevel.isConnected) && <span className={styles.sidebarBadge} />}
+          </button>
+
+          <div className={styles.sidebarDivider} />
+
+          {/* Tools Group */}
+          <span className={styles.sidebarGroup}>Tools</span>
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "research" ? styles.active : ""}`}
+            onClick={() => setActiveSection("research")}
+            title="Research Tools"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>Research</span>
+            <span className={styles.tooltip}>Research</span>
+          </button>
+
+          {/* User Profile Section */}
+          <div className={styles.sidebarDivider} />
+          <div className={styles.sidebarUser}>
+            <div className={styles.userAvatar}>
+              {user?.email?.charAt(0).toUpperCase() || "U"}
+            </div>
+            {sidebarExpanded && (
+              <div className={styles.userInfo}>
+                <span className={styles.userEmail}>{user?.email}</span>
+                <button
+                  type="button"
+                  className={styles.logoutBtn}
+                  onClick={() => signOutUser()}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+            {!sidebarExpanded && (
+              <button
+                type="button"
+                className={styles.logoutBtnIcon}
+                onClick={() => signOutUser()}
+                title="Sign Out"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Sidebar Toggle */}
+          <div className={styles.sidebarToggle}>
+            <button
+              type="button"
+              className={styles.sidebarToggleBtn}
+              onClick={() => setSidebarExpanded(!sidebarExpanded)}
+              title={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                {sidebarExpanded ? (
+                  <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
+                ) : (
+                  <path d="M13 5l7 7-7 7M6 5l7 7-7 7"/>
+                )}
+              </svg>
+              {sidebarExpanded && <span>Collapse</span>}
+            </button>
+          </div>
         </nav>
 
-        <div className={styles.formSection}>
+        <div className={`${styles.formSection} ${activeSection !== "create" ? styles.fullWidth : ""}`}>
           {/* Show the original form when "create" is selected */}
           {activeSection === "create" && (
           <>
           <form onSubmit={handleGenerateBlog} className={styles.form}>
+            {/* Hero Area - Quick Start */}
+            <div className={styles.heroArea}>
+              <h2 className={styles.heroTitle}>Create Content</h2>
+              <p className={styles.heroSubtitle}>Generate SEO-optimized blogs and pages in seconds</p>
+
+              {/* Mode Pills */}
+              <div className={styles.modePills}>
+                <button
+                  type="button"
+                  onClick={() => setGenerationMode("blog")}
+                  className={`${styles.modePill} ${generationMode === "blog" ? styles.active : ""}`}
+                >
+                  Blog Post
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGenerationMode("page")}
+                  className={`${styles.modePill} ${generationMode === "page" ? styles.active : ""}`}
+                >
+                  Website Page
+                </button>
+              </div>
+
+              {/* Hero Fields */}
+              <div className={styles.heroFields}>
+                <input
+                  type="text"
+                  name="topic"
+                  value={formData.topic}
+                  onChange={handleInputChange}
+                  placeholder={generationMode === "blog" ? "What topic should we write about?" : "Page title or subject..."}
+                  className={styles.heroInput}
+                  required
+                />
+                <div className={styles.heroRow}>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    placeholder="Location (e.g., Charlotte, NC)"
+                    className={styles.heroInput}
+                  />
+                  <input
+                    type="text"
+                    name="primaryKeyword"
+                    value={formData.primaryKeyword}
+                    onChange={handleInputChange}
+                    placeholder="Primary keyword"
+                    className={styles.heroInput}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={state.isLoading || !formData.topic}
+                  className={styles.heroButton}
+                >
+                  {state.isLoading ? (
+                    <>
+                      <span className={styles.spinner}></span>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 5v14M5 12h14"/>
+                      </svg>
+                      Generate {generationMode === "blog" ? "Blog" : "Page"}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Settings Tabs */}
+            <div className={styles.tabNav}>
+              <button
+                type="button"
+                onClick={() => setSettingsTab("basic")}
+                className={`${styles.tabButton} ${settingsTab === "basic" ? styles.active : ""}`}
+              >
+                Basic
+                {formData.location && formData.tone && (
+                  <span className={styles.tabCheck}>&#10003;</span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsTab("seo")}
+                className={`${styles.tabButton} ${settingsTab === "seo" ? styles.active : ""}`}
+              >
+                SEO
+                {formData.primaryKeyword && formData.metaTitle && (
+                  <span className={styles.tabCheck}>&#10003;</span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsTab("images")}
+                className={`${styles.tabButton} ${settingsTab === "images" ? styles.active : ""}`}
+              >
+                Images
+                <span className={styles.tabBadge}>{formData.imageMode}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsTab("advanced")}
+                className={`${styles.tabButton} ${settingsTab === "advanced" ? styles.active : ""}`}
+              >
+                Advanced
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className={styles.tabContent}>
+              {/* Basic Tab */}
+              {settingsTab === "basic" && (
+                <div className={styles.tabSection + " " + styles.visible}>
+                  <div className={styles.formCard}>
+                    <h4 className={styles.formCardTitle}>Content Settings</h4>
+                    <div className={styles.formCardGrid}>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="blogType">Content Type</label>
+                        <select
+                          id="blogType"
+                          name="blogType"
+                          value={formData.blogType}
+                          onChange={handleInputChange}
+                        >
+                          <option>Neighborhood Guide</option>
+                          <option>How-To Guide</option>
+                          <option>Trend Report</option>
+                          <option>Property Showcase</option>
+                          <option>Expert Tips</option>
+                          <option>Season-Specific Guide</option>
+                          <option>Before and After</option>
+                          <option>Product Comparison</option>
+                        </select>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="numberOfSections">Sections</label>
+                        <select
+                          id="numberOfSections"
+                          name="numberOfSections"
+                          value={formData.numberOfSections}
+                          onChange={handleInputChange}
+                        >
+                          {[3, 4, 5, 6, 7, 8].map(n => (
+                            <option key={n} value={n}>{n} sections</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className={styles.formGroup} style={{ marginTop: "1rem" }}>
+                      <label htmlFor="tone">Writing Tone</label>
+                      <input
+                        type="text"
+                        id="tone"
+                        name="tone"
+                        value={formData.tone}
+                        onChange={handleInputChange}
+                        placeholder="e.g., professional yet friendly"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SEO Tab */}
+              {settingsTab === "seo" && (
+                <div className={styles.tabSection + " " + styles.visible}>
+                  <div className={styles.formCard}>
+                    <h4 className={styles.formCardTitle}>SEO & Keywords</h4>
+                    <button
+                      type="button"
+                      onClick={handleResearchKeywords}
+                      disabled={isResearching || !formData.topic || !formData.location}
+                      className={styles.researchTypeBtn + " " + styles.primary}
+                      style={{ marginBottom: "1rem" }}
+                    >
+                      {isResearching ? (
+                        <>
+                          <span className={styles.spinner}></span>
+                          Researching...
+                        </>
+                      ) : (
+                        "Research Keywords & SEO"
+                      )}
+                    </button>
+
+                    {researchData && (
+                      <div className={styles.researchInsights} style={{ marginBottom: "1rem" }}>
+                        <h4>AI Research Insights:</h4>
+                        <div className={styles.insightsList}>
+                          <div>
+                            <strong>Competitor Insights:</strong>
+                            <ul>
+                              {researchData.competitorInsights.slice(0, 3).map((insight, i) => (
+                                <li key={i}>{insight}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={styles.formCardGrid + " " + styles.single}>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="seoSecondaryKeywords">Secondary Keywords</label>
+                        <textarea
+                          id="seoSecondaryKeywords"
+                          name="secondaryKeywords"
+                          value={formData.secondaryKeywords}
+                          onChange={handleInputChange}
+                          placeholder="e.g., outdoor lighting, pathway lights, garden illumination"
+                          rows={2}
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="seoMetaTitle">Meta Title</label>
+                        <input
+                          type="text"
+                          id="seoMetaTitle"
+                          name="metaTitle"
+                          value={formData.metaTitle}
+                          onChange={handleInputChange}
+                          placeholder="SEO-optimized page title (50-60 chars)"
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="seoMetaDescription">Meta Description</label>
+                        <textarea
+                          id="seoMetaDescription"
+                          name="metaDescription"
+                          value={formData.metaDescription}
+                          onChange={handleInputChange}
+                          placeholder="Compelling description for search results (150-160 chars)"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Images Tab */}
+              {settingsTab === "images" && (
+                <div className={styles.tabSection + " " + styles.visible}>
+                  <div className={styles.formCard}>
+                    <h4 className={styles.formCardTitle}>Image Settings</h4>
+                    <div className={styles.formGroup}>
+                      <label>Image Mode</label>
+                      <div className={styles.quickSelect}>
+                        <div className={styles.buttonGrid}>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, imageMode: "auto" }))}
+                            className={`${styles.quickSelectButton} ${formData.imageMode === "auto" ? styles.active : ""}`}
+                          >
+                            Auto Generate
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, imageMode: "manual" }))}
+                            className={`${styles.quickSelectButton} ${formData.imageMode === "manual" ? styles.active : ""}`}
+                          >
+                            Manual Upload
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, imageMode: "enhance" }))}
+                            className={`${styles.quickSelectButton} ${formData.imageMode === "enhance" ? styles.active : ""}`}
+                          >
+                            Enhance Uploads
+                          </button>
+                        </div>
+                        <small>
+                          {formData.imageMode === "auto" && "AI will generate unique images for each section"}
+                          {formData.imageMode === "manual" && "Use only your uploaded images"}
+                          {formData.imageMode === "enhance" && "Combine your images with AI-generated ones"}
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Advanced Tab */}
+              {settingsTab === "advanced" && (
+                <div className={styles.tabSection + " " + styles.visible}>
+                  <div className={styles.formCard}>
+                    <h4 className={styles.formCardTitle}>Advanced Options</h4>
+                    <div className={styles.formGroup}>
+                      <label className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={formData.useOrchestration}
+                          onChange={(e) => setFormData(prev => ({ ...prev, useOrchestration: e.target.checked }))}
+                        />
+                        Multi-AI Orchestration
+                      </label>
+                      <span className={styles.hint}>Use multiple AI models for better results</span>
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={formData.enableQualityReview}
+                          onChange={(e) => setFormData(prev => ({ ...prev, enableQualityReview: e.target.checked }))}
+                        />
+                        Quality Review Pass
+                      </label>
+                      <span className={styles.hint}>Additional AI pass for quality assurance</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden Submit Button (actual submission handled by hero button) */}
+            <button type="submit" style={{ display: "none" }} />
+
+            {/* Legacy Settings - WordPress (keeping for backwards compatibility) */}
+            <div style={{ display: "none" }}>
             {/* WordPress Settings Toggle */}
             <div className={styles.settingsToggle}>
               <button
@@ -1623,7 +2422,11 @@ export default function Home() {
                 )}
               </div>
             )}
+            </div>
+            {/* End Legacy Settings */}
 
+            {/* Legacy Company Profile - Now in Profile sidebar section */}
+            <div style={{ display: "none" }}>
             {/* Company Profile Toggle */}
             <div className={styles.settingsToggle}>
               <button
@@ -2135,7 +2938,11 @@ export default function Home() {
                 </div>
               </>
             )}
+            </div>
+            {/* End Legacy Company Profile */}
 
+            {/* Legacy Generation Mode Toggle - Now in Hero Area */}
+            <div style={{ display: "none" }}>
             {/* Generation Mode Toggle */}
             <div className={styles.modeToggleRow}>
               <div className={styles.modeToggle}>
@@ -2342,7 +3149,11 @@ export default function Home() {
                 </button>
               </div>
             )}
+            </div>
+            {/* End Legacy Generation Mode Toggle */}
 
+            {/* Legacy Blog Settings - Now in Hero Area and Tabs */}
+            <div style={{ display: "none" }}>
             {/* Blog Settings (Blog Mode) */}
             {generationMode === "blog" && (
               <>
@@ -2693,6 +3504,8 @@ export default function Home() {
             </button>
               </>
             )}
+            </div>
+            {/* End Legacy Blog Settings */}
           </form>
 
           {/* Progress Indicator */}
@@ -2726,6 +3539,46 @@ export default function Home() {
                 </div>
               </div>
               <p className={styles.progressMessage}>{state.progress.message}</p>
+
+              {/* Loading Entertainment Section */}
+              <div className={styles.loadingEntertainment}>
+                <button
+                  type="button"
+                  className={styles.newContentBtn}
+                  onClick={refreshEntertainment}
+                  title="Show another"
+                >
+                  Next
+                </button>
+
+                <div className={styles.entertainmentContent} key={entertainment.key}>
+                  <div className={styles.entertainmentTypeIcon}>
+                    {entertainment.type === "joke" && "😄"}
+                    {entertainment.type === "quote" && "💡"}
+                    {entertainment.type === "fact" && "🧠"}
+                  </div>
+
+                  <div className={styles.entertainmentTypeLabel}>
+                    {entertainment.type === "joke" && "While you wait..."}
+                    {entertainment.type === "quote" && "Inspiration"}
+                    {entertainment.type === "fact" && "Did you know?"}
+                  </div>
+
+                  <p className={`${styles.entertainmentText} ${styles[entertainment.type]}`}>
+                    {entertainment.content}
+                  </p>
+
+                  {entertainment.author && (
+                    <p className={styles.entertainmentAuthor}>{entertainment.author}</p>
+                  )}
+                </div>
+
+                <div className={styles.loadingDots}>
+                  <span className={styles.loadingDot}></span>
+                  <span className={styles.loadingDot}></span>
+                  <span className={styles.loadingDot}></span>
+                </div>
+              </div>
             </div>
           )}
           </>
@@ -2945,7 +3798,7 @@ export default function Home() {
                 onClick={() => {
                   localStorage.setItem("companyProfile", JSON.stringify(companyProfile));
                   setFormData(prev => ({ ...prev, companyName: companyProfile.name, companyWebsite: companyProfile.website }));
-                  alert("Company profile saved!");
+                  showToast("success", "Profile Saved", "Your company profile has been saved.");
                 }}
                 className={styles.testButton}
                 style={{ width: "100%" }}
@@ -3028,38 +3881,548 @@ export default function Home() {
                   </button>
                 </div>
               )}
+
+              {/* SERP Analysis Section - Full Featured */}
+              <div className={styles.formCard}>
+                <h4 className={styles.formCardTitle}>
+                  SERP Analysis
+                  <span style={{ fontSize: "0.7rem", color: "#667eea", marginLeft: "0.5rem" }}>Bright Data</span>
+                </h4>
+                <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem" }}>
+                  Analyze real Google search results with AI-powered competitive insights.
+                </p>
+
+                {/* Keyword Input */}
+                <div className={styles.formGroup}>
+                  <label htmlFor="serpKeyword">Keyword to Analyze</label>
+                  <input
+                    type="text"
+                    id="serpKeyword"
+                    value={serpKeyword}
+                    onChange={(e) => setSerpKeyword(e.target.value)}
+                    placeholder={formData.topic || formData.primaryKeyword || "Enter a keyword..."}
+                  />
+                </div>
+
+                {/* Search Options */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+                  {/* Search Type */}
+                  <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: "0.75rem" }}>Search Type</label>
+                    <select
+                      value={serpSearchType}
+                      onChange={(e) => setSerpSearchType(e.target.value as "web" | "images" | "news" | "shopping" | "videos")}
+                      style={{ fontSize: "0.85rem", padding: "0.5rem" }}
+                    >
+                      <option value="web">Web</option>
+                      <option value="news">News</option>
+                      <option value="images">Images</option>
+                      <option value="shopping">Shopping</option>
+                      <option value="videos">Videos</option>
+                    </select>
+                  </div>
+
+                  {/* Country */}
+                  <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: "0.75rem" }}>Country</label>
+                    <select
+                      value={serpCountry}
+                      onChange={(e) => setSerpCountry(e.target.value)}
+                      style={{ fontSize: "0.85rem", padding: "0.5rem" }}
+                    >
+                      <option value="us">United States</option>
+                      <option value="gb">United Kingdom</option>
+                      <option value="ca">Canada</option>
+                      <option value="au">Australia</option>
+                      <option value="de">Germany</option>
+                      <option value="fr">France</option>
+                      <option value="es">Spain</option>
+                      <option value="it">Italy</option>
+                      <option value="nl">Netherlands</option>
+                      <option value="br">Brazil</option>
+                      <option value="mx">Mexico</option>
+                      <option value="in">India</option>
+                      <option value="jp">Japan</option>
+                    </select>
+                  </div>
+
+                  {/* Device */}
+                  <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: "0.75rem" }}>Device</label>
+                    <select
+                      value={serpDevice}
+                      onChange={(e) => setSerpDevice(e.target.value as "desktop" | "mobile" | "tablet")}
+                      style={{ fontSize: "0.85rem", padding: "0.5rem" }}
+                    >
+                      <option value="desktop">Desktop</option>
+                      <option value="mobile">Mobile</option>
+                      <option value="tablet">Tablet</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={runSerpAnalysis}
+                  disabled={isAnalyzingSerp}
+                  className={`${styles.testButton} ${styles.primary}`}
+                  style={{ width: "100%" }}
+                >
+                  {isAnalyzingSerp ? "Analyzing Google Results..." : `Analyze ${serpSearchType.charAt(0).toUpperCase() + serpSearchType.slice(1)} SERP`}
+                </button>
+              </div>
+
+              {/* SERP Analysis Results - Full Featured */}
+              {serpAnalysis && (
+                <div className={styles.formCard}>
+                  <h4 className={styles.formCardTitle}>
+                    SERP Analysis: {serpAnalysis.keyword}
+                    <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: "0.5rem" }}>
+                      {serpAnalysis.searchType} | {serpAnalysis.country.toUpperCase()} | {serpAnalysis.device}
+                    </span>
+                  </h4>
+
+                  {/* Difficulty Score */}
+                  {serpAnalysis.analysis?.difficulty && (
+                    <div style={{ marginBottom: "1rem", padding: "1rem", background: "#f8f9ff", borderRadius: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                        <span style={{ fontWeight: "600" }}>Ranking Difficulty</span>
+                        <span style={{
+                          padding: "0.25rem 0.75rem",
+                          borderRadius: "20px",
+                          fontSize: "0.8rem",
+                          fontWeight: "600",
+                          background: serpAnalysis.analysis.difficulty.score < 30 ? "#d1fae5" : serpAnalysis.analysis.difficulty.score < 60 ? "#fef3c7" : "#fee2e2",
+                          color: serpAnalysis.analysis.difficulty.score < 30 ? "#059669" : serpAnalysis.analysis.difficulty.score < 60 ? "#d97706" : "#dc2626",
+                        }}>
+                          {serpAnalysis.analysis.difficulty.level} ({serpAnalysis.analysis.difficulty.score}/100)
+                        </span>
+                      </div>
+                      <div style={{ height: "8px", background: "#e5e7eb", borderRadius: "4px", overflow: "hidden" }}>
+                        <div style={{
+                          width: `${serpAnalysis.analysis.difficulty.score}%`,
+                          height: "100%",
+                          background: serpAnalysis.analysis.difficulty.score < 30 ? "#10b981" : serpAnalysis.analysis.difficulty.score < 60 ? "#f59e0b" : "#ef4444",
+                          borderRadius: "4px",
+                        }} />
+                      </div>
+                      {serpAnalysis.analysis.difficulty.factors?.length > 0 && (
+                        <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#666" }}>
+                          <strong>Factors:</strong> {serpAnalysis.analysis.difficulty.factors.slice(0, 3).join(" • ")}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Search Intent */}
+                  {serpAnalysis.analysis?.searchIntent && (
+                    <div style={{ marginBottom: "1rem", padding: "1rem", background: "#fef3c7", borderRadius: "8px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                        <strong>Search Intent:</strong>
+                        <span style={{
+                          textTransform: "capitalize",
+                          padding: "0.2rem 0.5rem",
+                          background: "#fff",
+                          borderRadius: "4px",
+                          fontWeight: "600",
+                          color: "#92400e"
+                        }}>
+                          {serpAnalysis.analysis.searchIntent.primary}
+                        </span>
+                      </div>
+                      {serpAnalysis.analysis.searchIntent.recommendation && (
+                        <p style={{ fontSize: "0.85rem", margin: 0, color: "#78350f" }}>
+                          {serpAnalysis.analysis.searchIntent.recommendation}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* SERP Features Present */}
+                  {serpAnalysis.analysis?.serpFeatures?.present && serpAnalysis.analysis.serpFeatures.present.length > 0 && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <strong>SERP Features Found:</strong>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+                        {serpAnalysis.analysis.serpFeatures.present.map((feature, i) => (
+                          <span key={i} style={{
+                            padding: "0.25rem 0.5rem",
+                            background: "#dbeafe",
+                            borderRadius: "4px",
+                            fontSize: "0.8rem",
+                            color: "#1e40af",
+                          }}>{feature}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Featured Snippet */}
+                  {serpAnalysis.serpData?.featuredSnippet && (
+                    <div style={{ marginBottom: "1rem", padding: "1rem", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
+                      <strong style={{ color: "#16a34a" }}>Featured Snippet ({serpAnalysis.serpData.featuredSnippet.type}):</strong>
+                      <p style={{ margin: "0.5rem 0", fontSize: "0.9rem" }}>{serpAnalysis.serpData.featuredSnippet.content.substring(0, 200)}...</p>
+                      <div style={{ fontSize: "0.8rem", color: "#666" }}>Source: {serpAnalysis.serpData.featuredSnippet.source}</div>
+                    </div>
+                  )}
+
+                  {/* Knowledge Panel */}
+                  {serpAnalysis.serpData?.knowledgePanel && (
+                    <div style={{ marginBottom: "1rem", padding: "1rem", background: "#f5f3ff", borderRadius: "8px", border: "1px solid #ddd6fe" }}>
+                      <strong style={{ color: "#6d28d9" }}>Knowledge Panel: {serpAnalysis.serpData.knowledgePanel.title}</strong>
+                      <p style={{ margin: "0.5rem 0", fontSize: "0.85rem" }}>{serpAnalysis.serpData.knowledgePanel.description?.substring(0, 200)}</p>
+                    </div>
+                  )}
+
+                  {/* Organic Results - Expandable */}
+                  {serpAnalysis.serpData?.organic && serpAnalysis.serpData.organic.length > 0 && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <button
+                        type="button"
+                        onClick={() => setSerpResultsExpanded(serpResultsExpanded === "organic" ? null : "organic")}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          fontWeight: "600",
+                          padding: 0,
+                        }}
+                      >
+                        <span style={{ transform: serpResultsExpanded === "organic" ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.2s" }}>▶</span>
+                        Top {serpAnalysis.serpData.organic.length} Organic Results
+                      </button>
+                      {serpResultsExpanded === "organic" && (
+                        <div style={{ marginTop: "0.5rem", maxHeight: "300px", overflowY: "auto" }}>
+                          {serpAnalysis.serpData.organic.slice(0, 10).map((result, i) => (
+                            <div key={i} style={{ padding: "0.75rem", background: i % 2 === 0 ? "#f9fafb" : "#fff", borderRadius: "4px", marginBottom: "0.25rem" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <span style={{ fontWeight: "bold", color: "#667eea", minWidth: "24px" }}>#{result.position}</span>
+                                <a href={result.link} target="_blank" rel="noopener noreferrer" style={{ color: "#1e40af", fontWeight: "500", fontSize: "0.9rem" }}>
+                                  {result.title}
+                                </a>
+                              </div>
+                              <div style={{ fontSize: "0.75rem", color: "#16a34a", marginTop: "0.25rem" }}>{result.domain}</div>
+                              <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.25rem" }}>{result.snippet?.substring(0, 150)}...</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Local Pack */}
+                  {serpAnalysis.serpData?.localPack && serpAnalysis.serpData.localPack.length > 0 && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <button
+                        type="button"
+                        onClick={() => setSerpResultsExpanded(serpResultsExpanded === "local" ? null : "local")}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          fontWeight: "600",
+                          padding: 0,
+                        }}
+                      >
+                        <span style={{ transform: serpResultsExpanded === "local" ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.2s" }}>▶</span>
+                        Local Pack ({serpAnalysis.serpData.localPack.length} businesses)
+                      </button>
+                      {serpResultsExpanded === "local" && (
+                        <div style={{ marginTop: "0.5rem" }}>
+                          {serpAnalysis.serpData.localPack.map((local, i) => (
+                            <div key={i} style={{ padding: "0.5rem", background: "#f9fafb", borderRadius: "4px", marginBottom: "0.25rem" }}>
+                              <div style={{ fontWeight: "500" }}>{local.title}</div>
+                              <div style={{ fontSize: "0.8rem", color: "#666" }}>{local.address}</div>
+                              {local.rating && <div style={{ fontSize: "0.8rem" }}>⭐ {local.rating} ({local.reviews} reviews)</div>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Ads */}
+                  {serpAnalysis.serpData?.ads?.top && serpAnalysis.serpData.ads.top.length > 0 && (
+                    <div style={{ marginBottom: "1rem", padding: "0.75rem", background: "#fef2f2", borderRadius: "8px", border: "1px solid #fecaca" }}>
+                      <strong style={{ color: "#dc2626", fontSize: "0.85rem" }}>
+                        {serpAnalysis.serpData.ads.top.length} Paid Ads Detected
+                      </strong>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+                        {serpAnalysis.serpData.ads.top.slice(0, 5).map((ad, i) => (
+                          <span key={i} style={{ padding: "0.2rem 0.5rem", background: "#fff", borderRadius: "4px", fontSize: "0.75rem" }}>
+                            {ad.domain}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* People Also Ask */}
+                  {serpAnalysis.serpData?.peopleAlsoAsk && serpAnalysis.serpData.peopleAlsoAsk.length > 0 && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <strong>People Also Ask ({serpAnalysis.serpData.peopleAlsoAsk.length}):</strong>
+                      <ul style={{ marginTop: "0.5rem", paddingLeft: "1.25rem", fontSize: "0.9rem" }}>
+                        {serpAnalysis.serpData.peopleAlsoAsk.slice(0, 6).map((q, i) => (
+                          <li key={i} style={{ marginBottom: "0.25rem" }}>{q.question}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Content Strategy */}
+                  {serpAnalysis.analysis?.contentStrategy && (
+                    <div style={{ marginBottom: "1rem", padding: "1rem", background: "#eff6ff", borderRadius: "8px", border: "1px solid #bfdbfe" }}>
+                      <strong style={{ color: "#1e40af" }}>Content Strategy</strong>
+                      <div style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}>
+                        <div><strong>Type:</strong> {serpAnalysis.analysis.contentStrategy.recommendedType}</div>
+                        <div><strong>Word Count:</strong> {serpAnalysis.analysis.contentStrategy.targetWordCount}</div>
+                        {serpAnalysis.analysis.contentStrategy.mustIncludeTopics?.length > 0 && (
+                          <div style={{ marginTop: "0.5rem" }}>
+                            <strong>Must Include:</strong>
+                            <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem" }}>
+                              {serpAnalysis.analysis.contentStrategy.mustIncludeTopics.slice(0, 5).map((topic, i) => (
+                                <li key={i}>{topic}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Title Recommendations */}
+                  {serpAnalysis.analysis?.contentStrategy?.titleSuggestions && serpAnalysis.analysis.contentStrategy.titleSuggestions.length > 0 && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <strong>Recommended Titles:</strong>
+                      <ul style={{ marginTop: "0.5rem", paddingLeft: "1.25rem", fontSize: "0.9rem" }}>
+                        {serpAnalysis.analysis.contentStrategy.titleSuggestions.slice(0, 5).map((title, i) => (
+                          <li key={i} style={{ marginBottom: "0.25rem" }}>{title}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Quick Wins */}
+                  {serpAnalysis.analysis?.quickWins && serpAnalysis.analysis.quickWins.length > 0 && (
+                    <div style={{ marginBottom: "1rem", padding: "1rem", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
+                      <strong style={{ color: "#16a34a" }}>Quick Wins:</strong>
+                      <ul style={{ marginTop: "0.5rem", paddingLeft: "1.25rem", fontSize: "0.9rem" }}>
+                        {serpAnalysis.analysis.quickWins.slice(0, 5).map((win, i) => (
+                          <li key={i} style={{ marginBottom: "0.25rem" }}>{win}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Keyword Strategy */}
+                  {serpAnalysis.analysis?.keywordStrategy && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      {serpAnalysis.analysis.keywordStrategy.secondaryKeywords?.length > 0 && (
+                        <div style={{ marginBottom: "0.75rem" }}>
+                          <strong>Secondary Keywords:</strong>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+                            {serpAnalysis.analysis.keywordStrategy.secondaryKeywords.slice(0, 10).map((kw, i) => (
+                              <span key={i} style={{
+                                padding: "0.25rem 0.5rem",
+                                background: "#e0e7ff",
+                                borderRadius: "4px",
+                                fontSize: "0.8rem",
+                                color: "#4338ca",
+                              }}>{kw}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {serpAnalysis.analysis.keywordStrategy.longTailOpportunities?.length > 0 && (
+                        <div>
+                          <strong>Long-tail Opportunities:</strong>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+                            {serpAnalysis.analysis.keywordStrategy.longTailOpportunities.slice(0, 8).map((kw, i) => (
+                              <span key={i} style={{
+                                padding: "0.25rem 0.5rem",
+                                background: "#dcfce7",
+                                borderRadius: "4px",
+                                fontSize: "0.8rem",
+                                color: "#166534",
+                              }}>{kw}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Related Searches */}
+                  {serpAnalysis.serpData?.relatedSearches && serpAnalysis.serpData.relatedSearches.length > 0 && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <strong>Related Searches:</strong>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+                        {serpAnalysis.serpData.relatedSearches.slice(0, 10).map((search, i) => (
+                          <span key={i} style={{
+                            padding: "0.25rem 0.5rem",
+                            background: "#fef3c7",
+                            borderRadius: "4px",
+                            fontSize: "0.8rem",
+                            color: "#92400e",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            setSerpKeyword(search.query);
+                          }}
+                          title="Click to analyze this keyword"
+                          >{search.query}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Risk Factors & Timeline */}
+                  {(serpAnalysis.analysis?.riskFactors?.length || serpAnalysis.analysis?.estimatedTimeToRank) && (
+                    <div style={{ marginTop: "1rem", padding: "1rem", background: "#f9fafb", borderRadius: "8px" }}>
+                      {serpAnalysis.analysis.estimatedTimeToRank && (
+                        <div style={{ marginBottom: "0.5rem" }}>
+                          <strong>Estimated Time to Rank:</strong> {serpAnalysis.analysis.estimatedTimeToRank}
+                        </div>
+                      )}
+                      {serpAnalysis.analysis.riskFactors && serpAnalysis.analysis.riskFactors.length > 0 && (
+                        <div>
+                          <strong>Risk Factors:</strong>
+                          <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem", fontSize: "0.85rem", color: "#666" }}>
+                            {serpAnalysis.analysis.riskFactors.slice(0, 3).map((risk, i) => (
+                              <li key={i}>{risk}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Technical SEO */}
+                  {serpAnalysis.analysis?.technicalSEO && (
+                    <div style={{ marginTop: "1rem", fontSize: "0.85rem", color: "#666" }}>
+                      <strong>Technical Notes:</strong>
+                      <div style={{ marginTop: "0.25rem" }}>
+                        Mobile: {serpAnalysis.analysis.technicalSEO.mobileOptimization} |
+                        Speed: {serpAnalysis.analysis.technicalSEO.pageSpeedImportance}
+                        {serpAnalysis.analysis.technicalSEO.schemaMarkupRecommended?.length > 0 && (
+                          <span> | Schema: {serpAnalysis.analysis.technicalSEO.schemaMarkupRecommended.slice(0, 2).join(", ")}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {/* Library Section */}
           {activeSection === "library" && (
             <div className={styles.sectionContent}>
-              <h2 className={styles.sectionTitle}>Page Library</h2>
-              <p className={styles.sectionDescription}>
-                Your saved generated pages and content.
-              </p>
-
-              {pageLibrary.length === 0 ? (
-                <div className={styles.formCard}>
-                  <p style={{ color: "#666", textAlign: "center", padding: "2rem 0" }}>
-                    No pages saved yet. Generated pages will appear here.
+              <div className={styles.libraryHeader}>
+                <div>
+                  <h2 className={styles.sectionTitle}>Page Library</h2>
+                  <p className={styles.sectionDescription}>
+                    {pageLibrary.length} saved pages and content
                   </p>
                 </div>
+              </div>
+
+              {/* Filter and Sort Controls */}
+              <div className={styles.libraryControls}>
+                <div className={styles.libraryFilters}>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryFilter("all")}
+                    className={`${styles.filterBtn} ${libraryFilter === "all" ? styles.active : ""}`}
+                  >
+                    All ({pageLibrary.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryFilter("blog_post")}
+                    className={`${styles.filterBtn} ${libraryFilter === "blog_post" ? styles.active : ""}`}
+                  >
+                    Blogs ({pageLibrary.filter(p => p.type === "blog_post").length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryFilter("service_page")}
+                    className={`${styles.filterBtn} ${libraryFilter === "service_page" ? styles.active : ""}`}
+                  >
+                    Services ({pageLibrary.filter(p => p.type === "service_page").length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryFilter("location_page")}
+                    className={`${styles.filterBtn} ${libraryFilter === "location_page" ? styles.active : ""}`}
+                  >
+                    Locations ({pageLibrary.filter(p => p.type === "location_page").length})
+                  </button>
+                </div>
+                <div className={styles.librarySort}>
+                  <label>Sort by:</label>
+                  <select
+                    value={librarySort}
+                    onChange={(e) => setLibrarySort(e.target.value as LibrarySort)}
+                    className={styles.sortSelect}
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="title">Title A-Z</option>
+                  </select>
+                </div>
+              </div>
+
+              {pageLibrary.length === 0 ? (
+                <div className={styles.libraryEmpty}>
+                  <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <h3>No pages yet</h3>
+                  <p>Generated pages will appear here. Start creating content!</p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection("create")}
+                    className={styles.primaryBtn}
+                  >
+                    Create Content
+                  </button>
+                </div>
               ) : (
-                <div className={styles.libraryList}>
-                  {pageLibrary.map((page) => (
-                    <div key={page.id} className={styles.libraryItem}>
-                      <div className={styles.libraryItemHeader}>
-                        <h4>{page.title}</h4>
-                        <span className={styles.libraryItemType}>{page.type}</span>
+                <div className={styles.libraryGrid}>
+                  {pageLibrary
+                    .filter(page => libraryFilter === "all" || page.type === libraryFilter)
+                    .sort((a, b) => {
+                      if (librarySort === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                      if (librarySort === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                      return a.title.localeCompare(b.title);
+                    })
+                    .map((page) => (
+                    <div key={page.id} className={styles.libraryCard}>
+                      <div className={styles.libraryCardHeader}>
+                        <span className={`${styles.libraryTypeBadge} ${styles[page.type.replace("_", "")]}`}>
+                          {page.type === "blog_post" ? "Blog" : page.type === "service_page" ? "Service" : page.type === "location_page" ? "Location" : page.type.replace("_", " ")}
+                        </span>
+                        <span className={`${styles.libraryStatusBadge} ${styles[page.status]}`}>
+                          {page.status}
+                        </span>
                       </div>
-                      <p className={styles.libraryItemMeta}>
-                        {page.primaryKeyword} • {new Date(page.createdAt).toLocaleDateString()}
-                      </p>
-                      <p className={styles.libraryItemMeta}>
-                        Status: {page.status} {page.publishedUrl && <a href={page.publishedUrl} target="_blank" rel="noreferrer">View</a>}
-                      </p>
-                      <div className={styles.libraryItemActions}>
+                      <h4 className={styles.libraryCardTitle}>{page.title}</h4>
+                      <p className={styles.libraryCardKeyword}>{page.primaryKeyword}</p>
+                      <div className={styles.libraryCardMeta}>
+                        <span>{new Date(page.createdAt).toLocaleDateString()}</span>
+                        {page.publishedUrl && (
+                          <a href={page.publishedUrl} target="_blank" rel="noreferrer" className={styles.viewLink}>
+                            View Live
+                          </a>
+                        )}
+                      </div>
+                      <div className={styles.libraryCardActions}>
                         <button
                           type="button"
                           onClick={() => {
@@ -3067,9 +4430,10 @@ export default function Home() {
                               const updated = pageLibrary.filter(p => p.id !== page.id);
                               setPageLibrary(updated);
                               localStorage.setItem("pageLibrary", JSON.stringify(updated));
+                              showToast("success", "Page Deleted", "The page has been removed from your library.");
                             }
                           }}
-                          className={`${styles.actionButton} ${styles.danger}`}
+                          className={styles.deleteBtn}
                         >
                           Delete
                         </button>
@@ -4082,6 +5446,218 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Setup Wizard */}
+      {showSetupWizard && hasCheckedSetup && (
+        <div className={styles.wizardOverlay}>
+          <div className={styles.wizardModal}>
+            <div className={styles.wizardHeader}>
+              <div className={styles.wizardLogo}>
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#667eea" strokeWidth="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <h2 className={styles.wizardTitle}>
+                {wizardStep === "welcome" && "Welcome to Blog Generator"}
+                {wizardStep === "researching" && "Analyzing Your Website"}
+                {wizardStep === "review" && "Review Your Profile"}
+              </h2>
+              <p className={styles.wizardSubtitle}>
+                {wizardStep === "welcome" && "Let's set up your company profile to generate personalized content"}
+                {wizardStep === "researching" && "Our AI is extracting information from your website"}
+                {wizardStep === "review" && "Confirm or edit the information we found"}
+              </p>
+            </div>
+
+            <div className={styles.wizardBody}>
+              {/* Step 1: Welcome - Enter Website */}
+              {wizardStep === "welcome" && (
+                <div className={styles.wizardStep}>
+                  <h3 className={styles.wizardStepTitle}>Enter Your Website</h3>
+                  <p className={styles.wizardStepDescription}>
+                    We&apos;ll analyze your website to auto-fill your company profile, including services, location, and contact information.
+                  </p>
+
+                  {wizardError && (
+                    <div className={styles.wizardError}>{wizardError}</div>
+                  )}
+
+                  <input
+                    type="url"
+                    value={wizardWebsite}
+                    onChange={(e) => setWizardWebsite(e.target.value)}
+                    placeholder="https://yourcompany.com"
+                    className={styles.wizardInput}
+                    onKeyDown={(e) => e.key === "Enter" && handleWizardResearch()}
+                  />
+
+                  <div className={styles.wizardActions}>
+                    <button
+                      type="button"
+                      onClick={handleWizardResearch}
+                      disabled={!wizardWebsite.trim()}
+                      className={`${styles.wizardBtn} ${styles.wizardBtnPrimary}`}
+                    >
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                      </svg>
+                      Analyze Website
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleWizardSkip}
+                    className={styles.wizardSkip}
+                  >
+                    Skip for now, I&apos;ll set up manually
+                  </button>
+                </div>
+              )}
+
+              {/* Step 2: Researching */}
+              {wizardStep === "researching" && (
+                <div className={styles.wizardLoading}>
+                  <div className={styles.wizardSpinner}></div>
+                  <p className={styles.wizardLoadingText}>Analyzing {wizardWebsite}</p>
+                  <p className={styles.wizardLoadingSubtext}>This may take 15-30 seconds...</p>
+                </div>
+              )}
+
+              {/* Step 3: Review */}
+              {wizardStep === "review" && (
+                <div className={styles.wizardStep}>
+                  <div className={styles.wizardReviewGrid}>
+                    <div className={styles.wizardReviewFull}>
+                      <div className={styles.wizardReviewLabel}>Company Name</div>
+                      <div className={styles.wizardReviewValue}>
+                        <input
+                          type="text"
+                          value={companyProfile.name}
+                          onChange={(e) => setCompanyProfile(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Enter company name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.wizardReviewSection}>
+                      <div className={styles.wizardReviewLabel}>Industry</div>
+                      <div className={styles.wizardReviewValue}>
+                        <select
+                          value={companyProfile.industryType}
+                          onChange={(e) => setCompanyProfile(prev => ({ ...prev, industryType: e.target.value }))}
+                        >
+                          <option value="">Select industry...</option>
+                          {getIndustryOptions().map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className={styles.wizardReviewSection}>
+                      <div className={styles.wizardReviewLabel}>Location</div>
+                      <div className={styles.wizardReviewValue}>
+                        <input
+                          type="text"
+                          value={companyProfile.headquarters}
+                          onChange={(e) => setCompanyProfile(prev => ({ ...prev, headquarters: e.target.value }))}
+                          placeholder="City, State"
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.wizardReviewSection}>
+                      <div className={styles.wizardReviewLabel}>Phone</div>
+                      <div className={styles.wizardReviewValue}>
+                        <input
+                          type="tel"
+                          value={companyProfile.phone}
+                          onChange={(e) => setCompanyProfile(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.wizardReviewSection}>
+                      <div className={styles.wizardReviewLabel}>Email</div>
+                      <div className={styles.wizardReviewValue}>
+                        <input
+                          type="email"
+                          value={companyProfile.email}
+                          onChange={(e) => setCompanyProfile(prev => ({ ...prev, email: e.target.value }))}
+                          placeholder="info@company.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.wizardDivider}></div>
+
+                  <div className={styles.wizardReviewSection}>
+                    <div className={styles.wizardReviewLabel}>Services (comma-separated)</div>
+                    <div className={styles.wizardReviewValue}>
+                      <input
+                        type="text"
+                        value={companyProfile.services?.join(", ") || ""}
+                        onChange={(e) => setCompanyProfile(prev => ({
+                          ...prev,
+                          services: e.target.value.split(",").map(s => s.trim()).filter(Boolean)
+                        }))}
+                        placeholder="Service 1, Service 2, Service 3"
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.wizardActions}>
+                    <button
+                      type="button"
+                      onClick={() => setWizardStep("welcome")}
+                      className={`${styles.wizardBtn} ${styles.wizardBtnSecondary}`}
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleWizardComplete}
+                      className={`${styles.wizardBtn} ${styles.wizardBtnPrimary}`}
+                    >
+                      Save & Continue
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notifications */}
+      <div className={styles.toastContainer}>
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`${styles.toast} ${styles[toast.type]}`}>
+            <span className={styles.toastIcon}>
+              {toast.type === "success" && "✓"}
+              {toast.type === "error" && "✕"}
+              {toast.type === "info" && "ℹ"}
+            </span>
+            <div className={styles.toastContent}>
+              <strong className={styles.toastTitle}>{toast.title}</strong>
+              <p className={styles.toastMessage}>{toast.message}</p>
+            </div>
+            <button
+              type="button"
+              className={styles.toastClose}
+              onClick={() => removeToast(toast.id)}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
