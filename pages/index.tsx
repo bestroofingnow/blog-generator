@@ -1481,43 +1481,42 @@ export default function Home() {
                 )}
 
                 {/* Basic Company Info */}
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="profileName">Company Name</label>
+                <div className={styles.formGroup}>
+                  <label htmlFor="profileName">Company Name</label>
+                  <input
+                    type="text"
+                    id="profileName"
+                    name="name"
+                    value={companyProfile.name}
+                    onChange={handleCompanyProfileChange}
+                    placeholder="e.g., Acme Roofing Co."
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="profileWebsite">Website</label>
+                  <div className={styles.inputWithButton}>
                     <input
-                      type="text"
-                      id="profileName"
-                      name="name"
-                      value={companyProfile.name}
+                      type="url"
+                      id="profileWebsite"
+                      name="website"
+                      value={companyProfile.website}
                       onChange={handleCompanyProfileChange}
-                      placeholder="e.g., Acme Roofing Co."
+                      placeholder="https://yourcompany.com"
                     />
+                    <button
+                      type="button"
+                      onClick={handleResearchCompany}
+                      disabled={isResearchingCompany || !companyProfile.website}
+                      className={styles.researchButton}
+                      title="Auto-fill profile by analyzing your website"
+                    >
+                      {isResearchingCompany ? "Researching..." : "Research"}
+                    </button>
                   </div>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="profileWebsite">Website</label>
-                    <div className={styles.inputWithButton}>
-                      <input
-                        type="url"
-                        id="profileWebsite"
-                        name="website"
-                        value={companyProfile.website}
-                        onChange={handleCompanyProfileChange}
-                        placeholder="https://yourcompany.com"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleResearchCompany}
-                        disabled={isResearchingCompany || !companyProfile.website}
-                        className={styles.researchButton}
-                        title="Auto-fill profile by analyzing your website"
-                      >
-                        {isResearchingCompany ? "Researching..." : "Research"}
-                      </button>
-                    </div>
-                    <span className={styles.fieldHint}>
-                      Click Research to auto-fill your profile from your website
-                    </span>
-                  </div>
+                  <span className={styles.fieldHint}>
+                    Click Research to auto-fill your profile from your website
+                  </span>
                 </div>
 
                 <div className={styles.formRow}>
