@@ -221,6 +221,7 @@ export default function Home() {
 
   const [testingConnection, setTestingConnection] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
+  const [isResearchingCompany, setIsResearchingCompany] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [researchData, setResearchData] = useState<ResearchData | null>(null);
 
@@ -845,6 +846,80 @@ export default function Home() {
     setIsResearching(false);
   };
 
+  // Deep research company website to auto-fill profile
+  const handleResearchCompany = async () => {
+    if (!companyProfile.website) {
+      alert("Please enter a website URL first");
+      return;
+    }
+
+    setIsResearchingCompany(true);
+    try {
+      const response = await fetch("/api/research-company", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: companyProfile.website }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const research = data.data;
+
+        // Update company profile with researched data
+        setCompanyProfile(prev => ({
+          ...prev,
+          name: research.name || prev.name,
+          tagline: research.tagline || prev.tagline,
+          phone: research.phone || prev.phone,
+          email: research.email || prev.email,
+          address: research.address || prev.address,
+          state: research.state || prev.state,
+          stateAbbr: research.stateAbbr || prev.stateAbbr,
+          headquarters: research.headquarters || prev.headquarters,
+          cities: research.cities?.length > 0 ? research.cities : prev.cities,
+          industryType: research.industryType || prev.industryType,
+          customIndustryName: research.customIndustryName || prev.customIndustryName,
+          services: research.services?.length > 0 ? research.services : prev.services,
+          usps: research.usps?.length > 0 ? research.usps : prev.usps,
+          certifications: research.certifications?.length > 0 ? research.certifications : prev.certifications,
+          yearsInBusiness: research.yearsInBusiness || prev.yearsInBusiness,
+          socialLinks: research.socialLinks || prev.socialLinks,
+          audience: research.audience || prev.audience,
+          brandVoice: research.brandVoice || prev.brandVoice,
+          writingStyle: research.writingStyle || prev.writingStyle,
+        }));
+
+        // Update cities input field
+        if (research.cities?.length > 0) {
+          setCitiesInput(research.cities.join(", "));
+        }
+
+        // Update custom industry name state if applicable
+        if (research.industryType === "custom" && research.customIndustryName) {
+          setCustomIndustryName(research.customIndustryName);
+        }
+
+        // Also sync with form data
+        if (research.name) {
+          setFormData(prev => ({
+            ...prev,
+            companyName: research.name,
+            companyWebsite: companyProfile.website,
+          }));
+        }
+
+        alert(`Successfully researched ${research.name || "company"}! Review the auto-filled fields.`);
+      } else {
+        alert(`Research failed: ${data.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Company research error:", error);
+      alert("Failed to research website. Please try again.");
+    }
+    setIsResearchingCompany(false);
+  };
+
   const handlePublish = async () => {
     if (!state.htmlContent || !state.seoData) return;
 
@@ -1420,14 +1495,28 @@ export default function Home() {
                   </div>
                   <div className={styles.formGroup}>
                     <label htmlFor="profileWebsite">Website</label>
-                    <input
-                      type="url"
-                      id="profileWebsite"
-                      name="website"
-                      value={companyProfile.website}
-                      onChange={handleCompanyProfileChange}
-                      placeholder="https://yourcompany.com"
-                    />
+                    <div className={styles.inputWithButton}>
+                      <input
+                        type="url"
+                        id="profileWebsite"
+                        name="website"
+                        value={companyProfile.website}
+                        onChange={handleCompanyProfileChange}
+                        placeholder="https://yourcompany.com"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleResearchCompany}
+                        disabled={isResearchingCompany || !companyProfile.website}
+                        className={styles.researchButton}
+                        title="Auto-fill profile by analyzing your website"
+                      >
+                        {isResearchingCompany ? "Researching..." : "Research"}
+                      </button>
+                    </div>
+                    <span className={styles.fieldHint}>
+                      Click Research to auto-fill your profile from your website
+                    </span>
                   </div>
                 </div>
 

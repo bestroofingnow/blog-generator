@@ -93,6 +93,41 @@
   font-style: italic;
 }
 
+.inputWithButton {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.inputWithButton input {
+  flex: 1;
+  min-width: 0;
+}
+
+.researchButton {
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.researchButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.researchButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .submitButton {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
