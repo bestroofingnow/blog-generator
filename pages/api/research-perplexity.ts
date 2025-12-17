@@ -1,17 +1,11 @@
 // pages/api/research-perplexity.ts
-// Deep research using Perplexity API via Vercel AI Gateway
+// Deep research using Perplexity Sonar Reasoning Pro via Vercel AI Gateway
 
 import { NextApiRequest, NextApiResponse } from "next";
-import { createOpenAI } from "@ai-sdk/openai";
+import { gateway } from "@ai-sdk/gateway";
 import { generateText } from "ai";
 
 export const maxDuration = 120;
-
-// Perplexity via Vercel AI Gateway
-const perplexity = createOpenAI({
-  baseURL: "https://api.perplexity.ai",
-  apiKey: process.env.PERPLEXITY_API_KEY,
-});
 
 interface ResearchRequest {
   topic: string;
@@ -30,10 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!topic || !industry) {
     return res.status(400).json({ error: "Missing required parameters: topic and industry" });
-  }
-
-  if (!process.env.PERPLEXITY_API_KEY) {
-    return res.status(500).json({ error: "Perplexity API key not configured" });
   }
 
   // Build research prompt based on type
@@ -182,9 +172,8 @@ Format as comprehensive JSON:
 
   try {
     const result = await generateText({
-      model: perplexity("llama-3.1-sonar-large-128k-online"),
+      model: gateway("perplexity/sonar-reasoning-pro"),
       prompt,
-      temperature: 0.7,
     });
 
     // Try to parse JSON from response

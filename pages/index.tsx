@@ -112,29 +112,6 @@ interface CompanyResearchData {
   pagesAnalyzed?: string[];
 }
 
-// Google Search Console types
-interface GoogleSearchConsoleSettings {
-  accessToken: string;
-  refreshToken: string;
-  email: string;
-  connectedAt: string;
-  selectedSite: string;
-}
-
-interface GSCKeyword {
-  keyword: string;
-  clicks: number;
-  impressions: number;
-  ctr: string;
-  position: string;
-}
-
-interface GSCSite {
-  url: string;
-  displayName: string;
-  permissionLevel: string;
-}
-
 // Perplexity Research types
 interface PerplexityResearch {
   keywords?: {
@@ -295,12 +272,6 @@ export default function Home() {
   const [showContentHub, setShowContentHub] = useState(false);
   const [contentFilter, setContentFilter] = useState<"all" | "blog" | "service_page" | "location_page">("all");
 
-  // Google Search Console state
-  const [gscSettings, setGscSettings] = useState<GoogleSearchConsoleSettings | null>(null);
-  const [gscSites, setGscSites] = useState<GSCSite[]>([]);
-  const [gscKeywords, setGscKeywords] = useState<GSCKeyword[]>([]);
-  const [isLoadingGSC, setIsLoadingGSC] = useState(false);
-
   // Perplexity Research state
   const [perplexityResearch, setPerplexityResearch] = useState<PerplexityResearch | null>(null);
   const [isResearchingPerplexity, setIsResearchingPerplexity] = useState(false);
@@ -403,121 +374,6 @@ export default function Home() {
       }
     }
   }, []);
-
-  // Load Google Search Console settings from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("gscSettings");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setGscSettings(parsed);
-      } catch {
-        // Invalid saved data
-      }
-    }
-  }, []);
-
-  // Handle GSC OAuth callback
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const gscConnected = urlParams.get("gsc_connected");
-    const gscData = urlParams.get("gsc_data");
-    const gscError = urlParams.get("gsc_error");
-
-    if (gscError) {
-      console.error("GSC connection error:", gscError);
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return;
-    }
-
-    if (gscConnected === "true" && gscData) {
-      try {
-        const decoded = JSON.parse(atob(gscData));
-        const settings: GoogleSearchConsoleSettings = {
-          accessToken: decoded.access_token,
-          refreshToken: decoded.refresh_token || "",
-          email: decoded.email || "",
-          connectedAt: decoded.connected_at || new Date().toISOString(),
-          selectedSite: "",
-        };
-        setGscSettings(settings);
-        localStorage.setItem("gscSettings", JSON.stringify(settings));
-
-        // Fetch available sites
-        fetchGSCSites(settings.accessToken);
-
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch (e) {
-        console.error("Failed to parse GSC data:", e);
-      }
-    }
-  }, []);
-
-  // Fetch GSC sites
-  const fetchGSCSites = async (accessToken: string) => {
-    setIsLoadingGSC(true);
-    try {
-      const response = await fetch("/api/search-console-sites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessToken }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setGscSites(data.sites || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch GSC sites:", error);
-    } finally {
-      setIsLoadingGSC(false);
-    }
-  };
-
-  // Fetch GSC keywords for selected site
-  const fetchGSCKeywords = async () => {
-    if (!gscSettings?.accessToken || !gscSettings?.selectedSite) return;
-
-    setIsLoadingGSC(true);
-    try {
-      const response = await fetch("/api/search-console", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accessToken: gscSettings.accessToken,
-          refreshToken: gscSettings.refreshToken,
-          siteUrl: gscSettings.selectedSite,
-          rowLimit: 50,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setGscKeywords(data.keywords || []);
-
-        // Update access token if refreshed
-        if (data.newAccessToken) {
-          const updatedSettings = { ...gscSettings, accessToken: data.newAccessToken };
-          setGscSettings(updatedSettings);
-          localStorage.setItem("gscSettings", JSON.stringify(updatedSettings));
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch GSC keywords:", error);
-    } finally {
-      setIsLoadingGSC(false);
-    }
-  };
-
-  // Disconnect GSC
-  const disconnectGSC = () => {
-    setGscSettings(null);
-    setGscSites([]);
-    setGscKeywords([]);
-    localStorage.removeItem("gscSettings");
-  };
 
   // Perplexity Deep Research
   const runPerplexityResearch = async (researchType: string = "comprehensive") => {
@@ -2130,96 +1986,6 @@ export default function Home() {
                     <span>{companyProfile.services.length} services | {companyProfile.usps.length} USPs | {companyProfile.cities.length} service areas</span>
                   </div>
                 )}
-
-                {/* Google Search Console Integration */}
-                <div className={styles.gscSection}>
-                  <h4>Google Search Console</h4>
-                  {!gscSettings?.accessToken ? (
-                    <div className={styles.gscNotConnected}>
-                      <p>Connect to view your real keyword performance data</p>
-                      <button
-                        type="button"
-                        onClick={() => window.location.href = "/api/auth/google"}
-                        className={styles.gscConnectBtn}
-                      >
-                        <span className={styles.googleIcon}>G</span>
-                        Connect Google Search Console
-                      </button>
-                    </div>
-                  ) : (
-                    <div className={styles.gscConnected}>
-                      <div className={styles.gscHeader}>
-                        <span className={styles.gscEmail}>{gscSettings.email}</span>
-                        <button
-                          type="button"
-                          onClick={disconnectGSC}
-                          className={styles.gscDisconnectBtn}
-                        >
-                          Disconnect
-                        </button>
-                      </div>
-
-                      {gscSites.length > 0 && (
-                        <div className={styles.gscSiteSelect}>
-                          <label>Select Site:</label>
-                          <select
-                            value={gscSettings.selectedSite || ""}
-                            onChange={(e) => {
-                              const updatedSettings = { ...gscSettings, selectedSite: e.target.value };
-                              setGscSettings(updatedSettings);
-                              localStorage.setItem("gscSettings", JSON.stringify(updatedSettings));
-                              if (e.target.value) {
-                                fetchGSCKeywords();
-                              }
-                            }}
-                          >
-                            <option value="">Choose a site...</option>
-                            {gscSites.map((site) => (
-                              <option key={site.url} value={site.url}>
-                                {site.displayName}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      {gscSettings.selectedSite && (
-                        <button
-                          type="button"
-                          onClick={fetchGSCKeywords}
-                          disabled={isLoadingGSC}
-                          className={styles.gscRefreshBtn}
-                        >
-                          {isLoadingGSC ? "Loading..." : "Refresh Keywords"}
-                        </button>
-                      )}
-
-                      {gscKeywords.length > 0 && (
-                        <div className={styles.gscKeywordsList}>
-                          <h5>Top Keywords (Last 28 days)</h5>
-                          <div className={styles.gscKeywordsTable}>
-                            <div className={styles.gscKeywordsHeader}>
-                              <span>Keyword</span>
-                              <span>Clicks</span>
-                              <span>Impressions</span>
-                              <span>CTR</span>
-                              <span>Position</span>
-                            </div>
-                            {gscKeywords.slice(0, 10).map((kw, idx) => (
-                              <div key={idx} className={styles.gscKeywordRow}>
-                                <span className={styles.gscKeywordText}>{kw.keyword}</span>
-                                <span>{kw.clicks}</span>
-                                <span>{kw.impressions}</span>
-                                <span>{kw.ctr}</span>
-                                <span>{kw.position}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
 
                 {/* Perplexity Deep Research */}
                 <div className={styles.perplexitySection}>
