@@ -109,6 +109,58 @@ interface CompanyResearchData {
   pagesAnalyzed?: string[];
 }
 
+// Google Search Console types
+interface GoogleSearchConsoleSettings {
+  accessToken: string;
+  refreshToken: string;
+  email: string;
+  connectedAt: string;
+  selectedSite: string;
+}
+
+interface GSCKeyword {
+  keyword: string;
+  clicks: number;
+  impressions: number;
+  ctr: string;
+  position: string;
+}
+
+interface GSCSite {
+  url: string;
+  displayName: string;
+  permissionLevel: string;
+}
+
+// Perplexity Research types
+interface PerplexityResearch {
+  keywords?: {
+    primary: { keyword: string; volume: string; difficulty: string; intent: string }[];
+    longTail: string[];
+    questions: string[];
+    local: string[];
+  };
+  competitors?: { name: string; website: string; strategy: string; gaps: string[] }[];
+  contentStrategy?: {
+    formats: string[];
+    uniqueAngles: string[];
+    statistics: { stat: string; source: string }[];
+    expertSources: string[];
+  };
+  localSEO?: {
+    keywords: string[];
+    gbpTips: string[];
+    citations: string[];
+  };
+  technical?: {
+    schemaTypes: string[];
+    internalLinking: string[];
+    featuredSnippetOpportunities: string[];
+  };
+  actionPlan?: string[];
+  rawResponse?: string;
+}
+
 interface WordPressCategory {
   id: number;
   name: string;
@@ -240,6 +292,17 @@ export default function Home() {
   const [showContentHub, setShowContentHub] = useState(false);
   const [contentFilter, setContentFilter] = useState<"all" | "blog" | "service_page" | "location_page">("all");
 
+  // Google Search Console state
+  const [gscSettings, setGscSettings] = useState<GoogleSearchConsoleSettings | null>(null);
+  const [gscSites, setGscSites] = useState<GSCSite[]>([]);
+  const [gscKeywords, setGscKeywords] = useState<GSCKeyword[]>([]);
+  const [isLoadingGSC, setIsLoadingGSC] = useState(false);
+
+  // Perplexity Research state
+  const [perplexityResearch, setPerplexityResearch] = useState<PerplexityResearch | null>(null);
+  const [isResearchingPerplexity, setIsResearchingPerplexity] = useState(false);
+  const [showResearchModal, setShowResearchModal] = useState(false);
+
   // Page Library state
   const [pageLibrary, setPageLibrary] = useState<PageEntry[]>([]);
   const [showPageLibrary, setShowPageLibrary] = useState(false);
@@ -333,6 +396,158 @@ export default function Home() {
       }
     }
   }, []);
+
+  // Load Google Search Console settings from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("gscSettings");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setGscSettings(parsed);
+      } catch {
+        // Invalid saved data
+      }
+    }
+  }, []);
+
+  // Handle GSC OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const gscConnected = urlParams.get("gsc_connected");
+    const gscData = urlParams.get("gsc_data");
+    const gscError = urlParams.get("gsc_error");
+
+    if (gscError) {
+      console.error("GSC connection error:", gscError);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (gscConnected === "true" && gscData) {
+      try {
+        const decoded = JSON.parse(atob(gscData));
+        const settings: GoogleSearchConsoleSettings = {
+          accessToken: decoded.access_token,
+          refreshToken: decoded.refresh_token || "",
+          email: decoded.email || "",
+          connectedAt: decoded.connected_at || new Date().toISOString(),
+          selectedSite: "",
+        };
+        setGscSettings(settings);
+        localStorage.setItem("gscSettings", JSON.stringify(settings));
+
+        // Fetch available sites
+        fetchGSCSites(settings.accessToken);
+
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (e) {
+        console.error("Failed to parse GSC data:", e);
+      }
+    }
+  }, []);
+
+  // Fetch GSC sites
+  const fetchGSCSites = async (accessToken: string) => {
+    setIsLoadingGSC(true);
+    try {
+      const response = await fetch("/api/search-console-sites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGscSites(data.sites || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch GSC sites:", error);
+    } finally {
+      setIsLoadingGSC(false);
+    }
+  };
+
+  // Fetch GSC keywords for selected site
+  const fetchGSCKeywords = async () => {
+    if (!gscSettings?.accessToken || !gscSettings?.selectedSite) return;
+
+    setIsLoadingGSC(true);
+    try {
+      const response = await fetch("/api/search-console", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accessToken: gscSettings.accessToken,
+          refreshToken: gscSettings.refreshToken,
+          siteUrl: gscSettings.selectedSite,
+          rowLimit: 50,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGscKeywords(data.keywords || []);
+
+        // Update access token if refreshed
+        if (data.newAccessToken) {
+          const updatedSettings = { ...gscSettings, accessToken: data.newAccessToken };
+          setGscSettings(updatedSettings);
+          localStorage.setItem("gscSettings", JSON.stringify(updatedSettings));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch GSC keywords:", error);
+    } finally {
+      setIsLoadingGSC(false);
+    }
+  };
+
+  // Disconnect GSC
+  const disconnectGSC = () => {
+    setGscSettings(null);
+    setGscSites([]);
+    setGscKeywords([]);
+    localStorage.removeItem("gscSettings");
+  };
+
+  // Perplexity Deep Research
+  const runPerplexityResearch = async (researchType: string = "comprehensive") => {
+    if (!formData.topic && !formData.primaryKeyword) {
+      alert("Please enter a topic or primary keyword first");
+      return;
+    }
+
+    setIsResearchingPerplexity(true);
+    try {
+      const response = await fetch("/api/research-perplexity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: formData.topic || formData.primaryKeyword,
+          industry: companyProfile.industryType || "general",
+          location: formData.location || companyProfile.headquarters,
+          companyName: companyProfile.name,
+          researchType,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPerplexityResearch(data.research);
+        setShowResearchModal(true);
+      } else {
+        const error = await response.json();
+        alert(`Research failed: ${error.message || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Perplexity research error:", error);
+      alert("Research failed. Please try again.");
+    } finally {
+      setIsResearchingPerplexity(false);
+    }
+  };
 
   // Save WordPress settings to localStorage
   const saveWordPressSettings = () => {
@@ -1908,6 +2123,137 @@ export default function Home() {
                     <span>{companyProfile.services.length} services | {companyProfile.usps.length} USPs | {companyProfile.cities.length} service areas</span>
                   </div>
                 )}
+
+                {/* Google Search Console Integration */}
+                <div className={styles.gscSection}>
+                  <h4>Google Search Console</h4>
+                  {!gscSettings?.accessToken ? (
+                    <div className={styles.gscNotConnected}>
+                      <p>Connect to view your real keyword performance data</p>
+                      <button
+                        type="button"
+                        onClick={() => window.location.href = "/api/auth/google"}
+                        className={styles.gscConnectBtn}
+                      >
+                        <span className={styles.googleIcon}>G</span>
+                        Connect Google Search Console
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={styles.gscConnected}>
+                      <div className={styles.gscHeader}>
+                        <span className={styles.gscEmail}>{gscSettings.email}</span>
+                        <button
+                          type="button"
+                          onClick={disconnectGSC}
+                          className={styles.gscDisconnectBtn}
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+
+                      {gscSites.length > 0 && (
+                        <div className={styles.gscSiteSelect}>
+                          <label>Select Site:</label>
+                          <select
+                            value={gscSettings.selectedSite || ""}
+                            onChange={(e) => {
+                              const updatedSettings = { ...gscSettings, selectedSite: e.target.value };
+                              setGscSettings(updatedSettings);
+                              localStorage.setItem("gscSettings", JSON.stringify(updatedSettings));
+                              if (e.target.value) {
+                                fetchGSCKeywords();
+                              }
+                            }}
+                          >
+                            <option value="">Choose a site...</option>
+                            {gscSites.map((site) => (
+                              <option key={site.url} value={site.url}>
+                                {site.displayName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {gscSettings.selectedSite && (
+                        <button
+                          type="button"
+                          onClick={fetchGSCKeywords}
+                          disabled={isLoadingGSC}
+                          className={styles.gscRefreshBtn}
+                        >
+                          {isLoadingGSC ? "Loading..." : "Refresh Keywords"}
+                        </button>
+                      )}
+
+                      {gscKeywords.length > 0 && (
+                        <div className={styles.gscKeywordsList}>
+                          <h5>Top Keywords (Last 28 days)</h5>
+                          <div className={styles.gscKeywordsTable}>
+                            <div className={styles.gscKeywordsHeader}>
+                              <span>Keyword</span>
+                              <span>Clicks</span>
+                              <span>Impressions</span>
+                              <span>CTR</span>
+                              <span>Position</span>
+                            </div>
+                            {gscKeywords.slice(0, 10).map((kw, idx) => (
+                              <div key={idx} className={styles.gscKeywordRow}>
+                                <span className={styles.gscKeywordText}>{kw.keyword}</span>
+                                <span>{kw.clicks}</span>
+                                <span>{kw.impressions}</span>
+                                <span>{kw.ctr}</span>
+                                <span>{kw.position}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Perplexity Deep Research */}
+                <div className={styles.perplexitySection}>
+                  <h4>Deep SEO Research</h4>
+                  <p>Powered by Perplexity AI for comprehensive market research</p>
+                  <div className={styles.researchTypeGrid}>
+                    {[
+                      { type: "keyword", label: "Keyword Research", icon: "🔑" },
+                      { type: "competitor", label: "Competitor Analysis", icon: "🎯" },
+                      { type: "content", label: "Content Strategy", icon: "📝" },
+                      { type: "local", label: "Local SEO", icon: "📍" },
+                      { type: "comprehensive", label: "Full Research", icon: "🔬" },
+                    ].map((research) => (
+                      <button
+                        key={research.type}
+                        type="button"
+                        onClick={() => runPerplexityResearch(research.type)}
+                        disabled={isResearchingPerplexity || !companyProfile.name}
+                        className={styles.researchTypeBtn}
+                      >
+                        <span className={styles.researchIcon}>{research.icon}</span>
+                        <span>{research.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {isResearchingPerplexity && (
+                    <div className={styles.researchProgress}>
+                      <div className={styles.spinner}></div>
+                      <span>Researching... This may take a minute.</span>
+                    </div>
+                  )}
+                  {perplexityResearch && (
+                    <button
+                      type="button"
+                      onClick={() => setShowResearchModal(true)}
+                      className={styles.viewResearchBtn}
+                    >
+                      View Research Results
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -3240,6 +3586,249 @@ export default function Home() {
                     </div>
                   </div>
                 </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Perplexity Research Results Modal */}
+      {showResearchModal && perplexityResearch && (
+        <div className={styles.modalOverlay} onClick={() => setShowResearchModal(false)}>
+          <div className={styles.researchModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Deep SEO Research Results</h2>
+              <button onClick={() => setShowResearchModal(false)} className={styles.closeButton}>
+                ×
+              </button>
+            </div>
+
+            <div className={styles.researchModalContent}>
+              {/* Raw response fallback */}
+              {perplexityResearch.rawResponse && !perplexityResearch.keywords && (
+                <div className={styles.rawResearchResponse}>
+                  <pre>{perplexityResearch.rawResponse}</pre>
+                </div>
+              )}
+
+              {/* Keywords Section */}
+              {perplexityResearch.keywords && (
+                <div className={styles.researchSection}>
+                  <h3>Keyword Research</h3>
+
+                  {perplexityResearch.keywords.primary?.length > 0 && (
+                    <div className={styles.keywordGroup}>
+                      <h4>Primary Keywords</h4>
+                      <div className={styles.keywordTable}>
+                        <div className={styles.keywordTableHeader}>
+                          <span>Keyword</span>
+                          <span>Volume</span>
+                          <span>Difficulty</span>
+                          <span>Intent</span>
+                        </div>
+                        {perplexityResearch.keywords.primary.map((kw, idx) => (
+                          <div key={idx} className={styles.keywordTableRow}>
+                            <span>{kw.keyword}</span>
+                            <span>{kw.volume}</span>
+                            <span>{kw.difficulty}</span>
+                            <span>{kw.intent}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {perplexityResearch.keywords.longTail?.length > 0 && (
+                    <div className={styles.keywordGroup}>
+                      <h4>Long-Tail Keywords</h4>
+                      <div className={styles.tagList}>
+                        {perplexityResearch.keywords.longTail.map((kw, idx) => (
+                          <span key={idx} className={styles.tag}>{kw}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {perplexityResearch.keywords.questions?.length > 0 && (
+                    <div className={styles.keywordGroup}>
+                      <h4>People Also Ask</h4>
+                      <ul className={styles.questionList}>
+                        {perplexityResearch.keywords.questions.map((q, idx) => (
+                          <li key={idx}>{q}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {perplexityResearch.keywords.local?.length > 0 && (
+                    <div className={styles.keywordGroup}>
+                      <h4>Local Keywords</h4>
+                      <div className={styles.tagList}>
+                        {perplexityResearch.keywords.local.map((kw, idx) => (
+                          <span key={idx} className={styles.tag}>{kw}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Competitors Section */}
+              {perplexityResearch.competitors && perplexityResearch.competitors.length > 0 && (
+                <div className={styles.researchSection}>
+                  <h3>Competitor Analysis</h3>
+                  <div className={styles.competitorList}>
+                    {perplexityResearch.competitors.map((comp, idx) => (
+                      <div key={idx} className={styles.competitorCard}>
+                        <h4>{comp.name}</h4>
+                        <a href={comp.website} target="_blank" rel="noopener noreferrer">{comp.website}</a>
+                        <p><strong>Strategy:</strong> {comp.strategy}</p>
+                        {comp.gaps?.length > 0 && (
+                          <div>
+                            <strong>Gaps:</strong>
+                            <ul>
+                              {comp.gaps.map((gap, gIdx) => (
+                                <li key={gIdx}>{gap}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Content Strategy Section */}
+              {perplexityResearch.contentStrategy && (
+                <div className={styles.researchSection}>
+                  <h3>Content Strategy</h3>
+
+                  {perplexityResearch.contentStrategy.formats?.length > 0 && (
+                    <div className={styles.strategyGroup}>
+                      <h4>Recommended Formats</h4>
+                      <div className={styles.tagList}>
+                        {perplexityResearch.contentStrategy.formats.map((fmt, idx) => (
+                          <span key={idx} className={styles.tag}>{fmt}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {perplexityResearch.contentStrategy.uniqueAngles?.length > 0 && (
+                    <div className={styles.strategyGroup}>
+                      <h4>Unique Angles</h4>
+                      <ul>
+                        {perplexityResearch.contentStrategy.uniqueAngles.map((angle, idx) => (
+                          <li key={idx}>{angle}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {perplexityResearch.contentStrategy.statistics?.length > 0 && (
+                    <div className={styles.strategyGroup}>
+                      <h4>Key Statistics</h4>
+                      <ul>
+                        {perplexityResearch.contentStrategy.statistics.map((stat, idx) => (
+                          <li key={idx}>{stat.stat} <em>({stat.source})</em></li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Local SEO Section */}
+              {perplexityResearch.localSEO && (
+                <div className={styles.researchSection}>
+                  <h3>Local SEO Opportunities</h3>
+
+                  {perplexityResearch.localSEO.keywords?.length > 0 && (
+                    <div className={styles.localGroup}>
+                      <h4>Local Keywords</h4>
+                      <div className={styles.tagList}>
+                        {perplexityResearch.localSEO.keywords.map((kw, idx) => (
+                          <span key={idx} className={styles.tag}>{kw}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {perplexityResearch.localSEO.gbpTips?.length > 0 && (
+                    <div className={styles.localGroup}>
+                      <h4>Google Business Profile Tips</h4>
+                      <ul>
+                        {perplexityResearch.localSEO.gbpTips.map((tip, idx) => (
+                          <li key={idx}>{tip}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {perplexityResearch.localSEO.citations?.length > 0 && (
+                    <div className={styles.localGroup}>
+                      <h4>Citation Opportunities</h4>
+                      <ul>
+                        {perplexityResearch.localSEO.citations.map((citation, idx) => (
+                          <li key={idx}>{citation}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Technical SEO Section */}
+              {perplexityResearch.technical && (
+                <div className={styles.researchSection}>
+                  <h3>Technical Recommendations</h3>
+
+                  {perplexityResearch.technical.schemaTypes?.length > 0 && (
+                    <div className={styles.technicalGroup}>
+                      <h4>Schema Markup</h4>
+                      <div className={styles.tagList}>
+                        {perplexityResearch.technical.schemaTypes.map((schema, idx) => (
+                          <span key={idx} className={styles.tag}>{schema}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {perplexityResearch.technical.internalLinking?.length > 0 && (
+                    <div className={styles.technicalGroup}>
+                      <h4>Internal Linking Strategy</h4>
+                      <ul>
+                        {perplexityResearch.technical.internalLinking.map((link, idx) => (
+                          <li key={idx}>{link}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {perplexityResearch.technical.featuredSnippetOpportunities?.length > 0 && (
+                    <div className={styles.technicalGroup}>
+                      <h4>Featured Snippet Opportunities</h4>
+                      <ul>
+                        {perplexityResearch.technical.featuredSnippetOpportunities.map((opp, idx) => (
+                          <li key={idx}>{opp}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Plan */}
+              {perplexityResearch.actionPlan && perplexityResearch.actionPlan.length > 0 && (
+                <div className={styles.researchSection}>
+                  <h3>Action Plan</h3>
+                  <ol className={styles.actionPlan}>
+                    {perplexityResearch.actionPlan.map((action, idx) => (
+                      <li key={idx}>{action}</li>
+                    ))}
+                  </ol>
+                </div>
               )}
             </div>
           </div>

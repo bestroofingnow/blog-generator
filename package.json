@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^2.0.21",
+    "@ai-sdk/openai": "^2.0.88",
     "@anthropic-ai/sdk": "^0.32.0",
     "@google/genai": "^1.33.0",
     "@google/generative-ai": "^0.24.0",
