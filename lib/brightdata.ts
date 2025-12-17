@@ -194,8 +194,8 @@ export async function searchGoogle(query: string, options?: {
         domain: new URL(item.link as string || item.url as string || "https://example.com").hostname,
         snippet: item.snippet as string || "",
       })),
-      paaQuestions: (data.people_also_ask || []).map((q: Record<string, unknown>) => q.question as string),
-      relatedSearches: (data.related_searches || []).map((s: Record<string, unknown>) => s.query as string || s as string),
+      paaQuestions: (data.people_also_ask || []).map((q: Record<string, unknown>) => String(q.question || "")),
+      relatedSearches: (data.related_searches || []).map((s: Record<string, unknown> | string) => typeof s === "string" ? s : String(s.query || "")),
       features: data.serp_features as string[] || [],
     };
   } catch (error) {
