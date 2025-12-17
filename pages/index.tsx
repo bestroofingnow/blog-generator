@@ -1,6 +1,9 @@
 // pages/index.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import styles from "../styles/Home.module.css";
+
+// Lazy load the rich text editor for better initial load performance
+const RichTextEditor = lazy(() => import("../components/RichTextEditor"));
 import { INDUSTRIES, getIndustryOptions, getDefaultServices, getDefaultUSPs } from "../lib/industries";
 import {
   CompanyProfile,
@@ -323,6 +326,10 @@ export default function Home() {
     progress: { step: "idle", message: "" },
     publishedPost: null,
   });
+
+  // Rich text editor state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState<string>("");
 
   // Load WordPress settings from localStorage
   useEffect(() => {
@@ -3091,14 +3098,60 @@ export default function Home() {
               </div>
             )}
 
-            <div className={styles.htmlPreview}>
-              <div dangerouslySetInnerHTML={{ __html: state.htmlContent }} />
+            {/* Content Preview/Editor Section */}
+            <div className={styles.contentSection}>
+              <div className={styles.contentHeader}>
+                <h3>{isEditing ? "Edit Content" : "Content Preview"}</h3>
+                <div className={styles.contentActions}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isEditing) {
+                        setEditedContent(state.htmlContent || "");
+                      }
+                      setIsEditing(!isEditing);
+                    }}
+                    className={`${styles.editToggleBtn} ${isEditing ? styles.active : ""}`}
+                  >
+                    {isEditing ? "Exit Editor" : "Edit Content"}
+                  </button>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setState((prev) => ({ ...prev, htmlContent: editedContent }));
+                        setIsEditing(false);
+                      }}
+                      className={styles.saveEditBtn}
+                    >
+                      Save Changes
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {isEditing ? (
+                <Suspense fallback={<div className={styles.editorLoading}>Loading editor...</div>}>
+                  <RichTextEditor
+                    content={editedContent}
+                    onChange={setEditedContent}
+                    onSave={() => {
+                      setState((prev) => ({ ...prev, htmlContent: editedContent }));
+                      setIsEditing(false);
+                    }}
+                  />
+                </Suspense>
+              ) : (
+                <div className={styles.htmlPreview}>
+                  <div dangerouslySetInnerHTML={{ __html: state.htmlContent }} />
+                </div>
+              )}
             </div>
 
             <details className={styles.codeDetails}>
               <summary>View Raw HTML</summary>
               <pre className={styles.codeBlock}>
-                <code>{state.htmlContent}</code>
+                <code>{isEditing ? editedContent : state.htmlContent}</code>
               </pre>
             </details>
           </div>
