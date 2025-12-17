@@ -1,6 +1,23 @@
 // pages/index.tsx
 import React, { useState, useEffect } from "react";
 import styles from "../styles/Home.module.css";
+import { INDUSTRIES, getIndustryOptions, getDefaultServices, getDefaultUSPs } from "../lib/industries";
+import {
+  CompanyProfile,
+  PageType,
+  getPageTypeOptions,
+  PAGE_TYPES,
+  SEOPlan,
+  PageEntry,
+  generateSlug,
+  generatePageUrl,
+  BRAND_VOICE_OPTIONS,
+  WRITING_STYLE_OPTIONS,
+  TARGET_AUDIENCE_OPTIONS,
+  BrandVoice,
+  WritingStyle,
+  TargetAudienceType,
+} from "../lib/page-types";
 
 type ImageMode = "auto" | "manual" | "enhance";
 
@@ -153,6 +170,54 @@ export default function Home() {
   const [showGHLSettings, setShowGHLSettings] = useState(false);
   const [showSEOSettings, setShowSEOSettings] = useState(false);
   const [showPublishSettings, setShowPublishSettings] = useState(false);
+  const [showCompanyProfile, setShowCompanyProfile] = useState(false);
+
+  // Company Profile for page generation
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile>({
+    name: "",
+    website: "",
+    phone: "",
+    email: "",
+    state: "",
+    stateAbbr: "",
+    headquarters: "",
+    cities: [],
+    industryType: "",
+    services: [],
+    usps: [],
+    audience: "both",
+  });
+
+  const [citiesInput, setCitiesInput] = useState("");
+
+  // Page Generation Mode
+  const [generationMode, setGenerationMode] = useState<"blog" | "page">("blog");
+  const [selectedPageType, setSelectedPageType] = useState<PageType>("blog_post");
+  const [pageConfig, setPageConfig] = useState({
+    title: "",
+    slug: "",
+    primaryKeyword: "",
+    secondaryKeywords: [] as string[],
+    serviceName: "",
+    serviceDescription: "",
+    city: "",
+    topic: "",
+    headline: "",
+    summary: "",
+    customInstructions: "",
+  });
+  const [isGeneratingPage, setIsGeneratingPage] = useState(false);
+
+  // SEO Planner state
+  const [showSEOPlanner, setShowSEOPlanner] = useState(false);
+  const [seoPlan, setSeoPlan] = useState<SEOPlan | null>(null);
+  const [isGeneratingSEOPlan, setIsGeneratingSEOPlan] = useState(false);
+  const [seoPlanTab, setSeoPlanTab] = useState<"pillar" | "blogs" | "keywords" | "calendar" | "recommendations">("pillar");
+
+  // Page Library state
+  const [pageLibrary, setPageLibrary] = useState<PageEntry[]>([]);
+  const [showPageLibrary, setShowPageLibrary] = useState(false);
+
   const [testingConnection, setTestingConnection] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -195,6 +260,40 @@ export default function Home() {
     }
   }, []);
 
+  // Load Company Profile from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("companyProfile");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setCompanyProfile(parsed);
+        // Also set cities input from saved cities
+        if (parsed.cities?.length > 0) {
+          setCitiesInput(parsed.cities.join(", "));
+        }
+        // Sync with form's companyName and companyWebsite
+        if (parsed.name) {
+          setFormData(prev => ({ ...prev, companyName: parsed.name, companyWebsite: parsed.website || "" }));
+        }
+      } catch {
+        // Invalid saved data
+      }
+    }
+  }, []);
+
+  // Load Page Library from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("pageLibrary");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setPageLibrary(parsed);
+      } catch {
+        // Invalid saved data
+      }
+    }
+  }, []);
+
   // Save WordPress settings to localStorage
   const saveWordPressSettings = () => {
     localStorage.setItem("wordpressSettings", JSON.stringify(wordpress));
@@ -203,6 +302,345 @@ export default function Home() {
   // Save GoHighLevel settings to localStorage
   const saveGHLSettings = () => {
     localStorage.setItem("gohighlevelSettings", JSON.stringify(gohighlevel));
+  };
+
+  // Save Company Profile to localStorage
+  const saveCompanyProfile = () => {
+    localStorage.setItem("companyProfile", JSON.stringify(companyProfile));
+    // Also update form's company info
+    setFormData(prev => ({ ...prev, companyName: companyProfile.name, companyWebsite: companyProfile.website }));
+  };
+
+  // Handle company profile input changes
+  const handleCompanyProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+
+    // Handle numeric fields
+    const numericFields = ["yearsInBusiness", "projectsCompleted", "preferredWordCount"];
+    if (numericFields.includes(name)) {
+      setCompanyProfile(prev => ({
+        ...prev,
+        [name]: value ? parseInt(value, 10) : undefined,
+      }));
+    } else {
+      setCompanyProfile(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  // Handle industry change - auto-populate services and USPs
+  const handleIndustryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const industryKey = e.target.value;
+    const services = getDefaultServices(industryKey);
+    const usps = getDefaultUSPs(industryKey);
+
+    setCompanyProfile(prev => ({
+      ...prev,
+      industryType: industryKey,
+      services,
+      usps,
+    }));
+  };
+
+  // Handle cities input (comma-separated)
+  const handleCitiesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCitiesInput(value);
+    const cities = value.split(",").map(c => c.trim()).filter(Boolean);
+    setCompanyProfile(prev => ({
+      ...prev,
+      cities,
+      headquarters: cities[0] || prev.headquarters, // First city becomes headquarters
+    }));
+  };
+
+  // Handle services toggle
+  const handleServiceToggle = (service: string) => {
+    setCompanyProfile(prev => ({
+      ...prev,
+      services: prev.services.includes(service)
+        ? prev.services.filter(s => s !== service)
+        : [...prev.services, service],
+    }));
+  };
+
+  // Handle USP toggle
+  const handleUSPToggle = (usp: string) => {
+    setCompanyProfile(prev => ({
+      ...prev,
+      usps: prev.usps.includes(usp)
+        ? prev.usps.filter(u => u !== usp)
+        : [...prev.usps, usp],
+    }));
+  };
+
+  // Get available services/USPs for the selected industry
+  const getAvailableServices = (): string[] => {
+    if (!companyProfile.industryType || !INDUSTRIES[companyProfile.industryType]) return [];
+    const industry = INDUSTRIES[companyProfile.industryType];
+    return [
+      ...industry.services.core.map(s => s.value),
+      ...industry.services.commercial.map(s => s.value),
+      ...industry.services.specialty.map(s => s.value),
+    ];
+  };
+
+  const getAvailableUSPs = (): string[] => {
+    if (!companyProfile.industryType || !INDUSTRIES[companyProfile.industryType]) return [];
+    return INDUSTRIES[companyProfile.industryType].usps.map(u => u.value);
+  };
+
+  // Handle page config changes
+  const handlePageConfigChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setPageConfig(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle secondary keywords for page config (comma-separated)
+  const handlePageSecondaryKeywords = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const keywords = value.split(",").map(k => k.trim()).filter(Boolean);
+    setPageConfig(prev => ({
+      ...prev,
+      secondaryKeywords: keywords,
+    }));
+  };
+
+  // Generate page using the page stream API
+  const handleGeneratePage = async () => {
+    if (!companyProfile.name || !companyProfile.industryType) {
+      alert("Please set up your Company Profile first (click 'Show Company Profile')");
+      return;
+    }
+
+    setIsGeneratingPage(true);
+    setState(prev => ({
+      ...prev,
+      progress: { step: "outline", message: "Archie is designing your page structure..." },
+    }));
+
+    try {
+      const response = await fetch("/api/generate-page-stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pageType: selectedPageType,
+          companyProfile,
+          pageConfig: {
+            ...pageConfig,
+            city: pageConfig.city || companyProfile.headquarters,
+          },
+          imageMode: formData.imageMode,
+          userImages: formData.userImages,
+          wordpress: wordpress.isConnected ? wordpress : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      let buffer = "";
+      let finalData: { success?: boolean; htmlContent?: string; seoData?: SEOData; error?: string } = {};
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.type === "progress") {
+                setState(prev => ({
+                  ...prev,
+                  progress: { step: data.step, message: data.message },
+                }));
+              } else if (data.type === "complete") {
+                finalData = data;
+              } else if (data.type === "error") {
+                throw new Error(data.error);
+              }
+            } catch {
+              // Ignore parse errors for incomplete data
+            }
+          }
+        }
+      }
+
+      if (!finalData.success) {
+        throw new Error(finalData.error || "Failed to generate page");
+      }
+
+      setState(prev => ({
+        ...prev,
+        htmlContent: finalData.htmlContent || null,
+        seoData: finalData.seoData || null,
+        progress: { step: "complete", message: "Page generated successfully!" },
+      }));
+    } catch (error) {
+      alert(`Page generation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      setState(prev => ({
+        ...prev,
+        progress: { step: "idle", message: "" },
+      }));
+    }
+
+    setIsGeneratingPage(false);
+  };
+
+  // Generate SEO Plan
+  const handleGenerateSEOPlan = async () => {
+    if (!companyProfile.name || !companyProfile.industryType) {
+      alert("Please set up your Company Profile first");
+      return;
+    }
+
+    if (companyProfile.cities.length === 0) {
+      alert("Please add at least one service area (city) to your Company Profile");
+      return;
+    }
+
+    setIsGeneratingSEOPlan(true);
+
+    try {
+      const response = await fetch("/api/seo-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyProfile,
+          contentDepth: "growth",
+          calendarLength: 6,
+          postFrequency: 2,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.plan) {
+        setSeoPlan(data.plan);
+        setShowSEOPlanner(true);
+      } else {
+        alert(`Failed to generate SEO plan: ${data.error}`);
+      }
+    } catch (error) {
+      alert(`SEO Plan generation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+
+    setIsGeneratingSEOPlan(false);
+  };
+
+  // Export SEO Plan to CSV
+  const exportSEOPlanToCSV = () => {
+    if (!seoPlan) return;
+
+    let csvContent = "";
+
+    // Pillar Pages
+    csvContent += "=== PILLAR PAGES ===\n";
+    csvContent += "City,Priority,URL,H1,Meta Title,Meta Description,Primary Keyword,Volume\n";
+    seoPlan.pillarPages.forEach(page => {
+      csvContent += `"${page.city}","${page.priority}","${page.url}","${page.h1}","${page.metaTitle}","${page.metaDescription}","${page.primaryKeyword}",${page.volume}\n`;
+    });
+
+    csvContent += "\n=== BLOG TOPICS ===\n";
+    csvContent += "Category,Title,Priority,URL,Word Count\n";
+    seoPlan.blogTopics.forEach(topic => {
+      csvContent += `"${topic.category}","${topic.title}","${topic.priority}","${topic.url}","${topic.wordCount}"\n`;
+    });
+
+    csvContent += "\n=== KEYWORDS ===\n";
+    csvContent += "City,Category,Keyword,Volume,Difficulty,Intent,Target Page\n";
+    seoPlan.keywords.forEach(kw => {
+      csvContent += `"${kw.city}","${kw.category}","${kw.keyword}",${kw.volume},"${kw.difficulty}","${kw.intent}","${kw.targetPage}"\n`;
+    });
+
+    csvContent += "\n=== CONTENT CALENDAR ===\n";
+    csvContent += "Week,Date,Title,Category,Priority,Status\n";
+    seoPlan.calendar.forEach(entry => {
+      csvContent += `${entry.week},"${entry.date}","${entry.title}","${entry.category || ""}","${entry.priority}","${entry.status}"\n`;
+    });
+
+    csvContent += "\n=== RECOMMENDATIONS ===\n";
+    seoPlan.recommendations.forEach((rec, i) => {
+      csvContent += `${i + 1}. ${rec}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `seo-plan-${companyProfile.name.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.csv`;
+    link.click();
+  };
+
+  // Page Library functions
+  const savePageLibrary = (library: PageEntry[]) => {
+    localStorage.setItem("pageLibrary", JSON.stringify(library));
+    setPageLibrary(library);
+  };
+
+  const addPageToLibrary = (pageData: {
+    type: PageType;
+    title: string;
+    primaryKeyword: string;
+    secondaryKeywords: string[];
+    metaTitle?: string;
+    metaDescription?: string;
+    publishedUrl?: string;
+  }) => {
+    const slug = generateSlug(pageData.title);
+    const url = generatePageUrl(pageData.type, slug);
+
+    const newPage: PageEntry = {
+      id: `page-${Date.now()}`,
+      type: pageData.type,
+      title: pageData.title,
+      slug,
+      url,
+      primaryKeyword: pageData.primaryKeyword,
+      secondaryKeywords: pageData.secondaryKeywords,
+      metaTitle: pageData.metaTitle,
+      metaDescription: pageData.metaDescription,
+      status: pageData.publishedUrl ? "published" : "draft",
+      publishedUrl: pageData.publishedUrl,
+      createdAt: new Date().toISOString(),
+      linkedFrom: [],
+      linksTo: [],
+    };
+
+    const updatedLibrary = [...pageLibrary, newPage];
+    savePageLibrary(updatedLibrary);
+    return newPage;
+  };
+
+  const removePageFromLibrary = (pageId: string) => {
+    const updatedLibrary = pageLibrary.filter(p => p.id !== pageId);
+    savePageLibrary(updatedLibrary);
+  };
+
+  const updatePageStatus = (pageId: string, status: PageEntry["status"], publishedUrl?: string) => {
+    const updatedLibrary = pageLibrary.map(p =>
+      p.id === pageId
+        ? { ...p, status, publishedUrl: publishedUrl || p.publishedUrl, updatedAt: new Date().toISOString() }
+        : p
+    );
+    savePageLibrary(updatedLibrary);
   };
 
   // Fetch categories when WordPress is connected
@@ -904,32 +1342,583 @@ export default function Home() {
               </div>
             )}
 
-            {/* Company Info */}
-            <div className={styles.formGroup}>
-              <label htmlFor="companyName">Company Name (Optional)</label>
-              <input
-                type="text"
-                id="companyName"
-                name="companyName"
-                value={formData.companyName}
-                onChange={handleInputChange}
-                placeholder="e.g., Charlotte Landscape Lighting Co."
-              />
+            {/* Company Profile Toggle */}
+            <div className={styles.settingsToggle}>
+              <button
+                type="button"
+                onClick={() => setShowCompanyProfile(!showCompanyProfile)}
+                className={styles.settingsButton}
+              >
+                {showCompanyProfile ? "Hide" : "Show"} Company Profile
+                {companyProfile.name && ` (${companyProfile.name})`}
+              </button>
             </div>
 
-            <div className={styles.formGroup}>
-              <label htmlFor="companyWebsite">Company Website (Optional)</label>
-              <input
-                type="url"
-                id="companyWebsite"
-                name="companyWebsite"
-                value={formData.companyWebsite}
-                onChange={handleInputChange}
-                placeholder="https://yourcompany.com"
-              />
+            {/* Company Profile Panel */}
+            {showCompanyProfile && (
+              <div className={styles.companyProfileSettings}>
+                <h3>Company Profile</h3>
+                <p className={styles.settingsHelp}>
+                  Set up your company profile to generate personalized, SEO-optimized content for all your pages.
+                </p>
+
+                {/* Industry Selection */}
+                <div className={styles.formGroup}>
+                  <label htmlFor="industryType">Industry Type</label>
+                  <select
+                    id="industryType"
+                    name="industryType"
+                    value={companyProfile.industryType}
+                    onChange={handleIndustryChange}
+                  >
+                    <option value="">Select your industry...</option>
+                    {getIndustryOptions().map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.icon} {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Basic Company Info */}
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileName">Company Name</label>
+                    <input
+                      type="text"
+                      id="profileName"
+                      name="name"
+                      value={companyProfile.name}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="e.g., Acme Roofing Co."
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileWebsite">Website</label>
+                    <input
+                      type="url"
+                      id="profileWebsite"
+                      name="website"
+                      value={companyProfile.website}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="https://yourcompany.com"
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profilePhone">Phone</label>
+                    <input
+                      type="tel"
+                      id="profilePhone"
+                      name="phone"
+                      value={companyProfile.phone}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileEmail">Email</label>
+                    <input
+                      type="email"
+                      id="profileEmail"
+                      name="email"
+                      value={companyProfile.email}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="info@company.com"
+                    />
+                  </div>
+                </div>
+
+                {/* Location Info */}
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileState">State</label>
+                    <input
+                      type="text"
+                      id="profileState"
+                      name="state"
+                      value={companyProfile.state}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="North Carolina"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileStateAbbr">State Abbr</label>
+                    <input
+                      type="text"
+                      id="profileStateAbbr"
+                      name="stateAbbr"
+                      value={companyProfile.stateAbbr}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="NC"
+                      maxLength={2}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="citiesInput">Service Areas (Cities)</label>
+                  <input
+                    type="text"
+                    id="citiesInput"
+                    value={citiesInput}
+                    onChange={handleCitiesChange}
+                    placeholder="Charlotte, Huntersville, Concord, Matthews..."
+                  />
+                  <small>Comma-separated list. First city becomes your headquarters.</small>
+                </div>
+
+                {/* Target Audience */}
+                <div className={styles.formGroup}>
+                  <label htmlFor="profileAudience">Target Market</label>
+                  <select
+                    id="profileAudience"
+                    name="audience"
+                    value={companyProfile.audience}
+                    onChange={handleCompanyProfileChange}
+                  >
+                    <option value="homeowners">Homeowners (Residential)</option>
+                    <option value="commercial">Commercial / Business</option>
+                    <option value="both">Both Residential & Commercial</option>
+                    <option value="property">Property Management</option>
+                  </select>
+                </div>
+
+                {/* Enhanced Target Audience */}
+                <div className={styles.formGroup}>
+                  <label htmlFor="profileTargetAudience">Detailed Target Audience</label>
+                  <select
+                    id="profileTargetAudience"
+                    name="targetAudience"
+                    value={companyProfile.targetAudience || ""}
+                    onChange={handleCompanyProfileChange}
+                  >
+                    <option value="">Select detailed audience...</option>
+                    {TARGET_AUDIENCE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label} - {opt.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Brand Voice & Writing Style */}
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileBrandVoice">Brand Voice</label>
+                    <select
+                      id="profileBrandVoice"
+                      name="brandVoice"
+                      value={companyProfile.brandVoice || ""}
+                      onChange={handleCompanyProfileChange}
+                    >
+                      <option value="">Select brand voice...</option>
+                      {BRAND_VOICE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label} - {opt.description}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileWritingStyle">Writing Style</label>
+                    <select
+                      id="profileWritingStyle"
+                      name="writingStyle"
+                      value={companyProfile.writingStyle || ""}
+                      onChange={handleCompanyProfileChange}
+                    >
+                      <option value="">Select writing style...</option>
+                      {WRITING_STYLE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label} - {opt.description}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Credibility Fields */}
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileYearsInBusiness">Years in Business</label>
+                    <input
+                      type="number"
+                      id="profileYearsInBusiness"
+                      name="yearsInBusiness"
+                      value={companyProfile.yearsInBusiness || ""}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="e.g., 15"
+                      min="1"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileProjectsCompleted">Projects Completed</label>
+                    <input
+                      type="number"
+                      id="profileProjectsCompleted"
+                      name="projectsCompleted"
+                      value={companyProfile.projectsCompleted || ""}
+                      onChange={handleCompanyProfileChange}
+                      placeholder="e.g., 5000"
+                      min="1"
+                    />
+                  </div>
+                </div>
+
+                {/* Content Preferences */}
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileWordCount">Preferred Blog Word Count</label>
+                    <select
+                      id="profileWordCount"
+                      name="preferredWordCount"
+                      value={companyProfile.preferredWordCount || ""}
+                      onChange={handleCompanyProfileChange}
+                    >
+                      <option value="">Default (2000-2500)</option>
+                      <option value="1500">Short (1500 words)</option>
+                      <option value="2000">Medium (2000 words)</option>
+                      <option value="2500">Long (2500 words)</option>
+                      <option value="3000">Extended (3000 words)</option>
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Content Features</label>
+                    <div className={styles.checkboxRow}>
+                      <label className={styles.checkboxItem}>
+                        <input
+                          type="checkbox"
+                          checked={companyProfile.includeCTAs !== false}
+                          onChange={(e) => setCompanyProfile(prev => ({
+                            ...prev,
+                            includeCTAs: e.target.checked
+                          }))}
+                        />
+                        <span>Include CTAs</span>
+                      </label>
+                      <label className={styles.checkboxItem}>
+                        <input
+                          type="checkbox"
+                          checked={companyProfile.includeStats !== false}
+                          onChange={(e) => setCompanyProfile(prev => ({
+                            ...prev,
+                            includeStats: e.target.checked
+                          }))}
+                        />
+                        <span>Include Statistics</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Services Selection */}
+                {companyProfile.industryType && (
+                  <div className={styles.formGroup}>
+                    <label>Services Offered</label>
+                    <div className={styles.checkboxGrid}>
+                      {getAvailableServices().map((service) => (
+                        <label key={service} className={styles.checkboxItem}>
+                          <input
+                            type="checkbox"
+                            checked={companyProfile.services.includes(service)}
+                            onChange={() => handleServiceToggle(service)}
+                          />
+                          <span>{service}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* USPs Selection */}
+                {companyProfile.industryType && (
+                  <div className={styles.formGroup}>
+                    <label>Unique Selling Points (USPs)</label>
+                    <div className={styles.checkboxGrid}>
+                      {getAvailableUSPs().map((usp) => (
+                        <label key={usp} className={styles.checkboxItem}>
+                          <input
+                            type="checkbox"
+                            checked={companyProfile.usps.includes(usp)}
+                            onChange={() => handleUSPToggle(usp)}
+                          />
+                          <span>{usp}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className={styles.profileButtons}>
+                  <button
+                    type="button"
+                    onClick={saveCompanyProfile}
+                    className={styles.testButton}
+                  >
+                    Save Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGenerateSEOPlan}
+                    disabled={isGeneratingSEOPlan || !companyProfile.name || !companyProfile.industryType || companyProfile.cities.length === 0}
+                    className={styles.seoPlanButton}
+                  >
+                    {isGeneratingSEOPlan ? "Generating..." : "Generate SEO Plan"}
+                  </button>
+                </div>
+
+                {companyProfile.name && companyProfile.industryType && (
+                  <div className={styles.profileSummary}>
+                    <strong>{companyProfile.name}</strong> ({INDUSTRIES[companyProfile.industryType]?.name || companyProfile.industryType})
+                    <br />
+                    <span>{companyProfile.services.length} services | {companyProfile.usps.length} USPs | {companyProfile.cities.length} service areas</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Company Info (Quick Access) */}
+            {!showCompanyProfile && (
+              <>
+                <div className={styles.formGroup}>
+                  <label htmlFor="companyName">Company Name (Optional)</label>
+                  <input
+                    type="text"
+                    id="companyName"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Charlotte Landscape Lighting Co."
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="companyWebsite">Company Website (Optional)</label>
+                  <input
+                    type="url"
+                    id="companyWebsite"
+                    name="companyWebsite"
+                    value={formData.companyWebsite}
+                    onChange={handleInputChange}
+                    placeholder="https://yourcompany.com"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Generation Mode Toggle */}
+            <div className={styles.modeToggleRow}>
+              <div className={styles.modeToggle}>
+                <button
+                  type="button"
+                  onClick={() => setGenerationMode("blog")}
+                  className={`${styles.modeBtn} ${generationMode === "blog" ? styles.active : ""}`}
+                >
+                  Blog Post
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGenerationMode("page")}
+                  className={`${styles.modeBtn} ${generationMode === "page" ? styles.active : ""}`}
+                >
+                  Website Page
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPageLibrary(true)}
+                className={styles.libraryButton}
+                title="View Page Library"
+              >
+                <span className={styles.libraryIcon}>📚</span>
+                {pageLibrary.length > 0 && <span className={styles.libraryCount}>{pageLibrary.length}</span>}
+              </button>
             </div>
 
-            {/* Blog Settings */}
+            {/* Page Type Selector (Page Mode) */}
+            {generationMode === "page" && (
+              <div className={styles.pageTypeSection}>
+                <label>Select Page Type</label>
+                <div className={styles.pageTypeGrid}>
+                  {getPageTypeOptions().map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setSelectedPageType(opt.value)}
+                      className={`${styles.pageTypeCard} ${selectedPageType === opt.value ? styles.selected : ""}`}
+                    >
+                      <span className={styles.pageTypeIcon}>{opt.icon}</span>
+                      <span className={styles.pageTypeLabel}>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Page-specific form fields */}
+                <div className={styles.pageConfigForm}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="pageTitle">Page Title</label>
+                    <input
+                      type="text"
+                      id="pageTitle"
+                      name="title"
+                      value={pageConfig.title}
+                      onChange={handlePageConfigChange}
+                      placeholder={`e.g., ${PAGE_TYPES[selectedPageType]?.label || "Page"} for ${companyProfile.headquarters || "Your City"}`}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label htmlFor="pagePrimaryKeyword">Primary Keyword</label>
+                    <input
+                      type="text"
+                      id="pagePrimaryKeyword"
+                      name="primaryKeyword"
+                      value={pageConfig.primaryKeyword}
+                      onChange={handlePageConfigChange}
+                      placeholder="e.g., roofing charlotte nc"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label htmlFor="pageSecondaryKeywords">Secondary Keywords</label>
+                    <textarea
+                      id="pageSecondaryKeywords"
+                      value={pageConfig.secondaryKeywords.join(", ")}
+                      onChange={handlePageSecondaryKeywords}
+                      placeholder="roof repair, roof replacement, storm damage..."
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Service Page Fields */}
+                  {selectedPageType === "service_page" && (
+                    <>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="serviceName">Service Name</label>
+                        <select
+                          id="serviceName"
+                          name="serviceName"
+                          value={pageConfig.serviceName}
+                          onChange={handlePageConfigChange}
+                        >
+                          <option value="">Select a service...</option>
+                          {companyProfile.services.map((service) => (
+                            <option key={service} value={service}>
+                              {service}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="serviceDescription">Service Description (Optional)</label>
+                        <textarea
+                          id="serviceDescription"
+                          name="serviceDescription"
+                          value={pageConfig.serviceDescription}
+                          onChange={handlePageConfigChange}
+                          placeholder="Brief description of this service..."
+                          rows={2}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Location Page Fields */}
+                  {selectedPageType === "location_page" && (
+                    <div className={styles.formGroup}>
+                      <label htmlFor="pageCity">City/Location</label>
+                      <select
+                        id="pageCity"
+                        name="city"
+                        value={pageConfig.city}
+                        onChange={handlePageConfigChange}
+                      >
+                        <option value="">Select a city...</option>
+                        {companyProfile.cities.map((city) => (
+                          <option key={city} value={city}>
+                            {city}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Blog Post / News Article Fields */}
+                  {(selectedPageType === "blog_post" || selectedPageType === "news_article") && (
+                    <>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="pageTopic">Topic</label>
+                        <input
+                          type="text"
+                          id="pageTopic"
+                          name="topic"
+                          value={pageConfig.topic}
+                          onChange={handlePageConfigChange}
+                          placeholder="e.g., Storm Damage Prevention, Seasonal Maintenance..."
+                        />
+                      </div>
+                      {selectedPageType === "news_article" && (
+                        <>
+                          <div className={styles.formGroup}>
+                            <label htmlFor="pageHeadline">Headline</label>
+                            <input
+                              type="text"
+                              id="pageHeadline"
+                              name="headline"
+                              value={pageConfig.headline}
+                              onChange={handlePageConfigChange}
+                              placeholder="News headline..."
+                            />
+                          </div>
+                          <div className={styles.formGroup}>
+                            <label htmlFor="pageSummary">Summary</label>
+                            <textarea
+                              id="pageSummary"
+                              name="summary"
+                              value={pageConfig.summary}
+                              onChange={handlePageConfigChange}
+                              placeholder="Brief summary of the news..."
+                              rows={2}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {/* Custom Page Instructions */}
+                  {selectedPageType === "custom" && (
+                    <div className={styles.formGroup}>
+                      <label htmlFor="customInstructions">Custom Instructions</label>
+                      <textarea
+                        id="customInstructions"
+                        name="customInstructions"
+                        value={pageConfig.customInstructions}
+                        onChange={handlePageConfigChange}
+                        placeholder="Describe what you want on this page..."
+                        rows={4}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGeneratePage}
+                  disabled={isGeneratingPage}
+                  className={styles.submitButton}
+                >
+                  {isGeneratingPage ? "Generating Page..." : `Generate ${PAGE_TYPES[selectedPageType]?.label || "Page"}`}
+                </button>
+              </div>
+            )}
+
+            {/* Blog Settings (Blog Mode) */}
+            {generationMode === "blog" && (
+              <>
             <div className={styles.formGroup}>
               <label htmlFor="topic">Blog Topic</label>
               <input
@@ -1275,10 +2264,12 @@ export default function Home() {
             >
               {state.isLoading ? "Generating..." : "Generate Blog"}
             </button>
+              </>
+            )}
           </form>
 
           {/* Progress Indicator */}
-          {state.isLoading && (
+          {(state.isLoading || isGeneratingPage) && (
             <div className={styles.progressSection}>
               <div className={styles.progressSteps}>
                 <div className={`${styles.progressStep} ${["research", "outline", "images", "content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
@@ -1559,6 +2550,285 @@ export default function Home() {
       <footer className={styles.footer}>
         <p>Powered by Vercel AI Gateway | Archie + Picasso + Penelope + Felix + Mona + Sherlock</p>
       </footer>
+
+      {/* SEO Planner Modal */}
+      {showSEOPlanner && seoPlan && (
+        <div className={styles.modalOverlay} onClick={() => setShowSEOPlanner(false)}>
+          <div className={styles.seoPlannerModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>SEO Content Plan for {seoPlan.companyProfile.name}</h2>
+              <div className={styles.modalActions}>
+                <button onClick={exportSEOPlanToCSV} className={styles.exportButton}>
+                  Export CSV
+                </button>
+                <button onClick={() => setShowSEOPlanner(false)} className={styles.closeButton}>
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.seoPlanTabs}>
+              <button
+                className={`${styles.seoPlanTab} ${seoPlanTab === "pillar" ? styles.active : ""}`}
+                onClick={() => setSeoPlanTab("pillar")}
+              >
+                Pillar Pages ({seoPlan.pillarPages.length})
+              </button>
+              <button
+                className={`${styles.seoPlanTab} ${seoPlanTab === "blogs" ? styles.active : ""}`}
+                onClick={() => setSeoPlanTab("blogs")}
+              >
+                Blog Topics ({seoPlan.blogTopics.length})
+              </button>
+              <button
+                className={`${styles.seoPlanTab} ${seoPlanTab === "keywords" ? styles.active : ""}`}
+                onClick={() => setSeoPlanTab("keywords")}
+              >
+                Keywords ({seoPlan.keywords.length})
+              </button>
+              <button
+                className={`${styles.seoPlanTab} ${seoPlanTab === "calendar" ? styles.active : ""}`}
+                onClick={() => setSeoPlanTab("calendar")}
+              >
+                Calendar ({seoPlan.calendar.length})
+              </button>
+              <button
+                className={`${styles.seoPlanTab} ${seoPlanTab === "recommendations" ? styles.active : ""}`}
+                onClick={() => setSeoPlanTab("recommendations")}
+              >
+                Recommendations
+              </button>
+            </div>
+
+            <div className={styles.seoPlanContent}>
+              {/* Pillar Pages Tab */}
+              {seoPlanTab === "pillar" && (
+                <div className={styles.pillarPagesGrid}>
+                  {seoPlan.pillarPages.map((page, i) => (
+                    <div key={i} className={`${styles.pillarCard} ${styles[`priority${page.priority}`]}`}>
+                      <div className={styles.pillarHeader}>
+                        <span className={styles.pillarCity}>{page.city}</span>
+                        <span className={styles.pillarPriority}>{page.priority}</span>
+                      </div>
+                      <div className={styles.pillarMeta}>
+                        <strong>URL:</strong> {page.url}
+                      </div>
+                      <div className={styles.pillarMeta}>
+                        <strong>H1:</strong> {page.h1}
+                      </div>
+                      <div className={styles.pillarMeta}>
+                        <strong>Keyword:</strong> {page.primaryKeyword}
+                      </div>
+                      <div className={styles.pillarMeta}>
+                        <strong>Est. Volume:</strong> {page.volume}/mo
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Blog Topics Tab */}
+              {seoPlanTab === "blogs" && (
+                <div className={styles.blogTopicsTable}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Category</th>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Words</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seoPlan.blogTopics.map((topic, i) => (
+                        <tr key={i} className={styles[`priority${topic.priority}`]}>
+                          <td>{topic.category}</td>
+                          <td>{topic.title}</td>
+                          <td>{topic.priority}</td>
+                          <td>{topic.wordCount}</td>
+                          <td>
+                            <button
+                              className={styles.generateTopicBtn}
+                              onClick={() => {
+                                setPageConfig(prev => ({
+                                  ...prev,
+                                  topic: topic.title,
+                                  title: topic.title,
+                                }));
+                                setGenerationMode("page");
+                                setSelectedPageType("blog_post");
+                                setShowSEOPlanner(false);
+                              }}
+                            >
+                              Generate
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Keywords Tab */}
+              {seoPlanTab === "keywords" && (
+                <div className={styles.keywordsTable}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Keyword</th>
+                        <th>City</th>
+                        <th>Category</th>
+                        <th>Volume</th>
+                        <th>Difficulty</th>
+                        <th>Intent</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seoPlan.keywords.slice(0, 50).map((kw, i) => (
+                        <tr key={i}>
+                          <td>{kw.keyword}</td>
+                          <td>{kw.city}</td>
+                          <td>{kw.category}</td>
+                          <td>{kw.volume}</td>
+                          <td>{kw.difficulty}</td>
+                          <td>{kw.intent}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {seoPlan.keywords.length > 50 && (
+                    <p className={styles.tableNote}>Showing 50 of {seoPlan.keywords.length} keywords. Export CSV for full list.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Calendar Tab */}
+              {seoPlanTab === "calendar" && (
+                <div className={styles.calendarTable}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Week</th>
+                        <th>Date</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seoPlan.calendar.map((entry, i) => (
+                        <tr key={i} className={styles[`priority${entry.priority}`]}>
+                          <td>{entry.week}</td>
+                          <td>{entry.date}</td>
+                          <td>{entry.title}</td>
+                          <td>{entry.category || "-"}</td>
+                          <td>{entry.priority}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Recommendations Tab */}
+              {seoPlanTab === "recommendations" && (
+                <div className={styles.recommendationsList}>
+                  {seoPlan.recommendations.map((rec, i) => (
+                    <div key={i} className={styles.recommendationItem}>
+                      <span className={styles.recNumber}>{i + 1}</span>
+                      <p>{rec}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Page Library Modal */}
+      {showPageLibrary && (
+        <div className={styles.modalOverlay} onClick={() => setShowPageLibrary(false)}>
+          <div className={styles.pageLibraryModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Page Library ({pageLibrary.length} pages)</h2>
+              <div className={styles.modalActions}>
+                <button onClick={() => setShowPageLibrary(false)} className={styles.closeButton}>
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.pageLibraryContent}>
+              {pageLibrary.length === 0 ? (
+                <div className={styles.emptyLibrary}>
+                  <p>No pages in your library yet.</p>
+                  <p>Generate pages and save them to build your internal linking structure.</p>
+                </div>
+              ) : (
+                <div className={styles.pageLibraryList}>
+                  {pageLibrary.map((page) => (
+                    <div key={page.id} className={styles.pageLibraryItem}>
+                      <div className={styles.pageLibraryHeader}>
+                        <span className={styles.pageTypeIcon}>{PAGE_TYPES[page.type]?.icon || "📄"}</span>
+                        <div className={styles.pageLibraryInfo}>
+                          <h4>{page.title}</h4>
+                          <span className={styles.pageUrl}>{page.url}</span>
+                        </div>
+                        <span className={`${styles.pageStatus} ${styles[`status${page.status}`]}`}>
+                          {page.status}
+                        </span>
+                      </div>
+                      <div className={styles.pageLibraryMeta}>
+                        <span><strong>Keyword:</strong> {page.primaryKeyword}</span>
+                        <span><strong>Type:</strong> {PAGE_TYPES[page.type]?.label || page.type}</span>
+                        <span><strong>Created:</strong> {new Date(page.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className={styles.pageLibraryActions}>
+                        {page.publishedUrl && (
+                          <a href={page.publishedUrl} target="_blank" rel="noopener noreferrer" className={styles.viewPageBtn}>
+                            View Published
+                          </a>
+                        )}
+                        <button
+                          onClick={() => {
+                            setPageConfig(prev => ({
+                              ...prev,
+                              title: page.title,
+                              primaryKeyword: page.primaryKeyword,
+                              secondaryKeywords: page.secondaryKeywords,
+                            }));
+                            setSelectedPageType(page.type);
+                            setGenerationMode("page");
+                            setShowPageLibrary(false);
+                          }}
+                          className={styles.regenerateBtn}
+                        >
+                          Regenerate
+                        </button>
+                        <button
+                          onClick={() => removePageFromLibrary(page.id)}
+                          className={styles.deletePageBtn}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.pageLibraryFooter}>
+              <p className={styles.libraryHelp}>
+                Tip: Use the Page Library to maintain internal linking consistency across your website.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
