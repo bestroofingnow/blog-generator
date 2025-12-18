@@ -141,20 +141,24 @@ Return a JSON object with the following structure:
 }`;
 }
 
-// Service Page Prompt
+// Service Page Prompt - Enhanced with Relentless Digital Formula
 function generateServicePagePrompt(params: PagePromptParams): string {
   const { companyProfile, pageConfig } = params;
   const serviceName = pageConfig.serviceName || pageConfig.title || "Service";
   const tone = pageConfig.tone || "professional yet friendly";
+  const city = pageConfig.city || companyProfile.headquarters;
+  const yearsInBusiness = companyProfile.yearsInBusiness || 10;
 
-  return `You are an expert SEO copywriter creating a service page outline for "${serviceName}".
+  return `You are an expert SEO copywriter creating a high-converting service page for "${serviceName}" using the proven Relentless Digital formula.
 
 COMPANY INFORMATION:
 - Company Name: ${companyProfile.name}
 - Industry: ${companyProfile.industryType}
-- Location: ${companyProfile.headquarters}, ${companyProfile.stateAbbr}
+- Location: ${city}, ${companyProfile.stateAbbr}
 - All Services: ${companyProfile.services.join(", ")}
 - USPs: ${companyProfile.usps.join(", ")}
+- Years in Business: ${yearsInBusiness}+
+${companyProfile.certifications?.length ? `- Certifications: ${companyProfile.certifications.join(", ")}` : ""}
 
 SERVICE DETAILS:
 - Service Name: ${serviceName}
@@ -164,126 +168,320 @@ SEO REQUIREMENTS:
 - Primary Keyword: ${pageConfig.primaryKeyword}
 - Secondary Keywords: ${pageConfig.secondaryKeywords.join(", ")}
 - Tone: ${tone}
-- Target Word Count: 1500-2500 words
+- Target Word Count: 2000-3000 words
 
-Create a comprehensive service page outline with the following sections:
+=== RELENTLESS DIGITAL FORMULA ===
+This page structure is designed to capture featured snippets and convert visitors.
 
-1. HERO SECTION
-   - Service-focused headline with primary keyword
-   - Brief value proposition (what problem this solves)
-   - Primary CTA
+Create a comprehensive service page outline with these sections IN ORDER:
 
-2. SERVICE DESCRIPTION
-   - What is this service?
-   - Who needs it?
-   - When is it needed?
-   - Clear explanation for someone unfamiliar
+1. HERO SECTION (Above the fold)
+   - H1: "${serviceName} in ${city}, ${companyProfile.stateAbbr}" (include primary keyword)
+   - Subheadline: Value proposition emphasizing speed, quality, or price
+   - DUAL CTAs: "Get Free Quote" (primary) + "Call Now: ${companyProfile.phone || '(XXX) XXX-XXXX'}" (secondary)
+   - Trust badges: ${yearsInBusiness}+ Years, Licensed & Insured, 5-Star Reviews
+   - Hero image placeholder
 
-3. BENEFITS (4-6 benefits)
-   - Each benefit with customer-focused explanation
-   - Connect to pain points this service solves
+2. PROBLEM RECOGNITION (Pain Point Section)
+   Title: "Common Signs You Need ${serviceName}"
+   - List 6-8 warning signs/symptoms customers experience
+   - Use bullet points for featured snippet potential
+   - Include urgency: "If you notice these signs, don't wait..."
+   - Emotional connection to customer frustrations
 
-4. OUR PROCESS / HOW IT WORKS
-   - Step-by-step process (4-6 steps)
-   - What customer can expect
-   - Timeline if applicable
+3. VALUE PROPOSITION (Benefits Section)
+   Title: "Benefits of Professional ${serviceName}"
+   - 5-6 benefits with icons/checkmarks
+   - Each benefit has a short explanation (2-3 sentences)
+   - Focus on outcomes, not features
+   - Include: Safety, Warranty, Quality, Time Savings, Cost Efficiency, Peace of Mind
 
-5. WHY CHOOSE US FOR THIS SERVICE
-   - Specific expertise in this service
-   - Certifications or training
-   - Equipment or techniques used
+4. PRICING TRANSPARENCY SECTION
+   Title: "How Much Does ${serviceName} Cost in ${city}?"
+   Subtitle: "Transparent Pricing for ${companyProfile.state} Homeowners"
+   - Three pricing tiers with ranges:
+     * Simple/Minor: $XXX - $XXX (describe scope)
+     * Standard/Medium: $XXX - $XXX (describe scope)
+     * Complex/Major: $XXX+ (describe scope)
+   - Factors that affect pricing (bulleted list)
+   - "Free estimates" mention
+   - Note: Actual prices should be realistic for ${companyProfile.industryType}
 
-6. PRICING / INVESTMENT (optional)
-   - General pricing guidance
-   - Factors that affect cost
-   - Financing options if available
+5. PROCESS SECTION
+   Title: "Our ${serviceName} Process"
+   - 5-step numbered process:
+     1. Free Consultation/Inspection
+     2. Detailed Quote
+     3. Schedule Service
+     4. Professional Service Delivery
+     5. Final Walkthrough & Warranty
+   - What customer can expect at each step
+   - Timeline estimates
 
-7. TESTIMONIALS
-   - 2-3 testimonials specific to this service
+6. WHY CHOOSE US (Differentiation)
+   Title: "Why Choose ${companyProfile.name} for ${serviceName}?"
+   - 4-6 differentiators with brief explanations:
+     * ${yearsInBusiness}+ years experience
+     * Licensed, bonded, insured
+     * Local family-owned business
+     * Satisfaction guarantee
+     * 24/7 emergency service (if applicable)
+     * Free estimates
+   - Weave in company certifications
 
-8. FAQ SECTION
-   - 5-8 frequently asked questions about this service
-   - Include common concerns and objections
+7. SERVICE AREA SIDEBAR/SECTION
+   Title: "${serviceName} Near You"
+   - List 8-12 cities/neighborhoods served
+   - Each as internal link placeholder: [LINK:city-service]
+   - Include ${city} prominently
 
-9. CALL TO ACTION
-   - Service-specific CTA
-   - Contact options
+8. TESTIMONIALS WITH SCHEMA
+   Title: "What Our ${city} Customers Say"
+   - 3 testimonials with:
+     * Customer name (first name, last initial)
+     * Location (city)
+     * Star rating (5 stars)
+     * Specific service mentioned
+     * Result/outcome
+   - Schema markup ready structure
+
+9. COMMERCIAL SERVICES (B2B Section)
+   Title: "Commercial ${serviceName} Services"
+   - Brief paragraph about serving businesses
+   - Types of commercial clients served
+   - "Contact for commercial pricing"
+   - Helps capture B2B search traffic
+
+10. FAQ SECTION (Schema Ready)
+    Title: "Frequently Asked Questions About ${serviceName}"
+    - 5 questions structured for featured snippets:
+      1. "How much does ${serviceName.toLowerCase()} cost in ${city}?"
+      2. "How long does ${serviceName.toLowerCase()} take?"
+      3. "Do I need ${serviceName.toLowerCase()}?" (signs question)
+      4. "What's included in your ${serviceName.toLowerCase()} service?"
+      5. "Do you offer warranties on ${serviceName.toLowerCase()}?"
+    - Each answer 2-4 sentences, direct and helpful
+    - Use FAQPage schema structure
+
+11. FINAL CTA SECTION
+    Title: "Ready to Get Started?"
+    - Reinforce main value proposition
+    - Urgency element: "Schedule today for [benefit]"
+    - DUAL CTAs again: Phone number + Form CTA
+    - Business hours
+    - Emergency availability (if applicable)
+
+=== CTA FREQUENCY RULE ===
+Include a CTA button every 400-500 words throughout the page.
+Alternate between "Get Free Quote" and "Call Now" CTAs.
 
 OUTPUT FORMAT:
-Return a JSON object with sections array, each section having id, type, title, content, and any subsections.`;
+Return a JSON object with:
+{
+  "pageTitle": "SEO title under 60 chars with ${serviceName} + ${city}",
+  "metaDescription": "155-160 chars with service, location, and CTA",
+  "h1": "Main heading with primary keyword",
+  "sections": [
+    {
+      "id": "hero",
+      "type": "hero",
+      "title": "...",
+      "content": {
+        "headline": "...",
+        "subheadline": "...",
+        "primaryCta": {"text": "Get Free Quote", "link": "/contact"},
+        "secondaryCta": {"text": "Call Now: XXX-XXX-XXXX", "link": "tel:..."},
+        "trustBadges": ["...", "...", "..."]
+      }
+    },
+    {
+      "id": "problem-signs",
+      "type": "list",
+      "title": "Common Signs You Need ${serviceName}",
+      "items": ["Sign 1", "Sign 2", ...]
+    },
+    // ... all other sections with appropriate structure
+  ],
+  "schema": {
+    "faqSchema": [...],
+    "localBusinessSchema": {...},
+    "serviceSchema": {...}
+  }
+}`;
 }
 
-// Location Page Prompt
+// Location Page Prompt - Enhanced with Relentless Digital Formula
 function generateLocationPagePrompt(params: PagePromptParams): string {
   const { companyProfile, pageConfig } = params;
   const city = pageConfig.city || companyProfile.headquarters;
   const tone = pageConfig.tone || "professional yet friendly";
+  const service = pageConfig.serviceName || companyProfile.services[0] || "Services";
+  const yearsInBusiness = companyProfile.yearsInBusiness || 10;
 
-  return `You are an expert local SEO copywriter creating a location-specific page for ${city}, ${companyProfile.stateAbbr}.
+  return `You are an expert local SEO copywriter creating a high-converting location page for "${service}" in ${city}, ${companyProfile.stateAbbr} using the Relentless Digital formula.
 
 COMPANY INFORMATION:
 - Company Name: ${companyProfile.name}
 - Industry: ${companyProfile.industryType}
 - Headquarters: ${companyProfile.headquarters}, ${companyProfile.stateAbbr}
+- Phone: ${companyProfile.phone || "(XXX) XXX-XXXX"}
 - Services: ${companyProfile.services.join(", ")}
 - USPs: ${companyProfile.usps.join(", ")}
+- Years in Business: ${yearsInBusiness}+
+${companyProfile.certifications?.length ? `- Certifications: ${companyProfile.certifications.join(", ")}` : ""}
 
 LOCATION DETAILS:
 - Target City: ${city}
 - State: ${companyProfile.state} (${companyProfile.stateAbbr})
+- Service: ${service}
 
 SEO REQUIREMENTS:
 - Primary Keyword: ${pageConfig.primaryKeyword}
 - Secondary Keywords: ${pageConfig.secondaryKeywords.join(", ")}
 - Tone: ${tone}
-- Target Word Count: 1500-2500 words
+- Target Word Count: 2,500-3,500 words (THIS IS CRITICAL FOR LOCAL SEO)
 
-IMPORTANT: This is a LOCAL SEO page. Include location-specific content throughout.
+=== RELENTLESS DIGITAL LOCATION PAGE FORMULA ===
+This structure generates unique, high-ranking local pages. MUST mention "${city}" 10-15 times naturally throughout.
 
-Create a comprehensive location page outline with the following sections:
+Create a comprehensive location page with these sections IN ORDER:
 
-1. HERO SECTION
-   - Location-focused headline: "[Service] in ${city}, ${companyProfile.stateAbbr}"
-   - Local value proposition
-   - Primary CTA
+1. HERO SECTION (Above the fold)
+   - H1: "${service} in ${city}, ${companyProfile.stateAbbr}" (exact match)
+   - Subheadline: "Trusted by ${city} homeowners for ${yearsInBusiness}+ years"
+   - DUAL CTAs:
+     * Primary: "Get Your Free ${city} Quote"
+     * Secondary: "Call ${city} Office: ${companyProfile.phone || '(XXX) XXX-XXXX'}"
+   - Trust badges row: ${yearsInBusiness}+ Years | Licensed & Insured | 5-Star ${city} Reviews
+   - Hero image: [IMAGE:${city.toLowerCase().replace(/\s/g, '-')}-${service.toLowerCase().replace(/\s/g, '-')}]
 
-2. AREA OVERVIEW
-   - Brief description of ${city}
-   - Why local expertise matters here
-   - Connection to community
+2. SERVICE LIST SIDEBAR (Position on right)
+   Title: "Our ${city} Services"
+   - Link to all services: ${companyProfile.services.slice(0, 8).join(", ")}
+   - Each as [LINK:city-service-slug]
+   - Highlight "${service}" as current
 
-3. SERVICES IN ${city.toUpperCase()}
-   - Services available in this area
-   - Any location-specific considerations
-   - Local pricing factors if relevant
+3. CONTACT FORM SECTION (10 fields - high intent capture)
+   Title: "Request Your Free ${city} Estimate"
+   Fields: Name, Email, Phone, Address, City, Service Needed, Project Size, Timeline, Budget Range, Message
+   - "We respond within 2 hours during business hours"
 
-4. NEIGHBORHOODS / AREAS SERVED
-   - List specific neighborhoods, zip codes, or nearby areas
-   - Coverage details
-   - Travel/service radius
+4. CITY-SPECIFIC INTRODUCTION (300-400 words)
+   Title: "Your Trusted ${service} Experts in ${city}, ${companyProfile.stateAbbr}"
+   - Welcome statement mentioning ${city} immediately
+   - Why ${companyProfile.name} is the right choice for ${city} residents
+   - Local knowledge: "${city}'s unique [climate/architecture/regulations]..."
+   - Community connection: "As neighbors serving ${city} for ${yearsInBusiness}+ years..."
+   - Weave "${city}" naturally 3-4 times in this section
+   - End with CTA: "Ready for ${city}'s best ${service}?"
 
-5. LOCAL EXPERTISE
-   - Experience serving ${city} specifically
-   - Understanding of local conditions (weather, building types, regulations)
-   - Local projects or case studies
+5. TESTIMONIALS SECTION (With Schema)
+   Title: "What ${city} Residents Say About ${companyProfile.name}"
+   - 3 testimonials with:
+     * Name: "[First] [Last Initial]."
+     * Location: "${city}, ${companyProfile.stateAbbr}"
+     * Rating: 5 stars
+     * Quote: Include "${service}" and outcome
+     * Service date indicator
+   - Schema markup for AggregateRating
 
-6. LOCAL TESTIMONIALS
-   - 2-3 testimonials from ${city} customers
-   - Include neighborhood names when possible
+6. MAIN CONTENT SECTION 1 - SERVICE OVERVIEW (400-500 words)
+   Title: "Professional ${service} in ${city}"
+   - What this service includes
+   - Why ${city} properties need this service
+   - Local considerations (weather, building types, etc.)
+   - Benefits specific to ${city} homeowners
+   - Mention "${city}" 2-3 times
 
-7. FAQ SECTION
-   - Location-specific FAQs
-   - "How long to get to ${city}?"
-   - "Do you serve [nearby area]?"
-   - Local regulation questions
+7. MAIN CONTENT SECTION 2 - WHY CHOOSE US (400-500 words)
+   Title: "Why ${city} Homeowners Choose ${companyProfile.name}"
+   - 5-6 differentiators as bullet points with explanations:
+     * ${yearsInBusiness}+ years serving ${city} and surrounding areas
+     * ${companyProfile.certifications?.length ? companyProfile.certifications[0] : "Licensed and certified"} professionals
+     * Local team - we know ${city}'s needs
+     * Guaranteed satisfaction
+     * Competitive ${city} pricing
+     * 24/7 emergency service
+   - MID-PAGE CTA: "Schedule Your Free ${city} Consultation"
 
-8. CALL TO ACTION
-   - Location-specific CTA
-   - Mention serving ${city} area
-   - Local phone number if different
+8. MAIN CONTENT SECTION 3 - SERVICE PROCESS (350-400 words)
+   Title: "Our ${service} Process in ${city}"
+   - 5-step numbered process:
+     1. Contact our ${city} team
+     2. Free on-site ${city} inspection
+     3. Transparent ${city}-competitive quote
+     4. Professional service delivery
+     5. ${city} satisfaction guarantee
+   - What ${city} customers can expect
+
+9. BENEFITS LIST SECTION
+   Title: "Benefits of Professional ${service} in ${city}"
+   - 6-8 benefits as bullet points (featured snippet format)
+   - Each benefit is customer-outcome focused
+   - Use power words: protect, save, increase, prevent, guarantee
+
+10. GUIDE SECTION (5-Point Numbered List)
+    Title: "5 Things ${city} Homeowners Should Know About ${service}"
+    - Educational content structured for featured snippets
+    - Each point 2-3 sentences
+    - Include local insights about ${city}
+
+11. DRIVING DIRECTIONS SECTION (Unique Content - 400+ words)
+    Title: "Getting to ${companyProfile.name} from ${city}"
+    - Detailed driving directions from ${city} center to office
+    - Include landmarks, major roads, neighborhoods passed
+    - Travel time estimate
+    - Alternative routes
+    - Office address and parking info
+    - This adds 400+ unique words per city page
+
+12. FAQ ACCORDION (5 Questions - Schema Markup)
+    Title: "Frequently Asked Questions About ${service} in ${city}"
+    Q1: "How much does ${service.toLowerCase()} cost in ${city}, ${companyProfile.stateAbbr}?"
+    Q2: "How long does ${service.toLowerCase()} take in ${city}?"
+    Q3: "Do you offer emergency ${service.toLowerCase()} in ${city}?"
+    Q4: "What areas of ${city} do you serve?"
+    Q5: "Why choose a local ${city} ${service.toLowerCase()} company?"
+    - Each answer 2-4 sentences, direct and helpful
+    - FAQPage schema structure
+
+13. AREAS SERVED GRID
+    Title: "Neighborhoods We Serve in ${city}"
+    - List 10-15 neighborhoods/zip codes
+    - Each as clickable link to service area
+    - Include nearby cities with links
+    - "Also serving: [City 1], [City 2], [City 3]..."
+
+14. FINAL CTA SECTION
+    Title: "Ready for Expert ${service} in ${city}?"
+    - Urgency: "Schedule your free ${city} estimate today"
+    - DUAL CTAs: Phone + Form button
+    - Hours of operation
+    - Emergency contact for ${city} area
+    - Trust badges repeat
+
+=== CRITICAL REQUIREMENTS ===
+- Mention "${city}" 10-15 times throughout (naturally, not forced)
+- Every CTA includes "${city}" reference
+- Minimum 2,500 words total
+- Include LocalBusiness and Service schema
+- All images have ${city}-specific alt text
 
 OUTPUT FORMAT:
-Return a JSON object with location-optimized sections.`;
+Return a JSON object with:
+{
+  "pageTitle": "${service} in ${city}, ${companyProfile.stateAbbr} | ${companyProfile.name}",
+  "metaDescription": "Professional ${service.toLowerCase()} in ${city}, ${companyProfile.stateAbbr}. ${yearsInBusiness}+ years experience. Free estimates. Call today!",
+  "h1": "${service} in ${city}, ${companyProfile.stateAbbr}",
+  "slug": "${city.toLowerCase().replace(/\\s/g, '-')}-${service.toLowerCase().replace(/\\s/g, '-')}",
+  "sections": [...],
+  "schema": {
+    "localBusiness": {...},
+    "service": {...},
+    "faqPage": {...}
+  },
+  "cityMentions": 12
+}`;
 }
 
 // Blog Post Prompt - Uses enhanced SEO-optimized prompt system
