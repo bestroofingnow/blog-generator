@@ -2,8 +2,14 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import styles from "../styles/Home.module.css";
 
-// Lazy load the rich text editor for better initial load performance
+// Lazy load heavy components for better initial load performance
 const RichTextEditor = lazy(() => import("../components/RichTextEditor"));
+const LocationPageBuilder = lazy(() => import("../components/LocationPageBuilder"));
+
+// UI Components
+import ThemeToggle from "../components/ui/ThemeToggle";
+import { useContentScore } from "../lib/hooks/useContentScore";
+
 import { INDUSTRIES, getIndustryOptions, getDefaultServices, getDefaultUSPs } from "../lib/industries";
 import {
   CompanyProfile,
@@ -435,7 +441,7 @@ export default function Home() {
   const [editedContent, setEditedContent] = useState<string>("");
 
   // Sidebar navigation state
-  type SidebarSection = "create" | "setup" | "profile" | "research" | "library";
+  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "locations";
   const [activeSection, setActiveSection] = useState<SidebarSection>("create");
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
     if (typeof window !== "undefined") {
@@ -1795,8 +1801,28 @@ export default function Home() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1>AI Blog Generator</h1>
-        <p>Multi-AI orchestrated blog creation with real images</p>
+        <div className={styles.headerContent}>
+          <h1>AI Blog Generator</h1>
+          <p>Multi-AI orchestrated blog creation with real images</p>
+        </div>
+        <div className={styles.headerActions}>
+          <ThemeToggle />
+          <button
+            type="button"
+            className={styles.keyboardShortcut}
+            onClick={() => {
+              const event = new KeyboardEvent("keydown", { key: "k", metaKey: true });
+              document.dispatchEvent(event);
+            }}
+            title="Open Command Palette (⌘K)"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <span>⌘K</span>
+          </button>
+        </div>
       </header>
 
       <main className={`${styles.main} ${activeSection === "create" ? styles.withPreview : ""}`} style={{ "--sidebar-width": sidebarExpanded ? "var(--sidebar-width-expanded)" : "var(--sidebar-width-collapsed)" } as React.CSSProperties}>
@@ -1890,6 +1916,22 @@ export default function Home() {
             </span>
             <span className={styles.sidebarLabel}>Research</span>
             <span className={styles.tooltip}>Research</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "locations" ? styles.active : ""}`}
+            onClick={() => setActiveSection("locations")}
+            title="Location Pages"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>Locations</span>
+            <span className={styles.tooltip}>Locations</span>
           </button>
 
           {/* User Profile Section */}
@@ -4137,6 +4179,18 @@ export default function Home() {
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Locations Section */}
+          {activeSection === "locations" && (
+            <div className={styles.sectionContent}>
+              <Suspense fallback={<div className={styles.loading}>Loading Location Builder...</div>}>
+                <LocationPageBuilder
+                  services={companyProfile.services}
+                  defaultService={companyProfile.services[0] || ""}
+                />
+              </Suspense>
             </div>
           )}
 
