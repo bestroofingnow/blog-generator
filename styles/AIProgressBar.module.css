@@ -1,0 +1,204 @@
+/* styles/AIProgressBar.module.css */
+/* AI Progress Bar styles with animations */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stageInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stageIcon {
+  font-size: 20px;
+}
+
+.stageLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.estimate {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+}
+
+.percentage {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-color);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Progress track */
+.track {
+  position: relative;
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--primary-gradient);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+}
+
+/* Stage dots */
+.stages {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.stageDot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.stageDot.active .dot {
+  background: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+.stageDot.complete .dot {
+  background: var(--success-color);
+}
+
+.stageText {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stageDot.active .stageText,
+.stageDot.complete .stageText {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Message */
+.message {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0;
+  padding: 8px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+/* Mini progress */
+.miniTrack {
+  height: 3px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.miniFill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+/* Pulsing loader */
+.pulsingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.pulsingDots {
+  display: flex;
+  gap: 4px;
+}
+
+.pulsingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-color);
+}
+
+.pulsingText {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .stages {
+    display: none;
+  }
+
+  .container {
+    padding: 16px;
+  }
+}

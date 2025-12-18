@@ -230,6 +230,38 @@ export const fastTransition: Transition = {
   ease: "easeOut",
 };
 
+// ===== SLIDE ANIMATIONS =====
+
+export const slideInLeft: Variants = {
+  initial: { opacity: 0, x: -30 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -30 },
+};
+
+export const slideInRight: Variants = {
+  initial: { opacity: 0, x: 30 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 30 },
+};
+
+export const slideInUp: Variants = {
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 30 },
+};
+
+export const slideInDown: Variants = {
+  initial: { opacity: 0, y: -30 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -30 },
+};
+
+// ===== TAP ANIMATIONS =====
+
+export const scaleOnTap = {
+  whileTap: { scale: 0.98 },
+};
+
 // ===== UTILITY FUNCTIONS =====
 
 export function getStaggerDelay(index: number, baseDelay = 0.1): number {
