@@ -38,6 +38,7 @@ interface FormData {
   blogType: string;
   numberOfSections: number;
   tone: string;
+  readingLevel: string;
   useOrchestration: boolean;
   enableQualityReview: boolean;
   companyName: string;
@@ -184,6 +185,7 @@ export default function Home() {
     blogType: "Neighborhood Guide",
     numberOfSections: 5,
     tone: "professional yet friendly",
+    readingLevel: "8th Grade",
     useOrchestration: true,
     enableQualityReview: false,
     companyName: "",
@@ -3138,6 +3140,27 @@ export default function Home() {
                 <option>educational and informative</option>
                 <option>inspirational and lifestyle</option>
               </select>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="readingLevel">Reading Level</label>
+              <select
+                id="readingLevel"
+                name="readingLevel"
+                value={formData.readingLevel}
+                onChange={handleInputChange}
+              >
+                <option value="5th Grade">5th Grade (Age 10-11)</option>
+                <option value="6th Grade">6th Grade (Age 11-12)</option>
+                <option value="7th Grade">7th Grade (Age 12-13)</option>
+                <option value="8th Grade">8th Grade (Age 13-14)</option>
+                <option value="High School">High School (Age 14-18)</option>
+                <option value="College">College (Undergraduate)</option>
+                <option value="Graduate">Graduate / Professional</option>
+              </select>
+              <small className={styles.hint}>
+                Lower reading levels use simpler words and shorter sentences. Higher levels allow more complex vocabulary.
+              </small>
             </div>
 
             <div className={styles.formGroup}>

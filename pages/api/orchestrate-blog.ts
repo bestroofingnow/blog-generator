@@ -20,6 +20,7 @@ interface OrchestrateRequest {
   blogType: string;
   numberOfSections?: number;
   tone?: string;
+  readingLevel?: string;
   companyName?: string;
   companyWebsite?: string;
   primaryKeyword?: string;
@@ -340,6 +341,7 @@ export default async function handler(
       topic: request.topic,
       location: request.location,
       tone: request.tone || "professional yet friendly",
+      readingLevel: request.readingLevel || "8th Grade",
       companyName: request.companyName,
     });
     steps.content = true;
@@ -371,20 +373,40 @@ export default async function handler(
 function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
   let result = content;
 
-  // Replace image placeholders in src attributes (new format: src="[IMAGE:X]")
+  // First pass: Replace src="[IMAGE:X]" with actual URLs (most common case)
   imageUrls.forEach((url, index) => {
-    const srcPlaceholder = `src="[IMAGE:${index}]"`;
-    result = result.replace(new RegExp(srcPlaceholder, 'g'), `src="${url}"`);
+    const srcPattern = new RegExp(`src=["']\\[IMAGE:${index}\\]["']`, 'gi');
+    result = result.replace(srcPattern, `src="${url}"`);
   });
 
-  // Also handle standalone placeholders (old format: [IMAGE:X])
+  // Second pass: Handle standalone [IMAGE:X] placeholders
   imageUrls.forEach((url, index) => {
     const placeholder = `[IMAGE:${index}]`;
-    const altText = index === 0
-      ? `${seoData.primaryKeyword} - Featured Image`
-      : `${seoData.primaryKeyword} - Image ${index}`;
-    const imgTag = `<img src="${url}" alt="${altText}" width="800" height="600" />`;
-    result = result.replace(new RegExp(placeholder.replace(/[[\]]/g, '\\$&'), 'g'), imgTag);
+
+    if (result.includes(placeholder)) {
+      const altText = index === 0
+        ? `${seoData.primaryKeyword} - Featured Image`
+        : `${seoData.primaryKeyword} - Image ${index}`;
+
+      const parts = result.split(placeholder);
+      const newParts: string[] = [];
+
+      for (let i = 0; i < parts.length; i++) {
+        newParts.push(parts[i]);
+        if (i < parts.length - 1) {
+          const before = parts[i];
+          const isInsideSrc = before.match(/src=["'][^"']*$/);
+
+          if (isInsideSrc) {
+            newParts.push(url);
+          } else {
+            newParts.push(`<img src="${url}" alt="${altText}" width="800" height="600" />`);
+          }
+        }
+      }
+
+      result = newParts.join('');
+    }
   });
 
   return result;

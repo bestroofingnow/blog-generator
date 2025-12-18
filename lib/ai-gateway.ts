@@ -332,17 +332,31 @@ function createFallbackKeywordResearch(topic: string, location: string): Keyword
   };
 }
 
+// Reading level guidelines for content generation
+const READING_LEVEL_GUIDELINES: Record<string, string> = {
+  "5th Grade": "Use very simple words (1-2 syllables). Short sentences (8-12 words). Avoid jargon. Explain everything like talking to a 10-year-old.",
+  "6th Grade": "Use simple words. Short sentences (10-14 words). Minimal technical terms. Clear and direct language.",
+  "7th Grade": "Use common vocabulary. Moderate sentence length (12-16 words). Introduce basic industry terms with brief explanations.",
+  "8th Grade": "Use everyday vocabulary with some industry terms. Sentences 14-18 words average. Balance clarity with detail.",
+  "High School": "Use varied vocabulary including industry terms. Mix short and medium sentences. Assume basic familiarity with the topic.",
+  "College": "Use sophisticated vocabulary and industry terminology. Complex sentence structures allowed. Assume reader knowledge of fundamentals.",
+  "Graduate": "Use advanced vocabulary, technical terms, and nuanced language. Complex analysis and detailed explanations. Professional-level content.",
+};
+
 // Generate blog content using Claude Sonnet 4.5
 export async function generateContent(params: {
   outline: BlogOutline;
   topic: string;
   location: string;
   tone?: string;
+  readingLevel?: string;
   companyName?: string;
 }): Promise<string> {
-  const { outline, topic, location, tone = "professional yet friendly", companyName } = params;
+  const { outline, topic, location, tone = "professional yet friendly", readingLevel = "8th Grade", companyName } = params;
 
-  const prompt = `You are an expert content writer specializing in local service businesses. Write a comprehensive, SEO-optimized blog post based on this outline.
+  const readingGuidelines = READING_LEVEL_GUIDELINES[readingLevel] || READING_LEVEL_GUIDELINES["8th Grade"];
+
+  const prompt = `You are an expert content writer who creates engaging, human-like content for local service businesses. Write a comprehensive, SEO-optimized blog post based on this outline.
 
 BLOG OUTLINE:
 ${JSON.stringify(outline, null, 2)}
@@ -352,6 +366,7 @@ REQUIREMENTS:
 - Location: ${location}
 - Tone: ${tone}
 - Company: ${companyName || "our team"}
+- Reading Level: ${readingLevel}
 - Include the primary keyword "${outline.seo.primaryKeyword}" naturally throughout
 - Include secondary keywords where appropriate
 - Write engaging, informative content for each section
@@ -360,6 +375,23 @@ REQUIREMENTS:
 - Include a strong call-to-action in the conclusion
 - DO NOT include <header> or <footer> elements
 - DO NOT include navigation elements
+
+READING LEVEL GUIDELINES (${readingLevel}):
+${readingGuidelines}
+
+HUMAN-LIKE WRITING STYLE:
+- Write like a knowledgeable friend explaining things, NOT like a corporate brochure
+- Use contractions (you're, we're, it's, don't) to sound natural
+- Vary sentence length - mix short punchy sentences with longer explanatory ones
+- Start some sentences with "And" or "But" for a conversational flow
+- Include rhetorical questions to engage readers ("Sound familiar?" "What does this mean for you?")
+- Use "you" and "your" frequently to speak directly to the reader
+- Add occasional personal touches ("Here's what we've learned..." or "The truth is...")
+- Avoid buzzwords and corporate jargon - use plain language
+- Include specific examples and real-world scenarios
+- Make transitions feel natural, not formulaic
+- Show personality - it's okay to have opinions and preferences
+- Avoid starting paragraphs with "In conclusion" or "Furthermore" - these sound robotic
 
 USE THIS EXACT HTML STRUCTURE (no header, no footer, no navigation):
 
@@ -428,10 +460,10 @@ IMPORTANT:
     console.log("[Penelope] Generating content with anthropic/claude-sonnet-4.5...");
     const result = await generateText({
       model: MODELS.contentWriter,
-      system: "You are an expert blog content writer. Write engaging, SEO-optimized content in HTML format.",
+      system: `You are an expert blog content writer who sounds like a real person, not a robot. Write engaging, SEO-optimized content in HTML format that feels natural and conversational. Your writing should pass as human-written content - avoid stiff, formulaic language. Match the specified reading level precisely. Output ONLY the HTML content, no explanations or markdown.`,
       prompt,
       maxOutputTokens: 8000,
-      temperature: 0.7,
+      temperature: 0.75,
     });
 
     console.log("[Penelope] Content generated, length:", result.text.length);

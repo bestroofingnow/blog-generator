@@ -64,20 +64,52 @@ async function callInternalApi(endpoint: string, body: unknown): Promise<unknown
 function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
   let result = content;
 
-  // Replace image placeholders in src attributes (new format: src="[IMAGE:X]")
+  // First pass: Replace src="[IMAGE:X]" with actual URLs (most common case)
+  // This handles cases where the AI generates <img src="[IMAGE:0]" ...>
   imageUrls.forEach((url, index) => {
-    const srcPlaceholder = `src="[IMAGE:${index}]"`;
-    result = result.replace(new RegExp(srcPlaceholder, 'g'), `src="${url}"`);
+    // Match src="[IMAGE:X]" pattern and replace just the placeholder with the URL
+    const srcPattern = new RegExp(`src=["']\\[IMAGE:${index}\\]["']`, 'gi');
+    result = result.replace(srcPattern, `src="${url}"`);
   });
 
-  // Also handle standalone placeholders (old format: [IMAGE:X])
+  // Second pass: Handle standalone [IMAGE:X] placeholders (less common)
+  // Only create full img tags for placeholders that are NOT already inside an img tag
   imageUrls.forEach((url, index) => {
     const placeholder = `[IMAGE:${index}]`;
-    const altText = index === 0
-      ? `${seoData.primaryKeyword} - Featured Image`
-      : `${seoData.primaryKeyword} - Image ${index}`;
-    const imgTag = `<img src="${url}" alt="${altText}" width="800" height="600" />`;
-    result = result.replace(new RegExp(placeholder.replace(/[[\]]/g, '\\$&'), 'g'), imgTag);
+    const escapedPlaceholder = placeholder.replace(/[[\]]/g, '\\$&');
+
+    // Check if there are any remaining standalone placeholders
+    // Use negative lookbehind to avoid matching placeholders already in src attributes
+    // Since JS regex lookbehind support varies, we'll do a simple check
+    if (result.includes(placeholder)) {
+      const altText = index === 0
+        ? `${seoData.primaryKeyword} - Featured Image`
+        : `${seoData.primaryKeyword} - Image ${index}`;
+
+      // Only replace standalone placeholders (not inside src="...")
+      // Split and check context to avoid double-wrapping
+      const parts = result.split(placeholder);
+      const newParts: string[] = [];
+
+      for (let i = 0; i < parts.length; i++) {
+        newParts.push(parts[i]);
+        if (i < parts.length - 1) {
+          // Check if this placeholder was inside a src attribute
+          const before = parts[i];
+          const isInsideSrc = before.match(/src=["'][^"']*$/);
+
+          if (isInsideSrc) {
+            // Already handled by first pass, or malformed - just use URL
+            newParts.push(url);
+          } else {
+            // Standalone placeholder - create full img tag
+            newParts.push(`<img src="${url}" alt="${altText}" width="800" height="600" />`);
+          }
+        }
+      }
+
+      result = newParts.join('');
+    }
   });
 
   return result;
@@ -140,6 +172,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     blogType,
     numberOfSections = 5,
     tone = "professional yet friendly",
+    readingLevel = "8th Grade",
     companyName,
     primaryKeyword,
     secondaryKeywords,
@@ -155,6 +188,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     blogType: string;
     numberOfSections: number;
     tone: string;
+    readingLevel?: string;
     companyName?: string;
     primaryKeyword?: string;
     secondaryKeywords?: string[];
@@ -276,6 +310,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       topic,
       location,
       tone,
+      readingLevel,
       companyName,
     });
 
