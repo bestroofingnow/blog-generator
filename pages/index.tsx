@@ -6,10 +6,13 @@ import styles from "../styles/Home.module.css";
 const RichTextEditor = lazy(() => import("../components/RichTextEditor"));
 const LocationPageBuilder = lazy(() => import("../components/LocationPageBuilder"));
 const ImageEditModal = lazy(() => import("../components/ImageEditModal"));
+const ScheduleCalendar = lazy(() => import("../components/scheduling/ScheduleCalendar"));
 
 // UI Components
 import ThemeToggle from "../components/ui/ThemeToggle";
 import { useContentScore } from "../lib/hooks/useContentScore";
+import { SEOAnalysisSidebar, SEOSidebarToggle } from "../components/seo/SEOAnalysisSidebar";
+import { analyzeContent, type SEOScore } from "../lib/seo-analyzer";
 
 import { INDUSTRIES, getIndustryOptions, getDefaultServices, getDefaultUSPs } from "../lib/industries";
 import {
@@ -524,7 +527,7 @@ export default function Home() {
   const [editedContent, setEditedContent] = useState<string>("");
 
   // Sidebar navigation state
-  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "locations" | "knowledge";
+  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "locations" | "knowledge" | "schedule";
   const [activeSection, setActiveSection] = useState<SidebarSection>("create");
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
     if (typeof window !== "undefined") {
@@ -575,6 +578,23 @@ export default function Home() {
   type LibrarySort = "newest" | "oldest" | "title";
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
   const [librarySort, setLibrarySort] = useState<LibrarySort>("newest");
+
+  // Schedule calendar state
+  interface ScheduledBlogData {
+    id: string;
+    title: string;
+    type: string;
+    scheduledPublishAt: string | null;
+    scheduleStatus: string;
+    featuredImageUrl?: string;
+  }
+  const [scheduledBlogs, setScheduledBlogs] = useState<ScheduledBlogData[]>([]);
+  const [unscheduledBlogs, setUnscheduledBlogs] = useState<ScheduledBlogData[]>([]);
+  const [isScheduleLoading, setIsScheduleLoading] = useState(false);
+
+  // SEO Analysis sidebar state
+  const [showSEOSidebar, setShowSEOSidebar] = useState(false);
+  const [seoScore, setSeoScore] = useState<SEOScore | null>(null);
 
   // Toast notification state
   type ToastType = "success" | "error" | "info";
@@ -694,6 +714,39 @@ export default function Home() {
       }
     }
   }, []);
+
+  // Calculate SEO score when content changes
+  useEffect(() => {
+    if (state.htmlContent || editedContent) {
+      const content = isEditing ? editedContent : (state.htmlContent || "");
+      const title = formData.metaTitle || formData.topic;
+      const metaDescription = formData.metaDescription || "";
+      const primaryKeyword = formData.primaryKeyword || "";
+      const secondaryKeywords = formData.secondaryKeywords
+        ? formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean)
+        : [];
+
+      if (content && primaryKeyword) {
+        const score = analyzeContent({
+          title,
+          metaDescription,
+          content,
+          primaryKeyword,
+          secondaryKeywords,
+        });
+        setSeoScore(score);
+      }
+    }
+  }, [
+    state.htmlContent,
+    editedContent,
+    isEditing,
+    formData.metaTitle,
+    formData.topic,
+    formData.metaDescription,
+    formData.primaryKeyword,
+    formData.secondaryKeywords,
+  ]);
 
   // Perplexity Deep Research
   const runPerplexityResearch = async (researchType: string = "comprehensive") => {
@@ -1125,6 +1178,78 @@ export default function Home() {
     );
     savePageLibrary(updatedLibrary);
   };
+
+  // Schedule calendar functions
+  const loadScheduleData = async () => {
+    setIsScheduleLoading(true);
+    try {
+      const response = await fetch("/api/schedule/list");
+      const data = await response.json();
+      if (data.success && data.data) {
+        setScheduledBlogs(data.data.scheduled || []);
+        setUnscheduledBlogs(data.data.unscheduled || []);
+      }
+    } catch (error) {
+      console.error("Failed to load schedule data:", error);
+    } finally {
+      setIsScheduleLoading(false);
+    }
+  };
+
+  const handleScheduleBlog = async (blogId: string, date: string): Promise<void> => {
+    try {
+      const response = await fetch("/api/schedule/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blogId,
+          scheduledPublishAt: new Date(date).toISOString(),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showToast("success", "Blog Scheduled", `Scheduled for ${new Date(date).toLocaleDateString()}`);
+        await loadScheduleData();
+      } else {
+        showToast("error", "Scheduling Failed", data.error || "Failed to schedule blog");
+      }
+    } catch (error) {
+      console.error("Schedule error:", error);
+      showToast("error", "Scheduling Failed", "An error occurred while scheduling");
+    }
+  };
+
+  const handleUnscheduleBlog = async (blogId: string): Promise<void> => {
+    try {
+      const response = await fetch("/api/schedule/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blogId,
+          scheduledPublishAt: null,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showToast("info", "Blog Unscheduled", "Blog moved back to unscheduled");
+        await loadScheduleData();
+      } else {
+        showToast("error", "Failed", data.error || "Failed to unschedule blog");
+      }
+    } catch (error) {
+      console.error("Unschedule error:", error);
+      showToast("error", "Failed", "An error occurred while unscheduling");
+    }
+  };
+
+  // Load schedule data when section is active
+  useEffect(() => {
+    if (activeSection === "schedule") {
+      loadScheduleData();
+    }
+  }, [activeSection]);
 
   // Fetch categories when WordPress is connected
   const fetchCategories = async () => {
@@ -2378,6 +2503,24 @@ export default function Home() {
             </span>
             <span className={styles.sidebarLabel}>Knowledge</span>
             <span className={styles.tooltip}>Knowledge Base</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "schedule" ? styles.active : ""}`}
+            onClick={() => setActiveSection("schedule")}
+            title="Schedule Calendar"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>Schedule</span>
+            <span className={styles.tooltip}>Schedule Calendar</span>
           </button>
 
           {/* User Profile Section */}
@@ -5088,6 +5231,48 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          {/* Schedule Calendar Section */}
+          {activeSection === "schedule" && (
+            <div className={styles.sectionContent}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2 className={styles.sectionTitle}>Schedule Calendar</h2>
+                  <p className={styles.sectionDescription}>
+                    Drag and drop blogs onto calendar dates to schedule publishing
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={loadScheduleData}
+                  disabled={isScheduleLoading}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                  </svg>
+                  Refresh
+                </button>
+              </div>
+
+              <Suspense fallback={
+                <div className={styles.loadingSpinner}>
+                  <div className={styles.spinner} />
+                  <p>Loading calendar...</p>
+                </div>
+              }>
+                <ScheduleCalendar
+                  scheduledBlogs={scheduledBlogs}
+                  unscheduledBlogs={unscheduledBlogs}
+                  onSchedule={handleScheduleBlog}
+                  onUnschedule={handleUnscheduleBlog}
+                  isLoading={isScheduleLoading}
+                />
+              </Suspense>
+            </div>
+          )}
         </div>
 
         {state.error && (
@@ -5327,6 +5512,11 @@ export default function Home() {
                       Save Changes
                     </button>
                   )}
+                  {/* SEO Analysis Toggle */}
+                  <SEOSidebarToggle
+                    score={seoScore?.overall}
+                    onClick={() => setShowSEOSidebar(true)}
+                  />
                 </div>
               </div>
 
@@ -6293,6 +6483,19 @@ export default function Home() {
           onSave={handleImageSave}
         />
       </Suspense>
+
+      {/* SEO Analysis Sidebar */}
+      <SEOAnalysisSidebar
+        content={isEditing ? editedContent : (state.htmlContent || "")}
+        title={formData.metaTitle || formData.topic}
+        metaDescription={formData.metaDescription}
+        primaryKeyword={formData.primaryKeyword}
+        secondaryKeywords={formData.secondaryKeywords ? formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean) : []}
+        url={pageConfig.slug ? `/${pageConfig.slug}` : undefined}
+        siteName={companyProfile.name || "Your Site"}
+        isOpen={showSEOSidebar}
+        onClose={() => setShowSEOSidebar(false)}
+      />
 
       {/* Toast Notifications */}
       <div className={styles.toastContainer}>

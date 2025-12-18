@@ -171,6 +171,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     location,
     blogType,
     numberOfSections = 5,
+    numberOfImages = 3,
+    wordCountRange = "1800-2400",
     tone = "professional yet friendly",
     readingLevel = "8th Grade",
     companyName,
@@ -187,6 +189,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     location: string;
     blogType: string;
     numberOfSections: number;
+    numberOfImages: number;
+    wordCountRange: string;
     tone: string;
     readingLevel?: string;
     companyName?: string;

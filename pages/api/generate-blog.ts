@@ -33,6 +33,8 @@ const client = new Anthropic();
 
 const systemPrompt = `You are an expert landscape lighting and lifestyle marketing content writer specializing in Charlotte, North Carolina neighborhoods. Your writing style perfectly blends practical expertise with emotional resonance.
 
+CRITICAL: All content MUST be written in American English only. Do not use any other languages, foreign words, or non-English characters.
+
 KEY CONTENT STYLE ELEMENTS:
 1. Conversational "you" addressing readers directly - create personal connection
 2. Open with compelling problem/opportunity statement that hooks the reader

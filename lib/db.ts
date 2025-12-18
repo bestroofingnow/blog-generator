@@ -106,6 +106,9 @@ export const drafts = pgTable("drafts", {
   status: text("status").default("draft"),
   publishedUrl: text("published_url"),
   publishedAt: timestamp("published_at"),
+  // Scheduling fields
+  scheduledPublishAt: timestamp("scheduled_publish_at"),
+  scheduleStatus: text("schedule_status").default("unscheduled"), // unscheduled, scheduled, published, failed
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -195,6 +198,19 @@ export type PasswordResetAttempt = typeof passwordResetAttempts.$inferSelect;
 export type KnowledgeBaseEntry = typeof knowledgeBase.$inferSelect;
 export type NewKnowledgeBaseEntry = typeof knowledgeBase.$inferInsert;
 export type KnowledgeBaseHistoryEntry = typeof knowledgeBaseHistory.$inferSelect;
+
+// Schedule status types
+export type ScheduleStatus = "unscheduled" | "scheduled" | "published" | "failed";
+
+// Scheduled blog type for calendar view
+export interface ScheduledBlog {
+  id: string;
+  title: string;
+  type: string;
+  scheduledPublishAt: Date | null;
+  scheduleStatus: ScheduleStatus;
+  featuredImageUrl?: string;
+}
 
 // Re-export drizzle operators
 export { eq, desc, and };

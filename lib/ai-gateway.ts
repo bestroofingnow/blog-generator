@@ -132,12 +132,15 @@ ${imageThemes.map((theme, i) => `${i + 1}. ${theme}`).join("\n")}`
 
   const prompt = `You are an expert content strategist and SEO specialist. Create a detailed blog post outline for a local service company.
 
+IMPORTANT: All content MUST be written in American English only. Do not use any other languages.
+
 BLOG SPECIFICATIONS:
 - Topic: ${topic}
 - Location: ${location}
 - Blog Type: ${blogType}
 - Number of Sections: ${numberOfSections}
 - Tone: ${tone}
+- Language: American English ONLY
 
 Your task is to create a structured outline that will guide the content writer. For each section, provide a detailed image prompt that will be used to generate a unique, professional image.
 ${seoContext}
@@ -365,6 +368,8 @@ export async function generateContent(params: {
 
   const prompt = `You are an expert content writer who creates engaging, human-like content for local service businesses. Write a comprehensive, SEO-optimized blog post based on this outline.
 
+CRITICAL: All content MUST be written in American English only. Do not use any other languages, characters, or scripts.
+
 BLOG OUTLINE:
 ${JSON.stringify(outline, null, 2)}
 
@@ -374,6 +379,7 @@ REQUIREMENTS:
 - Tone: ${tone}
 - Company: ${companyName || "our team"}
 - Reading Level: ${readingLevel}
+- Language: American English ONLY (no other languages or special characters)
 - Include the primary keyword "${outline.seo.primaryKeyword}" naturally throughout
 - Include secondary keywords where appropriate
 - Write engaging, informative content for each section
@@ -467,7 +473,7 @@ IMPORTANT:
     console.log("[Craftsman] Generating content with anthropic/claude-sonnet-4.5...");
     const result = await generateText({
       model: MODELS.contentWriter,
-      system: `You are an expert blog content writer who sounds like a real person, not a robot. Write engaging, SEO-optimized content in HTML format that feels natural and conversational. Your writing should pass as human-written content - avoid stiff, formulaic language. Match the specified reading level precisely. Output ONLY the HTML content, no explanations or markdown.`,
+      system: `You are an expert blog content writer who sounds like a real person, not a robot. Write engaging, SEO-optimized content in HTML format that feels natural and conversational. Your writing should pass as human-written content - avoid stiff, formulaic language. Match the specified reading level precisely. Output ONLY the HTML content, no explanations or markdown. CRITICAL: Write ONLY in American English - never use any other language, foreign words, or non-English characters.`,
       prompt,
       maxOutputTokens: 8000,
       temperature: 0.75,
@@ -508,22 +514,46 @@ async function reviewWithClaude(params: {
 }): Promise<{ approved: boolean; feedback?: string; remakePrompt?: string }> {
   const { imageBase64, originalPrompt, sectionContext } = params;
 
-  const prompt = `Review this image for quality and relevance to the blog section.
+  const prompt = `Review this image for quality, accuracy, and text issues.
 
 ORIGINAL PROMPT: ${originalPrompt}
 SECTION CONTEXT: ${sectionContext}
+REQUIRED LANGUAGE: American English
 
-Evaluate:
-1. Does the image match the prompt?
-2. Is it professional quality?
-3. Is it appropriate for a business blog?
-4. Does it support the section content?
+REVIEW CRITERIA:
 
-Respond in JSON:
+1. QUALITY CHECK:
+   - Does the image match the prompt accurately?
+   - Is it professional marketing quality?
+   - Is it appropriate for a business blog?
+   - Does it support the section content?
+
+2. TEXT/SPELLING CHECK (CRITICAL):
+   - Does the image contain ANY visible text, letters, numbers, or words?
+   - If text is present, is it spelled correctly in American English?
+   - Are there any nonsensical, garbled, or misspelled text elements?
+   - Are there signs, labels, banners, or watermarks that shouldn't be there?
+   - Is any visible text in the wrong language (should be American English only)?
+
+3. VISUAL ACCURACY CHECK:
+   - Do all visual elements make sense? (no extra limbs, weird proportions, impossible physics)
+   - Is the subject matter accurate to the prompt?
+
+An image should be REJECTED if:
+- It contains ANY misspelled text
+- It contains text in the wrong language
+- It contains garbled/nonsensical text
+- It has visual inaccuracies or distortions
+- It doesn't match the prompt
+
+Respond ONLY in JSON:
 {
   "approved": true/false,
-  "feedback": "explanation if not approved",
-  "remakePrompt": "improved prompt if remake needed"
+  "hasText": true/false,
+  "textIssues": "describe any text problems (misspellings, wrong language, garbled) or 'none'",
+  "visualIssues": "describe any visual accuracy problems or 'none'",
+  "feedback": "overall feedback explaining the decision",
+  "remakePrompt": "if not approved, provide improved prompt - MUST include 'ABSOLUTELY NO TEXT' instruction"
 }`;
 
   try {
@@ -563,22 +593,46 @@ async function reviewWithKimi(params: {
 }): Promise<{ approved: boolean; feedback?: string; remakePrompt?: string }> {
   const { imageBase64, originalPrompt, sectionContext } = params;
 
-  const prompt = `You are a professional image quality reviewer. Analyze this image for a business blog.
+  const prompt = `You are a professional image quality reviewer specializing in detecting text and visual issues. Analyze this image for a business blog.
 
 ORIGINAL IMAGE PROMPT: ${originalPrompt}
 BLOG SECTION: ${sectionContext}
+REQUIRED LANGUAGE: American English only
 
-Review criteria:
-1. Does the image accurately represent the prompt?
-2. Is the quality professional enough for marketing?
-3. Would this image enhance the blog section?
-4. Are there any issues (wrong subject, poor quality, inappropriate content)?
+CRITICAL REVIEW CHECKLIST:
+
+1. TEXT DETECTION (MOST IMPORTANT):
+   - Look carefully for ANY text, words, letters, or numbers in the image
+   - Check signs, labels, banners, clothing, products, buildings, screens
+   - If text exists, verify it is spelled correctly in American English
+   - Look for garbled, nonsensical, or AI-generated text artifacts
+   - Check for watermarks or logos
+
+2. QUALITY & RELEVANCE:
+   - Does the image accurately represent the prompt?
+   - Is the quality professional enough for marketing?
+   - Would this image enhance the blog section?
+
+3. VISUAL ACCURACY:
+   - Are there any anatomical errors (wrong number of fingers, distorted faces)?
+   - Are there any impossible physics or unrealistic elements?
+   - Is the lighting and perspective consistent?
+
+REJECTION CRITERIA (reject if ANY apply):
+- Image contains misspelled text
+- Image contains text in wrong language
+- Image contains garbled/nonsensical text
+- Image has significant visual distortions
+- Image doesn't match the prompt
 
 Respond ONLY in JSON format:
 {
   "approved": true or false,
-  "feedback": "your detailed feedback",
-  "remakePrompt": "if not approved, provide a better image prompt"
+  "hasText": true or false,
+  "textIssues": "description of text problems or 'none'",
+  "visualIssues": "description of visual problems or 'none'",
+  "feedback": "your detailed review",
+  "remakePrompt": "if not approved, provide better prompt WITH 'ABSOLUTELY NO TEXT, WORDS, OR LETTERS' instruction"
 }`;
 
   try {
@@ -675,12 +729,22 @@ export async function generateBlogImage(params: {
   const enhancedPrompt = `Create a high-quality, photorealistic image for a professional blog post.
 
 IMAGE REQUIREMENTS:
-- Style: Professional marketing photography
-- Quality: High resolution, sharp details
-- Composition: Well-balanced, visually appealing
+- Style: Professional marketing photography, magazine-quality
+- Quality: High resolution, sharp details, proper exposure and color balance
+- Composition: Rule of thirds, balanced, visually appealing focal point
 - Subject: ${prompt}
 
-Make the image look like it was taken by a professional photographer for a magazine or marketing material.`;
+CRITICAL TEXT RESTRICTIONS (VERY IMPORTANT):
+- ABSOLUTELY NO TEXT, WORDS, LETTERS, OR NUMBERS anywhere in the image
+- NO signs, labels, banners, logos, watermarks, or brand names
+- NO readable text on objects, buildings, vehicles, clothing, or products
+- If text would naturally appear (storefront signs, product labels, street signs), the image should either not include those elements OR blur/obscure any text
+- NO typography, handwriting, or digital text overlays of any kind
+- Pure visual imagery only - this image must contain ZERO text elements
+
+LANGUAGE: All visual elements should be culturally neutral and universally appropriate for American business audiences.
+
+Generate a clean, professional image that tells the story visually without any text elements. The image should look like it was captured by a professional photographer for a high-end marketing campaign or business magazine.`;
 
   try {
     console.log(`[Image Gen] Starting image generation for index ${index}...`);
@@ -738,10 +802,18 @@ export async function remakeBlogImage(params: {
 Original prompt: ${improvedPrompt}
 
 Create an enhanced, detailed prompt that will generate a high-quality, photorealistic image suitable for a professional business blog. Include specific details about:
-- Lighting (natural, studio, golden hour, etc.)
-- Composition and framing
-- Style and mood
-- Technical quality expectations
+- Lighting (natural, studio, golden hour, soft shadows, etc.)
+- Composition and framing (rule of thirds, leading lines, depth)
+- Style and mood (professional, inviting, trustworthy)
+- Technical quality expectations (sharp focus, proper exposure)
+
+CRITICAL TEXT RESTRICTIONS - Include these EXACT instructions in your enhanced prompt:
+- "ABSOLUTELY NO TEXT, WORDS, LETTERS, OR NUMBERS in the image"
+- "NO signs, labels, banners, logos, watermarks, or readable text on any objects"
+- "If text would naturally appear, blur it or exclude those elements"
+- "Pure visual imagery only - ZERO text elements of any kind"
+
+The enhanced prompt MUST explicitly tell the image generator to avoid all text. This is mandatory.
 
 Return ONLY the enhanced prompt text, nothing else.`,
       maxOutputTokens: 500,
@@ -786,6 +858,8 @@ export async function formatBlogCode(params: {
   const { content, images, outline } = params;
 
   const prompt = `You are an expert web developer specializing in engaging blog designs. Take this blog content and images and format it as beautiful, interactive HTML ready for WordPress.
+
+CRITICAL: All output MUST be in American English only. Do not add any text, comments, or content in any other language.
 
 BLOG CONTENT:
 ${content}
@@ -842,7 +916,7 @@ Return ONLY the formatted HTML with embedded styles and scripts, no explanations
     console.log("[Foreman] Formatting blog code with moonshotai/kimi-k2...");
     const result = await generateText({
       model: MODELS.codeWriter,
-      system: "You are an expert web developer. Return only clean HTML code with inline CSS and JavaScript for interactive effects. No explanations.",
+      system: "You are an expert web developer. Return only clean HTML code with inline CSS and JavaScript for interactive effects. No explanations. CRITICAL: All output must be in American English only - no other languages, no foreign characters, no Chinese/Japanese/Korean text.",
       prompt,
       maxOutputTokens: 12000,
       temperature: 0.4,

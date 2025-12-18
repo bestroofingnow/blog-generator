@@ -1,8 +1,9 @@
 // lib/database.ts
 // Database CRUD operations for Neon DB with Drizzle ORM
 
-import { db, profiles, drafts, draftImages, eq, desc } from "./db";
+import { db, profiles, drafts, draftImages, eq, desc, and } from "./db";
 import type { CompanyProfile } from "./page-types";
+import type { ScheduleStatus, ScheduledBlog } from "./db";
 
 // ============ PROFILE OPERATIONS ============
 
@@ -563,4 +564,155 @@ export function getOnboardingStatus(profile: CompanyProfile | null): {
     incompleteCount: incomplete.length,
     highPriorityMissing: highPriority.map((f) => f.label),
   };
+}
+
+// ============ SCHEDULING OPERATIONS ============
+
+/**
+ * Update a blog's scheduled publish date and status
+ */
+export async function updateBlogSchedule(
+  userId: string,
+  blogId: string,
+  scheduledPublishAt: Date | null
+): Promise<{ error: Error | null }> {
+  try {
+    const scheduleStatus: ScheduleStatus = scheduledPublishAt ? "scheduled" : "unscheduled";
+
+    await db
+      .update(drafts)
+      .set({
+        scheduledPublishAt,
+        scheduleStatus,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(drafts.id, blogId), eq(drafts.userId, userId)));
+
+    return { error: null };
+  } catch (error) {
+    console.error("Error updating blog schedule:", error);
+    return { error: error as Error };
+  }
+}
+
+/**
+ * Load all scheduled blogs for a given month (for calendar view)
+ */
+export async function loadScheduledBlogs(
+  userId: string,
+  year?: number,
+  month?: number
+): Promise<ScheduledBlog[]> {
+  try {
+    const result = await db
+      .select({
+        id: drafts.id,
+        title: drafts.title,
+        type: drafts.type,
+        scheduledPublishAt: drafts.scheduledPublishAt,
+        scheduleStatus: drafts.scheduleStatus,
+      })
+      .from(drafts)
+      .where(
+        and(
+          eq(drafts.userId, userId),
+          eq(drafts.scheduleStatus, "scheduled")
+        )
+      )
+      .orderBy(drafts.scheduledPublishAt);
+
+    // Filter by month if provided
+    let filteredResults = result;
+    if (year !== undefined && month !== undefined) {
+      filteredResults = result.filter((blog) => {
+        if (!blog.scheduledPublishAt) return false;
+        const date = new Date(blog.scheduledPublishAt);
+        return date.getFullYear() === year && date.getMonth() === month;
+      });
+    }
+
+    return filteredResults.map((blog) => ({
+      id: blog.id,
+      title: blog.title,
+      type: blog.type,
+      scheduledPublishAt: blog.scheduledPublishAt,
+      scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
+    }));
+  } catch (error) {
+    console.error("Error loading scheduled blogs:", error);
+    return [];
+  }
+}
+
+/**
+ * Load all unscheduled blogs (for the "to be scheduled" panel)
+ */
+export async function loadUnscheduledBlogs(
+  userId: string
+): Promise<ScheduledBlog[]> {
+  try {
+    const result = await db
+      .select({
+        id: drafts.id,
+        title: drafts.title,
+        type: drafts.type,
+        scheduledPublishAt: drafts.scheduledPublishAt,
+        scheduleStatus: drafts.scheduleStatus,
+      })
+      .from(drafts)
+      .where(
+        and(
+          eq(drafts.userId, userId),
+          eq(drafts.scheduleStatus, "unscheduled")
+        )
+      )
+      .orderBy(desc(drafts.updatedAt));
+
+    return result.map((blog) => ({
+      id: blog.id,
+      title: blog.title,
+      type: blog.type,
+      scheduledPublishAt: blog.scheduledPublishAt,
+      scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
+    }));
+  } catch (error) {
+    console.error("Error loading unscheduled blogs:", error);
+    return [];
+  }
+}
+
+/**
+ * Get a single blog's schedule info
+ */
+export async function getBlogSchedule(
+  userId: string,
+  blogId: string
+): Promise<ScheduledBlog | null> {
+  try {
+    const result = await db
+      .select({
+        id: drafts.id,
+        title: drafts.title,
+        type: drafts.type,
+        scheduledPublishAt: drafts.scheduledPublishAt,
+        scheduleStatus: drafts.scheduleStatus,
+      })
+      .from(drafts)
+      .where(and(eq(drafts.id, blogId), eq(drafts.userId, userId)))
+      .limit(1);
+
+    if (result.length === 0) return null;
+
+    const blog = result[0];
+    return {
+      id: blog.id,
+      title: blog.title,
+      type: blog.type,
+      scheduledPublishAt: blog.scheduledPublishAt,
+      scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
+    };
+  } catch (error) {
+    console.error("Error getting blog schedule:", error);
+    return null;
+  }
 }
