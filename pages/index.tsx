@@ -3428,7 +3428,7 @@ export default function Home() {
                 {/* Perplexity Deep Research */}
                 <div className={styles.perplexitySection}>
                   <h4>Deep SEO Research</h4>
-                  <p>Powered by Perplexity AI for comprehensive market research</p>
+                  <p>AI-powered comprehensive market research</p>
                   <div className={styles.researchTypeGrid}>
                     {[
                       { type: "keyword", label: "Keyword Research", icon: "🔑" },
@@ -4359,7 +4359,7 @@ export default function Home() {
               </p>
 
               <div className={styles.formCard}>
-                <h4 className={styles.formCardTitle}>Perplexity Deep Research</h4>
+                <h4 className={styles.formCardTitle}>AI Deep Research</h4>
                 <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem" }}>
                   Enter a topic in the Create section first, then use these tools to research.
                 </p>
@@ -4406,7 +4406,7 @@ export default function Home() {
                   </button>
                 </div>
                 {isResearchingPerplexity && (
-                  <p style={{ marginTop: "1rem", color: "#667eea" }}>Researching with Perplexity AI...</p>
+                  <p style={{ marginTop: "1rem", color: "#667eea" }}>AI is researching...</p>
                 )}
               </div>
 

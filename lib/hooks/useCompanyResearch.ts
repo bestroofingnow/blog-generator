@@ -1,6 +1,5 @@
 // lib/hooks/useCompanyResearch.ts
 // Hook for AI-powered deep company research during onboarding
-// Uses KIMI2 + LLAMA 4 Maverick as AI managers
 
 import { useState, useCallback } from "react";
 import type { CompanyProfile, SocialLinks, AdditionalLink } from "../page-types";
@@ -40,16 +39,16 @@ export interface ResearchResult {
   confidence: Record<string, number>;
 }
 
-// Research phases with AI team members
+// Research phases
 const RESEARCH_PHASES = [
-  { phase: "strategy", label: "Blueprint creating research strategy...", aiTeam: "🎯 Blueprint (LLAMA 4)" },
-  { phase: "website", label: "Scout analyzing website...", aiTeam: "🔍 Scout (Perplexity)" },
-  { phase: "social", label: "Scout finding social profiles...", aiTeam: "🔍 Scout (Perplexity)" },
-  { phase: "directories", label: "Scout searching directories...", aiTeam: "🔍 Scout (Perplexity)" },
-  { phase: "competitors", label: "Scout analyzing competitors...", aiTeam: "🔍 Scout (Perplexity)" },
-  { phase: "analysis", label: "Foreman structuring data...", aiTeam: "📊 Foreman (K2)" },
-  { phase: "seo", label: "Blueprint generating SEO strategy...", aiTeam: "🎯 Blueprint (LLAMA 4)" },
-  { phase: "complete", label: "Research complete!", aiTeam: "✅ AI Crew" },
+  { phase: "strategy", label: "Creating research strategy...", aiTeam: "🎯 Strategy" },
+  { phase: "website", label: "Analyzing website...", aiTeam: "🔍 Research" },
+  { phase: "social", label: "Finding social profiles...", aiTeam: "🔍 Research" },
+  { phase: "directories", label: "Searching directories...", aiTeam: "🔍 Research" },
+  { phase: "competitors", label: "Analyzing competitors...", aiTeam: "🔍 Research" },
+  { phase: "analysis", label: "Structuring data...", aiTeam: "📊 Analysis" },
+  { phase: "seo", label: "Generating SEO strategy...", aiTeam: "🎯 Strategy" },
+  { phase: "complete", label: "Research complete!", aiTeam: "✅ Complete" },
 ];
 
 export function useCompanyResearch() {

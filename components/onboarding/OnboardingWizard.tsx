@@ -370,18 +370,10 @@ function ResearchStep({ progress, phases }: {
   return (
     <div className={styles.researchLoading}>
       <div className={styles.spinner} />
-      <h3 className={styles.researchTitle}>AI Team Research in Progress</h3>
+      <h3 className={styles.researchTitle}>AI Research in Progress</h3>
       <p className={styles.researchSubtitle}>
-        Our AI team is researching your company across the web
+        Analyzing your company information across the web
       </p>
-
-      {/* Current AI Team Member */}
-      {progress.aiTeam && (
-        <div className={styles.aiTeamBadge}>
-          <span className={styles.aiTeamIcon}>{progress.aiTeam.split(" ")[0]}</span>
-          <span className={styles.aiTeamName}>{progress.aiTeam.split(" ").slice(1).join(" ")}</span>
-        </div>
-      )}
 
       <div className={styles.researchProgress}>
         <div className={styles.progressBar}>
@@ -411,18 +403,18 @@ function ResearchStep({ progress, phases }: {
       <div className={styles.aiTeamInfo}>
         <div className={styles.aiTeamMember}>
           <span className={styles.memberIcon}>🎯</span>
-          <span className={styles.memberName}>Maverick</span>
-          <span className={styles.memberRole}>Strategy (LLAMA 4)</span>
+          <span className={styles.memberName}>Strategy</span>
+          <span className={styles.memberRole}>Planning research approach</span>
         </div>
         <div className={styles.aiTeamMember}>
           <span className={styles.memberIcon}>🔍</span>
-          <span className={styles.memberName}>Scout</span>
-          <span className={styles.memberRole}>Research (Perplexity)</span>
+          <span className={styles.memberName}>Research</span>
+          <span className={styles.memberRole}>Gathering company data</span>
         </div>
         <div className={styles.aiTeamMember}>
           <span className={styles.memberIcon}>📊</span>
-          <span className={styles.memberName}>Foreman</span>
-          <span className={styles.memberRole}>Analysis (K2)</span>
+          <span className={styles.memberName}>Analysis</span>
+          <span className={styles.memberRole}>Processing insights</span>
         </div>
       </div>
     </div>
@@ -872,19 +864,19 @@ function CompleteStep({
             )}
           </div>
 
-          {/* AI Team Notes */}
+          {/* AI Notes */}
           {profile.aiTeamNotes && (profile.aiTeamNotes.maverick || profile.aiTeamNotes.kimi) && (
             <div className={styles.aiNotes}>
               <div className={styles.aiNotesHeader}>
                 <span>💡</span>
-                <span>AI Team Recommendations</span>
+                <span>AI Recommendations</span>
               </div>
               <div className={styles.aiNotesContent}>
                 {profile.aiTeamNotes.maverick && (
-                  <p><strong>Maverick (Strategy):</strong> {profile.aiTeamNotes.maverick}</p>
+                  <p><strong>Strategic Insights:</strong> {profile.aiTeamNotes.maverick}</p>
                 )}
                 {profile.aiTeamNotes.kimi && (
-                  <p style={{ marginTop: '0.5rem' }}><strong>KIMI (Analysis):</strong> {profile.aiTeamNotes.kimi}</p>
+                  <p style={{ marginTop: '0.5rem' }}><strong>Analysis:</strong> {profile.aiTeamNotes.kimi}</p>
                 )}
               </div>
             </div>
