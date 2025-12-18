@@ -3,8 +3,10 @@ import type { AppProps } from "next/app";
 import { useRouter } from "next/router";
 import { SessionProvider } from "next-auth/react";
 import { AuthProvider } from "../lib/auth-context";
+import { ThemeProvider } from "../lib/theme-context";
 import AuthGuard from "../components/AuthGuard";
 import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
+import CommandPalette from "../components/CommandPalette";
 import "../styles/globals.css";
 
 // Pages that don't require authentication
@@ -15,17 +17,20 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
   const isPublicPage = publicPages.some((page) => router.pathname.startsWith(page));
 
   return (
-    <SessionProvider session={session}>
-      <AuthProvider>
-        {isPublicPage ? (
-          <Component {...pageProps} />
-        ) : (
-          <AuthGuard>
-            <OnboardingTrigger />
+    <ThemeProvider>
+      <SessionProvider session={session}>
+        <AuthProvider>
+          {isPublicPage ? (
             <Component {...pageProps} />
-          </AuthGuard>
-        )}
-      </AuthProvider>
-    </SessionProvider>
+          ) : (
+            <AuthGuard>
+              <OnboardingTrigger />
+              <CommandPalette />
+              <Component {...pageProps} />
+            </AuthGuard>
+          )}
+        </AuthProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }

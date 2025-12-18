@@ -1,0 +1,210 @@
+/* styles/CommandPalette.module.css */
+/* Command palette styles - Inspired by Linear, Raycast, Vercel */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+}
+
+.dialog {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 560px;
+  z-index: 9999;
+  padding: 0 16px;
+}
+
+.command {
+  background: var(--cmd-bg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--cmd-border);
+  box-shadow: 0 16px 70px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* Search input */
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.inputWrapper svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Results list */
+.list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Command groups */
+.group {
+  padding-bottom: 8px;
+}
+
+.group [cmdk-group-heading] {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+/* Command items */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.item[data-selected="true"] {
+  background: var(--cmd-item-hover);
+}
+
+.item:hover {
+  background: var(--cmd-item-hover);
+}
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.item[data-selected="true"] .itemIcon {
+  background: var(--primary-color);
+  color: white;
+}
+
+.itemLabel {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* Keyboard shortcuts */
+.shortcut {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--cmd-kbd-bg);
+  border: 1px solid var(--cmd-kbd-border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.kbdSmall {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--cmd-kbd-bg);
+  border: 1px solid var(--cmd-kbd-border);
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-light);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.footer span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .dialog {
+    top: 10%;
+    max-width: 100%;
+  }
+
+  .list {
+    max-height: 300px;
+  }
+
+  .footer {
+    display: none;
+  }
+}

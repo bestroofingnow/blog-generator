@@ -1,0 +1,63 @@
+/* styles/ThemeToggle.module.css */
+/* Theme toggle component styles */
+
+.container {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+.button.active {
+  background: var(--bg-primary);
+  color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.placeholder {
+  width: 108px;
+  height: 40px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+}
+
+/* Compact toggle for sidebar */
+.compactButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.compactButton:hover {
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+}
