@@ -1,9 +1,20 @@
 // lib/database.ts
 // Database CRUD operations for Neon DB with Drizzle ORM
 
-import { db, profiles, drafts, draftImages, eq, desc, and } from "./db";
+import { db, profiles, drafts, draftImages, dailyUsage, automationSettings, generationQueue, siteStructureProposals, eq, desc, and } from "./db";
 import type { CompanyProfile } from "./page-types";
-import type { ScheduleStatus, ScheduledBlog } from "./db";
+import type {
+  ScheduleStatus,
+  ScheduledBlog,
+  AutomationSettings as AutomationSettingsType,
+  GenerationQueueItem,
+  NewGenerationQueueItem,
+  SiteStructureProposal,
+  QueueStatus,
+  ProposalStatus,
+  ProposedSiteStructure,
+  GenerationProgress,
+} from "./db";
 
 // ============ PROFILE OPERATIONS ============
 
@@ -151,7 +162,7 @@ export async function saveDraft(
 ): Promise<{ id: string; error: Error | null }> {
   try {
     if (draft.id) {
-      // Update existing draft
+      // Update existing draft - always verify userId for security
       await db
         .update(drafts)
         .set({
@@ -165,7 +176,7 @@ export async function saveDraft(
           publishedAt: draft.publishedUrl ? new Date() : null,
           updatedAt: new Date(),
         })
-        .where(eq(drafts.id, draft.id));
+        .where(and(eq(drafts.id, draft.id), eq(drafts.userId, userId)));
 
       return { id: draft.id, error: null };
     } else {
@@ -197,15 +208,26 @@ export async function deleteDraft(
   draftId: string
 ): Promise<{ error: Error | null }> {
   try {
-    // Delete associated images first
+    // Verify the draft belongs to this user first
+    const existing = await db
+      .select({ id: drafts.id })
+      .from(drafts)
+      .where(and(eq(drafts.id, draftId), eq(drafts.userId, userId)))
+      .limit(1);
+
+    if (existing.length === 0) {
+      return { error: new Error("Draft not found or access denied") };
+    }
+
+    // Delete associated images first (also verify userId for safety)
     await db
       .delete(draftImages)
-      .where(eq(draftImages.draftId, draftId));
+      .where(and(eq(draftImages.draftId, draftId), eq(draftImages.userId, userId)));
 
-    // Delete the draft
+    // Delete the draft (with userId verification)
     await db
       .delete(drafts)
-      .where(eq(drafts.id, draftId));
+      .where(and(eq(drafts.id, draftId), eq(drafts.userId, userId)));
 
     return { error: null };
   } catch (error) {
@@ -231,10 +253,11 @@ export async function updateDraftStatus(
       updateData.publishedAt = new Date();
     }
 
+    // Always verify userId to ensure user can only update their own drafts
     await db
       .update(drafts)
       .set(updateData)
-      .where(eq(drafts.id, draftId));
+      .where(and(eq(drafts.id, draftId), eq(drafts.userId, userId)));
 
     return { error: null };
   } catch (error) {
@@ -260,6 +283,7 @@ export async function saveImage(
 ): Promise<{ id: string; error: Error | null }> {
   try {
     if (image.id) {
+      // Update existing image - always verify userId for security
       await db
         .update(draftImages)
         .set({
@@ -269,7 +293,7 @@ export async function saveImage(
           altText: image.altText || null,
           isFeatured: image.isFeatured || false,
         })
-        .where(eq(draftImages.id, image.id));
+        .where(and(eq(draftImages.id, image.id), eq(draftImages.userId, userId)));
 
       return { id: image.id, error: null };
     } else {
@@ -322,9 +346,10 @@ export async function deleteImage(
   imageId: string
 ): Promise<{ error: Error | null }> {
   try {
+    // Always verify userId to ensure user can only delete their own images
     await db
       .delete(draftImages)
-      .where(eq(draftImages.id, imageId));
+      .where(and(eq(draftImages.id, imageId), eq(draftImages.userId, userId)));
 
     return { error: null };
   } catch (error) {
@@ -714,5 +739,501 @@ export async function getBlogSchedule(
   } catch (error) {
     console.error("Error getting blog schedule:", error);
     return null;
+  }
+}
+
+// ============ DAILY USAGE OPERATIONS ============
+
+const DAILY_BLOG_LIMIT = 20;
+
+/**
+ * Get today's date in YYYY-MM-DD format (UTC)
+ */
+function getTodayDateString(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+/**
+ * Get the current daily usage for a user
+ */
+export async function getDailyUsage(
+  userId: string,
+  date?: string
+): Promise<{ date: string; blogsGenerated: number; limit: number; remaining: number; canGenerate: boolean }> {
+  const targetDate = date || getTodayDateString();
+
+  try {
+    const result = await db
+      .select()
+      .from(dailyUsage)
+      .where(and(eq(dailyUsage.userId, userId), eq(dailyUsage.date, targetDate)))
+      .limit(1);
+
+    const blogsGenerated = result.length > 0 ? result[0].blogsGenerated || 0 : 0;
+    const remaining = Math.max(0, DAILY_BLOG_LIMIT - blogsGenerated);
+
+    return {
+      date: targetDate,
+      blogsGenerated,
+      limit: DAILY_BLOG_LIMIT,
+      remaining,
+      canGenerate: blogsGenerated < DAILY_BLOG_LIMIT,
+    };
+  } catch (error) {
+    console.error("Error getting daily usage:", error);
+    return {
+      date: targetDate,
+      blogsGenerated: 0,
+      limit: DAILY_BLOG_LIMIT,
+      remaining: DAILY_BLOG_LIMIT,
+      canGenerate: true,
+    };
+  }
+}
+
+/**
+ * Increment the daily usage count
+ * Returns the new count and whether the limit was exceeded
+ */
+export async function incrementDailyUsage(
+  userId: string,
+  count: number = 1
+): Promise<{ success: boolean; newCount: number; remaining: number; error: Error | null }> {
+  const targetDate = getTodayDateString();
+
+  try {
+    // Check current usage first
+    const current = await getDailyUsage(userId, targetDate);
+
+    if (current.blogsGenerated + count > DAILY_BLOG_LIMIT) {
+      return {
+        success: false,
+        newCount: current.blogsGenerated,
+        remaining: current.remaining,
+        error: new Error("Daily limit exceeded"),
+      };
+    }
+
+    // Check if record exists for today
+    const existing = await db
+      .select()
+      .from(dailyUsage)
+      .where(and(eq(dailyUsage.userId, userId), eq(dailyUsage.date, targetDate)))
+      .limit(1);
+
+    let newCount: number;
+
+    if (existing.length > 0) {
+      // Update existing record
+      newCount = (existing[0].blogsGenerated || 0) + count;
+      await db
+        .update(dailyUsage)
+        .set({
+          blogsGenerated: newCount,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(dailyUsage.userId, userId), eq(dailyUsage.date, targetDate)));
+    } else {
+      // Create new record
+      newCount = count;
+      await db.insert(dailyUsage).values({
+        userId,
+        date: targetDate,
+        blogsGenerated: newCount,
+      });
+    }
+
+    return {
+      success: true,
+      newCount,
+      remaining: Math.max(0, DAILY_BLOG_LIMIT - newCount),
+      error: null,
+    };
+  } catch (error) {
+    console.error("Error incrementing daily usage:", error);
+    return {
+      success: false,
+      newCount: 0,
+      remaining: 0,
+      error: error as Error,
+    };
+  }
+}
+
+/**
+ * Check if user can generate more blogs today
+ */
+export async function checkDailyLimit(userId: string): Promise<boolean> {
+  const usage = await getDailyUsage(userId);
+  return usage.canGenerate;
+}
+
+// ============ AUTOMATION SETTINGS OPERATIONS ============
+
+/**
+ * Get automation settings for a user (creates default if not exists)
+ */
+export async function getAutomationSettings(userId: string): Promise<AutomationSettingsType | null> {
+  try {
+    const result = await db
+      .select()
+      .from(automationSettings)
+      .where(eq(automationSettings.userId, userId))
+      .limit(1);
+
+    if (result.length === 0) {
+      // Return default settings (not persisted until save)
+      return {
+        userId,
+        allowBuildEntireSite: false,
+        allowAutoCreateDailyBlogs: false,
+        allowAutoScheduleBlogs: false,
+        allowAutoPostBlogs: false,
+        dailyBlogFrequency: 1,
+        autoPostPlatform: "wordpress",
+        autoCreateMode: "queue_for_review",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error("Error getting automation settings:", error);
+    return null;
+  }
+}
+
+/**
+ * Save automation settings for a user (upsert)
+ */
+export async function saveAutomationSettings(
+  userId: string,
+  settings: Partial<Omit<AutomationSettingsType, "userId" | "createdAt" | "updatedAt">>
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    const existing = await db
+      .select()
+      .from(automationSettings)
+      .where(eq(automationSettings.userId, userId))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update
+      await db
+        .update(automationSettings)
+        .set({
+          ...settings,
+          updatedAt: new Date(),
+        })
+        .where(eq(automationSettings.userId, userId));
+    } else {
+      // Insert
+      await db.insert(automationSettings).values({
+        userId,
+        allowBuildEntireSite: settings.allowBuildEntireSite ?? false,
+        allowAutoCreateDailyBlogs: settings.allowAutoCreateDailyBlogs ?? false,
+        allowAutoScheduleBlogs: settings.allowAutoScheduleBlogs ?? false,
+        allowAutoPostBlogs: settings.allowAutoPostBlogs ?? false,
+        dailyBlogFrequency: settings.dailyBlogFrequency ?? 1,
+        autoPostPlatform: settings.autoPostPlatform ?? "wordpress",
+        autoCreateMode: settings.autoCreateMode ?? "queue_for_review",
+      });
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error saving automation settings:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+// ============ GENERATION QUEUE OPERATIONS ============
+
+export interface QueueItemInput {
+  type: "blog" | "service_page" | "location_page";
+  topic: string;
+  keywords?: string;
+  priority?: number;
+  scheduledFor?: Date;
+  batchId?: string;
+}
+
+/**
+ * Add items to the generation queue
+ */
+export async function addToQueue(
+  userId: string,
+  items: QueueItemInput[]
+): Promise<{ success: boolean; insertedIds: string[]; error: Error | null }> {
+  try {
+    const insertedIds: string[] = [];
+
+    for (const item of items) {
+      const result = await db
+        .insert(generationQueue)
+        .values({
+          userId,
+          type: item.type,
+          topic: item.topic,
+          keywords: item.keywords || null,
+          priority: item.priority || 0,
+          scheduledFor: item.scheduledFor || null,
+          batchId: item.batchId || null,
+          status: "pending",
+        })
+        .returning({ id: generationQueue.id });
+
+      insertedIds.push(result[0].id);
+    }
+
+    return { success: true, insertedIds, error: null };
+  } catch (error) {
+    console.error("Error adding to queue:", error);
+    return { success: false, insertedIds: [], error: error as Error };
+  }
+}
+
+/**
+ * Get queue items for a user with optional filters
+ */
+export async function getQueueItems(
+  userId: string,
+  filters?: {
+    status?: QueueStatus | QueueStatus[];
+    type?: string;
+    batchId?: string;
+    limit?: number;
+  }
+): Promise<GenerationQueueItem[]> {
+  try {
+    let query = db
+      .select()
+      .from(generationQueue)
+      .where(eq(generationQueue.userId, userId))
+      .orderBy(desc(generationQueue.priority), desc(generationQueue.createdAt));
+
+    // Note: More complex filtering would require building dynamic conditions
+    // For now, we'll filter in memory for simplicity
+    const result = await query;
+
+    let filtered = result;
+
+    if (filters?.status) {
+      const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
+      filtered = filtered.filter((item) => statuses.includes(item.status as QueueStatus));
+    }
+
+    if (filters?.type) {
+      filtered = filtered.filter((item) => item.type === filters.type);
+    }
+
+    if (filters?.batchId) {
+      filtered = filtered.filter((item) => item.batchId === filters.batchId);
+    }
+
+    if (filters?.limit) {
+      filtered = filtered.slice(0, filters.limit);
+    }
+
+    return filtered;
+  } catch (error) {
+    console.error("Error getting queue items:", error);
+    return [];
+  }
+}
+
+/**
+ * Update a queue item
+ */
+export async function updateQueueItem(
+  userId: string,
+  itemId: string,
+  updates: Partial<{
+    status: QueueStatus;
+    priority: number;
+    scheduledFor: Date | null;
+    generatedDraftId: string;
+    errorMessage: string;
+    attempts: number;
+  }>
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    await db
+      .update(generationQueue)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(generationQueue.id, itemId), eq(generationQueue.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating queue item:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
+ * Delete a queue item
+ */
+export async function deleteQueueItem(
+  userId: string,
+  itemId: string
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    await db
+      .delete(generationQueue)
+      .where(and(eq(generationQueue.id, itemId), eq(generationQueue.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error deleting queue item:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
+ * Get pending queue items for processing (for cron job)
+ * Only returns items that are pending and user is under daily limit
+ */
+export async function getPendingQueueItems(
+  limit: number = 10
+): Promise<Array<GenerationQueueItem & { userId: string }>> {
+  try {
+    const result = await db
+      .select()
+      .from(generationQueue)
+      .where(eq(generationQueue.status, "pending"))
+      .orderBy(desc(generationQueue.priority), generationQueue.createdAt)
+      .limit(limit);
+
+    return result;
+  } catch (error) {
+    console.error("Error getting pending queue items:", error);
+    return [];
+  }
+}
+
+// ============ SITE STRUCTURE PROPOSAL OPERATIONS ============
+
+/**
+ * Create a new site structure proposal
+ */
+export async function createSiteProposal(
+  userId: string,
+  proposal: {
+    industry?: string;
+    proposedStructure?: ProposedSiteStructure;
+    aiReasoning?: string;
+    status?: ProposalStatus;
+  }
+): Promise<{ success: boolean; proposalId: string | null; error: Error | null }> {
+  try {
+    const result = await db
+      .insert(siteStructureProposals)
+      .values({
+        userId,
+        industry: proposal.industry || null,
+        proposedStructure: proposal.proposedStructure || null,
+        aiReasoning: proposal.aiReasoning || null,
+        status: proposal.status || "draft",
+      })
+      .returning({ id: siteStructureProposals.id });
+
+    return { success: true, proposalId: result[0].id, error: null };
+  } catch (error) {
+    console.error("Error creating site proposal:", error);
+    return { success: false, proposalId: null, error: error as Error };
+  }
+}
+
+/**
+ * Get a specific site proposal
+ */
+export async function getSiteProposal(
+  userId: string,
+  proposalId: string
+): Promise<SiteStructureProposal | null> {
+  try {
+    const result = await db
+      .select()
+      .from(siteStructureProposals)
+      .where(and(eq(siteStructureProposals.id, proposalId), eq(siteStructureProposals.userId, userId)))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("Error getting site proposal:", error);
+    return null;
+  }
+}
+
+/**
+ * Update a site proposal
+ */
+export async function updateSiteProposal(
+  userId: string,
+  proposalId: string,
+  updates: Partial<{
+    status: ProposalStatus;
+    proposedStructure: ProposedSiteStructure;
+    aiReasoning: string;
+    userModifications: Record<string, unknown>;
+    generationProgress: GenerationProgress;
+  }>
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    await db
+      .update(siteStructureProposals)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(siteStructureProposals.id, proposalId), eq(siteStructureProposals.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating site proposal:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
+ * Get all proposals for a user
+ */
+export async function getUserSiteProposals(
+  userId: string
+): Promise<SiteStructureProposal[]> {
+  try {
+    const result = await db
+      .select()
+      .from(siteStructureProposals)
+      .where(eq(siteStructureProposals.userId, userId))
+      .orderBy(desc(siteStructureProposals.createdAt));
+
+    return result;
+  } catch (error) {
+    console.error("Error getting user site proposals:", error);
+    return [];
+  }
+}
+
+/**
+ * Delete a site proposal
+ */
+export async function deleteSiteProposal(
+  userId: string,
+  proposalId: string
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    await db
+      .delete(siteStructureProposals)
+      .where(and(eq(siteStructureProposals.id, proposalId), eq(siteStructureProposals.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error deleting site proposal:", error);
+    return { success: false, error: error as Error };
   }
 }

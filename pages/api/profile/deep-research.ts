@@ -8,25 +8,16 @@ import { generateText } from "ai";
 import { MODELS } from "../../../lib/ai-gateway";
 import type { CompanyProfile, SocialLinks, AdditionalLink } from "../../../lib/page-types";
 
-// AI Crew Personas - Trade Services Themed
-const AI_MANAGERS = {
-  blueprint: {
-    name: "Blueprint",
-    role: "Chief Strategy Officer",
+// AI Models for different research phases
+const AI_MODELS = {
+  strategy: {
     model: MODELS.conductor,
-    description: "LLAMA 4 Blueprint - Orchestrates research strategy and SEO planning",
   },
-  foreman: {
-    name: "Foreman",
-    role: "Data Intelligence Director",
+  analysis: {
     model: MODELS.codeWriter,
-    description: "Foreman (K2) - Analyzes data, structures findings, ensures quality",
   },
-  scout: {
-    name: "Scout",
-    role: "Research Specialist",
+  research: {
     model: MODELS.researcher,
-    description: "Scout (Perplexity) - Deep web research and competitive analysis",
   },
 };
 
@@ -126,8 +117,8 @@ export default async function handler(
     console.log("========================================");
     console.log(`Target: ${websiteUrl || companyName}`);
 
-    // PHASE 1: Maverick creates research strategy
-    console.log("\n📋 PHASE 1: Blueprint creating research strategy...");
+    // PHASE 1: Create research strategy
+    console.log("\n📋 PHASE 1: Creating research strategy...");
     const strategy = await createResearchStrategy({
       websiteUrl,
       companyName,
@@ -135,8 +126,8 @@ export default async function handler(
       industryType,
     });
 
-    // PHASE 2: Scout executes deep research
-    console.log("\n🔍 PHASE 2: Scout executing deep research...");
+    // PHASE 2: Execute deep research
+    console.log("\n🔍 PHASE 2: Executing deep research...");
     const researchData = await executeDeepResearch({
       websiteUrl,
       companyName: companyName || strategy.suggestedCompanyName,
@@ -145,16 +136,16 @@ export default async function handler(
       strategy,
     });
 
-    // PHASE 3: Foreman analyzes and structures data
-    console.log("\n📊 PHASE 3: Foreman analyzing and structuring data...");
+    // PHASE 3: Analyze and structure data
+    console.log("\n📊 PHASE 3: Analyzing and structuring data...");
     const structuredData = await analyzeAndStructureData({
       rawResearch: researchData,
       websiteUrl,
       companyName: companyName || strategy.suggestedCompanyName,
     });
 
-    // PHASE 4: Blueprint provides final SEO recommendations
-    console.log("\n🎯 PHASE 4: Blueprint providing SEO recommendations...");
+    // PHASE 4: Generate SEO recommendations
+    console.log("\n🎯 PHASE 4: Generating SEO recommendations...");
     const seoRecommendations = await generateSEORecommendations({
       profile: structuredData.profile,
       competitorData: structuredData.competitorAnalysis,
@@ -174,8 +165,8 @@ export default async function handler(
       conversionInsights: structuredData.conversionInsights,
       researchSources: researchData.sources,
       aiTeamNotes: {
-        maverick: strategy.maverickNotes + " | " + seoRecommendations.maverickNotes,
-        kimi: structuredData.kimiNotes,
+        maverick: strategy.strategyNotes + " | " + seoRecommendations.strategyNotes,
+        kimi: structuredData.analysisNotes,
       },
     };
 
@@ -206,9 +197,9 @@ async function createResearchStrategy(params: {
   suggestedCompanyName?: string;
   suggestedLocation?: string;
   suggestedIndustry?: string;
-  maverickNotes: string;
+  strategyNotes: string;
 }> {
-  const prompt = `You are Maverick, the Chief Strategy Officer for an AI research team. Your job is to create a comprehensive research strategy to gather ALL available information about a company for SEO domination.
+  const prompt = `You are a strategic research analyst. Your job is to create a comprehensive research strategy to gather ALL available information about a company for SEO domination.
 
 TARGET COMPANY:
 - Website: ${params.websiteUrl || "Not provided"}
@@ -236,13 +227,13 @@ Respond in this JSON format:
   "suggestedCompanyName": "if discoverable from website",
   "suggestedLocation": "city, state if discoverable",
   "suggestedIndustry": "industry type if discoverable",
-  "maverickNotes": "Strategic observations and recommendations"
+  "strategyNotes": "Strategic observations and recommendations"
 }`;
 
   try {
     const result = await generateText({
-      model: AI_MANAGERS.blueprint.model,
-      system: "You are Blueprint, an AI strategist. Always respond with valid JSON only.",
+      model: AI_MODELS.strategy.model,
+      system: "You are a strategic analyst. Always respond with valid JSON only.",
       prompt,
       maxOutputTokens: 2000,
       temperature: 0.7,
@@ -260,12 +251,12 @@ Respond in this JSON format:
       ],
       priorityPlatforms: ["facebook", "google", "bbb", "yelp"],
       competitorKeywords: [`${params.industryType || "service"} ${params.location || ""}`],
-      maverickNotes: "Using fallback strategy due to AI error",
+      strategyNotes: "Using fallback strategy due to AI error",
     };
   }
 }
 
-// Phase 2: Scout executes deep research
+// Phase 2: Execute deep research
 async function executeDeepResearch(params: {
   websiteUrl?: string;
   companyName?: string;
@@ -281,7 +272,7 @@ async function executeDeepResearch(params: {
   websiteAnalysis: Record<string, unknown>;
   sources: string[];
 }> {
-  const researchPrompt = `You are Scout, an expert research investigator for trade services. Conduct COMPREHENSIVE research on this company to gather ALL available information for SEO and conversion optimization.
+  const researchPrompt = `You are an expert research investigator for trade services. Conduct COMPREHENSIVE research on this company to gather ALL available information for SEO and conversion optimization.
 
 TARGET:
 - Website: ${params.websiteUrl || "Not provided"}
@@ -354,7 +345,7 @@ Respond with comprehensive JSON:
 
   try {
     const result = await generateText({
-      model: AI_MANAGERS.scout.model,
+      model: AI_MODELS.research.model,
       prompt: researchPrompt,
       maxOutputTokens: 4000,
       temperature: 0.5,
@@ -376,7 +367,7 @@ Respond with comprehensive JSON:
   }
 }
 
-// Phase 3: Foreman analyzes and structures the data
+// Phase 3: Analyze and structure the data
 async function analyzeAndStructureData(params: {
   rawResearch: Record<string, unknown>;
   websiteUrl?: string;
@@ -395,9 +386,9 @@ async function analyzeAndStructureData(params: {
     trustSignals: string[];
     ctaRecommendations: string[];
   };
-  kimiNotes: string;
+  analysisNotes: string;
 }> {
-  const analysisPrompt = `You are KIMI, the Data Intelligence Director. Analyze this research data and structure it for optimal SEO and conversion performance.
+  const analysisPrompt = `You are a data intelligence analyst. Analyze this research data and structure it for optimal SEO and conversion performance.
 
 RAW RESEARCH DATA:
 ${JSON.stringify(params.rawResearch, null, 2)}
@@ -464,13 +455,13 @@ Respond with structured JSON:
     "trustSignals": ["BBB Accredited", "5-star Google rating", "Licensed & Insured"],
     "ctaRecommendations": ["Get Free Estimate", "Schedule Consultation", "View Our Work"]
   },
-  "kimiNotes": "Data quality assessment and recommendations"
+  "analysisNotes": "Data quality assessment and recommendations"
 }`;
 
   try {
     const result = await generateText({
-      model: AI_MANAGERS.foreman.model,
-      system: "You are Foreman, a data analyst. Always respond with valid JSON only, no markdown.",
+      model: AI_MODELS.analysis.model,
+      system: "You are a data analyst. Always respond with valid JSON only, no markdown.",
       prompt: analysisPrompt,
       maxOutputTokens: 4000,
       temperature: 0.4,
@@ -492,19 +483,19 @@ Respond with structured JSON:
 
     return data;
   } catch (error) {
-    console.error("KIMI analysis error:", error);
+    console.error("Data analysis error:", error);
     return {
       profile: { name: params.companyName, website: params.websiteUrl },
       socialLinks: {},
       additionalLinks: [],
       competitorAnalysis: { competitors: [], strengthsWeaknesses: [], opportunities: [] },
       conversionInsights: { uspStrength: 5, trustSignals: [], ctaRecommendations: [] },
-      kimiNotes: "Analysis failed - using raw data",
+      analysisNotes: "Analysis failed - using raw data",
     };
   }
 }
 
-// Phase 4: Maverick provides SEO recommendations
+// Phase 4: Generate SEO recommendations
 async function generateSEORecommendations(params: {
   profile: Partial<CompanyProfile>;
   competitorData?: { competitors: string[]; opportunities: string[] };
@@ -515,9 +506,9 @@ async function generateSEORecommendations(params: {
     localSEOScore: number;
     recommendations: string[];
   };
-  maverickNotes: string;
+  strategyNotes: string;
 }> {
-  const seoPrompt = `You are Maverick, the Chief Strategy Officer. Based on this company profile, provide strategic SEO recommendations for market domination.
+  const seoPrompt = `You are a strategic SEO analyst. Based on this company profile, provide strategic SEO recommendations for market domination.
 
 COMPANY PROFILE:
 ${JSON.stringify(params.profile, null, 2)}
@@ -545,13 +536,13 @@ Respond in JSON:
       "Create before/after content"
     ]
   },
-  "maverickNotes": "Strategic summary and priority actions"
+  "strategyNotes": "Strategic summary and priority actions"
 }`;
 
   try {
     const result = await generateText({
-      model: AI_MANAGERS.blueprint.model,
-      system: "You are Blueprint, an SEO strategist. Respond with valid JSON only.",
+      model: AI_MODELS.strategy.model,
+      system: "You are an SEO strategist. Respond with valid JSON only.",
       prompt: seoPrompt,
       maxOutputTokens: 2000,
       temperature: 0.6,
@@ -560,7 +551,7 @@ Respond in JSON:
     const cleaned = cleanJsonResponse(result.text);
     return JSON.parse(cleaned);
   } catch (error) {
-    console.error("Blueprint SEO error:", error);
+    console.error("SEO analysis error:", error);
     return {
       seoInsights: {
         primaryKeywords: [],
@@ -568,7 +559,7 @@ Respond in JSON:
         localSEOScore: 50,
         recommendations: ["Complete company profile", "Add social media links", "Gather reviews"],
       },
-      maverickNotes: "Using fallback recommendations",
+      strategyNotes: "Using fallback recommendations",
     };
   }
 }

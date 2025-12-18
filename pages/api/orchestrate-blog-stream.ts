@@ -64,52 +64,108 @@ async function callInternalApi(endpoint: string, body: unknown): Promise<unknown
 function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
   let result = content;
 
+  // Debug: Log what we're working with
+  console.log(`[Image Insertion] Processing ${imageUrls.length} images`);
+  imageUrls.forEach((url, i) => {
+    const urlPreview = url ? (url.startsWith('data:') ? 'base64 data URL' : url.substring(0, 80)) : 'EMPTY';
+    console.log(`  Image ${i}: ${urlPreview}`);
+  });
+
   // First pass: Replace src="[IMAGE:X]" with actual URLs (most common case)
   // This handles cases where the AI generates <img src="[IMAGE:0]" ...>
   imageUrls.forEach((url, index) => {
-    // Match src="[IMAGE:X]" pattern and replace just the placeholder with the URL
-    const srcPattern = new RegExp(`src=["']\\[IMAGE:${index}\\]["']`, 'gi');
-    result = result.replace(srcPattern, `src="${url}"`);
+    if (!url) return; // Skip empty URLs
+
+    // Match various src formats: src="[IMAGE:X]", src='[IMAGE:X]', src=[IMAGE:X]
+    const srcPatterns = [
+      new RegExp(`src=["']\\[IMAGE:${index}\\]["']`, 'gi'),
+      new RegExp(`src=["']\\[IMAGE: ${index}\\]["']`, 'gi'), // With space
+      new RegExp(`src=\\[IMAGE:${index}\\]`, 'gi'), // Without quotes
+    ];
+
+    srcPatterns.forEach(pattern => {
+      result = result.replace(pattern, `src="${url}"`);
+    });
   });
 
   // Second pass: Handle standalone [IMAGE:X] placeholders (less common)
   // Only create full img tags for placeholders that are NOT already inside an img tag
   imageUrls.forEach((url, index) => {
-    const placeholder = `[IMAGE:${index}]`;
-    const escapedPlaceholder = placeholder.replace(/[[\]]/g, '\\$&');
+    if (!url) return; // Skip empty URLs
 
-    // Check if there are any remaining standalone placeholders
-    // Use negative lookbehind to avoid matching placeholders already in src attributes
-    // Since JS regex lookbehind support varies, we'll do a simple check
-    if (result.includes(placeholder)) {
-      const altText = index === 0
-        ? `${seoData.primaryKeyword} - Featured Image`
-        : `${seoData.primaryKeyword} - Image ${index}`;
+    // Handle both [IMAGE:X] and [IMAGE: X] (with space)
+    const placeholders = [`[IMAGE:${index}]`, `[IMAGE: ${index}]`];
 
-      // Only replace standalone placeholders (not inside src="...")
-      // Split and check context to avoid double-wrapping
-      const parts = result.split(placeholder);
-      const newParts: string[] = [];
+    placeholders.forEach(placeholder => {
+      if (result.includes(placeholder)) {
+        const altText = index === 0
+          ? `${seoData.primaryKeyword} - Featured Image`
+          : `${seoData.primaryKeyword} - Image ${index}`;
 
-      for (let i = 0; i < parts.length; i++) {
-        newParts.push(parts[i]);
-        if (i < parts.length - 1) {
-          // Check if this placeholder was inside a src attribute
-          const before = parts[i];
-          const isInsideSrc = before.match(/src=["'][^"']*$/);
+        // Only replace standalone placeholders (not inside src="...")
+        // Split and check context to avoid double-wrapping
+        const parts = result.split(placeholder);
+        const newParts: string[] = [];
 
-          if (isInsideSrc) {
-            // Already handled by first pass, or malformed - just use URL
-            newParts.push(url);
-          } else {
-            // Standalone placeholder - create full img tag
-            newParts.push(`<img src="${url}" alt="${altText}" width="800" height="600" />`);
+        for (let i = 0; i < parts.length; i++) {
+          newParts.push(parts[i]);
+          if (i < parts.length - 1) {
+            // Check if this placeholder was inside a src attribute
+            const before = parts[i];
+            const isInsideSrc = before.match(/src=["'][^"']*$/);
+
+            if (isInsideSrc) {
+              // Already handled by first pass, or malformed - just use URL
+              newParts.push(url);
+            } else {
+              // Standalone placeholder - create full img tag with proper styling
+              newParts.push(`<figure class="blog-image"><img src="${url}" alt="${altText}" width="800" height="600" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;" /><figcaption>${altText}</figcaption></figure>`);
+            }
           }
         }
-      }
 
-      result = newParts.join('');
+        result = newParts.join('');
+      }
+    });
+  });
+
+  // Third pass: Clean up any remaining unfilled placeholders with placeholder images
+  const remainingPlaceholders = result.match(/\[IMAGE:\s*\d+\]/g);
+  if (remainingPlaceholders) {
+    console.warn(`[Image Insertion] Found ${remainingPlaceholders.length} unfilled placeholders:`, remainingPlaceholders);
+    remainingPlaceholders.forEach(placeholder => {
+      const match = placeholder.match(/\d+/);
+      const index = match ? parseInt(match[0], 10) : 0;
+      const fallbackUrl = `https://placehold.co/800x400/667eea/ffffff?text=${encodeURIComponent(`${seoData.primaryKeyword} ${index + 1}`)}`;
+      const altText = `${seoData.primaryKeyword} - Image ${index + 1}`;
+      result = result.replace(
+        placeholder,
+        `<figure class="blog-image"><img src="${fallbackUrl}" alt="${altText}" width="800" height="400" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;" /></figure>`
+      );
+    });
+  }
+
+  // Fourth pass: Ensure all img tags have proper attributes for display
+  // Fix any img tags without width/height or with broken src
+  result = result.replace(/<img([^>]*?)>/gi, (match, attrs) => {
+    // Check if src is present and valid
+    const srcMatch = attrs.match(/src=["']([^"']+)["']/);
+    if (!srcMatch || !srcMatch[1] || srcMatch[1] === '' || srcMatch[1] === 'undefined') {
+      // Replace with placeholder
+      const fallbackUrl = `https://placehold.co/800x400/667eea/ffffff?text=Image`;
+      return `<img src="${fallbackUrl}" alt="${seoData.primaryKeyword}" width="800" height="400" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;" />`;
     }
+
+    // Ensure loading="lazy" and style for proper display
+    let newAttrs = attrs;
+    if (!attrs.includes('loading=')) {
+      newAttrs += ' loading="lazy"';
+    }
+    if (!attrs.includes('style=')) {
+      newAttrs += ' style="max-width:100%;height:auto;border-radius:8px;"';
+    }
+
+    return `<img${newAttrs}>`;
   });
 
   return result;
@@ -205,8 +261,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
-    // STEP 1: Generate outline with Blueprint
-    sendProgress(res, "outline", "Blueprint is designing your blog structure...");
+    // STEP 1: Generate outline
+    sendProgress(res, "outline", "AI is designing your blog structure...");
 
     let outline: BlogOutline;
     try {
@@ -267,7 +323,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } else {
       // Auto mode: Generate images with AI (default behavior)
-      sendProgress(res, "images", "Snapshot is creating stunning images...");
+      sendProgress(res, "images", "AI is creating stunning images...");
 
       const imagePrompts: { prompt: string; index: number }[] = [];
 
@@ -306,8 +362,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // STEP 3: Generate content with Craftsman
-    sendProgress(res, "content", "Craftsman is writing engaging content...");
+    // STEP 3: Generate content
+    sendProgress(res, "content", "AI is writing engaging content...");
 
     const rawContent = await generateContent({
       outline,
@@ -318,8 +374,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       companyName,
     });
 
-    // STEP 4: Format content with Foreman
-    sendProgress(res, "format", "Foreman is formatting the HTML...");
+    // STEP 4: Format content
+    sendProgress(res, "format", "AI is formatting the HTML...");
 
     // STEP 5: Upload to WordPress (if configured) or use external URLs
     let imageUrls: string[] = [];

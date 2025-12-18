@@ -59,7 +59,7 @@ export default async function handler(
         });
 
         if (!review.approved && review.remakePrompt) {
-          console.log(`Image ${i + 1} not approved, Touchup is remaking it...`);
+          console.log(`Image ${i + 1} not approved, remaking with improved prompt...`);
           const remadeImage = await remakeBlogImage({
             improvedPrompt: review.remakePrompt,
             index: i,

@@ -8,11 +8,21 @@ const LocationPageBuilder = lazy(() => import("../components/LocationPageBuilder
 const ImageEditModal = lazy(() => import("../components/ImageEditModal"));
 const ScheduleCalendar = lazy(() => import("../components/scheduling/ScheduleCalendar"));
 
+// Automation components
+const UsageMeter = lazy(() => import("../components/automation/UsageMeter").then(m => ({ default: m.UsageMeter })));
+const AutomationSettings = lazy(() => import("../components/automation/AutomationSettings").then(m => ({ default: m.AutomationSettings })));
+const BatchGenerator = lazy(() => import("../components/automation/BatchGenerator").then(m => ({ default: m.BatchGenerator })));
+const QueueDashboard = lazy(() => import("../components/automation/QueueDashboard").then(m => ({ default: m.QueueDashboard })));
+const SiteBuilderWizard = lazy(() => import("../components/automation/SiteBuilderWizard").then(m => ({ default: m.SiteBuilderWizard })));
+
 // UI Components
 import ThemeToggle from "../components/ui/ThemeToggle";
 import { useContentScore } from "../lib/hooks/useContentScore";
 import { SEOAnalysisSidebar, SEOSidebarToggle } from "../components/seo/SEOAnalysisSidebar";
 import { analyzeContent, type SEOScore } from "../lib/seo-analyzer";
+
+// SEO Tools
+const SEOHeatmap = lazy(() => import("../components/seo/SEOHeatmap").then(m => ({ default: m.SEOHeatmap })));
 
 import { INDUSTRIES, getIndustryOptions, getDefaultServices, getDefaultUSPs } from "../lib/industries";
 import {
@@ -527,7 +537,7 @@ export default function Home() {
   const [editedContent, setEditedContent] = useState<string>("");
 
   // Sidebar navigation state
-  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "locations" | "knowledge" | "schedule";
+  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "locations" | "knowledge" | "schedule" | "seo-heatmap" | "automation";
   const [activeSection, setActiveSection] = useState<SidebarSection>("create");
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
     if (typeof window !== "undefined") {
@@ -540,6 +550,11 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("sidebarExpanded", String(sidebarExpanded));
   }, [sidebarExpanded]);
+
+  // Automation modal states
+  const [showBatchGenerator, setShowBatchGenerator] = useState(false);
+  const [showQueueDashboard, setShowQueueDashboard] = useState(false);
+  const [showSiteBuilder, setShowSiteBuilder] = useState(false);
 
   // Loading entertainment state
   interface EntertainmentState {
@@ -747,6 +762,39 @@ export default function Home() {
     formData.primaryKeyword,
     formData.secondaryKeywords,
   ]);
+
+  // Handle broken images in preview - add error handlers and fallbacks
+  useEffect(() => {
+    if (!state.htmlContent || isEditing) return;
+
+    // Wait for DOM to render
+    const timer = setTimeout(() => {
+      const previewContainer = document.querySelector(`.${styles.clickableImages}`);
+      if (!previewContainer) return;
+
+      const images = previewContainer.querySelectorAll('img');
+      images.forEach((img) => {
+        // Add error handler for broken images
+        img.onerror = () => {
+          const keyword = state.seoData?.primaryKeyword || formData.topic || 'Image';
+          const fallbackUrl = `https://placehold.co/800x400/667eea/ffffff?text=${encodeURIComponent(keyword)}`;
+          img.src = fallbackUrl;
+          img.alt = `${keyword} - Placeholder`;
+          img.style.minHeight = '200px';
+        };
+
+        // Check if image is already broken (naturalWidth is 0)
+        if (img.complete && img.naturalWidth === 0 && img.src && !img.src.includes('placehold.co')) {
+          const keyword = state.seoData?.primaryKeyword || formData.topic || 'Image';
+          const fallbackUrl = `https://placehold.co/800x400/667eea/ffffff?text=${encodeURIComponent(keyword)}`;
+          img.src = fallbackUrl;
+          img.alt = `${keyword} - Placeholder`;
+        }
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [state.htmlContent, isEditing, state.seoData?.primaryKeyword, formData.topic]);
 
   // Perplexity Deep Research
   const runPerplexityResearch = async (researchType: string = "comprehensive") => {
@@ -956,7 +1004,7 @@ export default function Home() {
     setIsGeneratingPage(true);
     setState(prev => ({
       ...prev,
-      progress: { step: "outline", message: "Blueprint is designing your page structure..." },
+      progress: { step: "outline", message: "AI is designing your page structure..." },
     }));
 
     try {
@@ -1809,7 +1857,7 @@ export default function Home() {
       seoData: null,
       featuredImageId: null,
       copiedToClipboard: false,
-      progress: { step: "outline", message: "Blueprint is designing your blog structure..." },
+      progress: { step: "outline", message: "AI is designing your blog structure..." },
       publishedPost: null,
     });
     // Auto-show publish settings when WordPress is connected
@@ -2521,6 +2569,44 @@ export default function Home() {
             </span>
             <span className={styles.sidebarLabel}>Schedule</span>
             <span className={styles.tooltip}>Schedule Calendar</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "seo-heatmap" ? styles.active : ""}`}
+            onClick={() => setActiveSection("seo-heatmap")}
+            title="SEO Heatmap"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <rect x="7" y="7" width="3" height="9" fill="currentColor" opacity="0.3"/>
+                <rect x="12" y="10" width="3" height="6" fill="currentColor" opacity="0.5"/>
+                <rect x="17" y="5" width="3" height="11" fill="currentColor" opacity="0.7"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>SEO Heatmap</span>
+            <span className={styles.tooltip}>SEO Heatmap & Research</span>
+          </button>
+
+          <div className={styles.sidebarDivider} />
+
+          {/* Automation Group */}
+          <span className={styles.sidebarGroup}>Automation</span>
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "automation" ? styles.active : ""}`}
+            onClick={() => setActiveSection("automation")}
+            title="AI Automation"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>AI Automation</span>
+            <span className={styles.tooltip}>Batch Generate & Site Builder</span>
           </button>
 
           {/* User Profile Section */}
@@ -3648,9 +3734,9 @@ export default function Home() {
                 disabled={isResearching || !formData.topic || !formData.location}
                 className={styles.researchButton}
               >
-                {isResearching ? "Scout is investigating..." : "Research Keywords & SEO"}
+                {isResearching ? "Researching..." : "Research Keywords & SEO"}
               </button>
-              <small>Scout analyzes competitors and suggests optimal keywords</small>
+              <small>AI analyzes competitors and suggests optimal keywords</small>
             </div>
 
             {/* SEO Settings Toggle */}
@@ -3809,12 +3895,12 @@ export default function Home() {
                   checked={formData.useOrchestration}
                   onChange={handleInputChange}
                 />
-                <span>Use AI Orchestration (Multi-AI via Vercel AI Gateway)</span>
+                <span>Use Advanced AI Mode</span>
               </label>
               <small className={styles.hint}>
                 {formData.useOrchestration
-                  ? "Blueprint (outlines) + Snapshot (images) + Craftsman (content) + Foreman (formatting)"
-                  : "Single AI mode (faster, no image generation)"}
+                  ? "AI generates outlines, images, content, and formatting"
+                  : "Basic mode (faster, no image generation)"}
               </small>
             </div>
 
@@ -3830,7 +3916,7 @@ export default function Home() {
                   <span>Enable Image Quality Review</span>
                 </label>
                 <small className={styles.hint}>
-                  Foreman and Craftsman review images, Touchup remakes any that don't meet quality standards (slower but better results)
+                  AI reviews images and remakes any that don't meet quality standards (slower but better results)
                 </small>
               </div>
             )}
@@ -3863,7 +3949,7 @@ export default function Home() {
                   </button>
                 </div>
                 <small className={styles.hint}>
-                  {formData.imageMode === "auto" && "Snapshot will generate unique images for your blog"}
+                  {formData.imageMode === "auto" && "AI will generate unique images for your blog"}
                   {formData.imageMode === "manual" && "Use your own images - add URLs or upload files"}
                   {formData.imageMode === "enhance" && "Upload images and AI will enhance/edit them for your blog"}
                 </small>
@@ -3971,27 +4057,27 @@ export default function Home() {
                 <div className={`${styles.progressStep} ${["research", "outline", "images", "content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>1</span>
                   <span>Outline</span>
-                  <small>Blueprint</small>
+                  <small>Structure</small>
                 </div>
                 <div className={`${styles.progressStep} ${["images", "content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>2</span>
                   <span>Images</span>
-                  <small>Snapshot</small>
+                  <small>Generation</small>
                 </div>
                 <div className={`${styles.progressStep} ${["content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>3</span>
                   <span>Content</span>
-                  <small>Craftsman</small>
+                  <small>Writing</small>
                 </div>
                 <div className={`${styles.progressStep} ${["format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>4</span>
                   <span>Format</span>
-                  <small>Foreman</small>
+                  <small>Polish</small>
                 </div>
                 <div className={`${styles.progressStep} ${["upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>5</span>
                   <span>Upload</span>
-                  <small>WordPress</small>
+                  <small>Publish</small>
                 </div>
               </div>
               <p className={styles.progressMessage}>{state.progress.message}</p>
@@ -5273,7 +5359,137 @@ export default function Home() {
               </Suspense>
             </div>
           )}
+
+          {/* SEO Heatmap Section */}
+          {activeSection === "seo-heatmap" && (
+            <div className={styles.sectionContent}>
+              <Suspense fallback={
+                <div className={styles.loadingSpinner}>
+                  <div className={styles.spinner} />
+                  <p>Loading SEO Heatmap...</p>
+                </div>
+              }>
+                <SEOHeatmap />
+              </Suspense>
+            </div>
+          )}
+
+          {/* AI Automation Section */}
+          {activeSection === "automation" && (
+            <div className={styles.sectionContent}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2 className={styles.sectionTitle}>AI Automation</h2>
+                  <p className={styles.sectionDescription}>
+                    Batch generate content, manage the queue, and configure AI automation settings
+                  </p>
+                </div>
+              </div>
+
+              <div className={styles.automationLayout}>
+                {/* Usage Meter Sidebar */}
+                <div className={styles.automationSidebar}>
+                  <Suspense fallback={
+                    <div className={styles.loadingSpinner}>
+                      <div className={styles.spinner} />
+                    </div>
+                  }>
+                    <UsageMeter />
+                  </Suspense>
+
+                  {/* Quick Actions */}
+                  <div className={styles.quickActionsCard}>
+                    <h3 className={styles.quickActionsTitle}>Quick Actions</h3>
+                    <div className={styles.quickActionsList}>
+                      <button
+                        type="button"
+                        className={styles.quickActionBtn}
+                        onClick={() => setShowBatchGenerator(true)}
+                      >
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="7" height="7" rx="1"/>
+                          <rect x="14" y="3" width="7" height="7" rx="1"/>
+                          <rect x="3" y="14" width="7" height="7" rx="1"/>
+                          <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                        Batch Generate
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.quickActionBtn}
+                        onClick={() => setShowQueueDashboard(true)}
+                      >
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="8" y1="6" x2="21" y2="6"/>
+                          <line x1="8" y1="12" x2="21" y2="12"/>
+                          <line x1="8" y1="18" x2="21" y2="18"/>
+                          <line x1="3" y1="6" x2="3.01" y2="6"/>
+                          <line x1="3" y1="12" x2="3.01" y2="12"/>
+                          <line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                        View Queue
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Settings Panel */}
+                <div className={styles.automationMain}>
+                  <Suspense fallback={
+                    <div className={styles.loadingSpinner}>
+                      <div className={styles.spinner} />
+                      <p>Loading settings...</p>
+                    </div>
+                  }>
+                    <AutomationSettings
+                      onOpenBatchGenerator={() => setShowBatchGenerator(true)}
+                      onOpenSiteBuilder={() => setShowSiteBuilder(true)}
+                      onOpenQueueDashboard={() => setShowQueueDashboard(true)}
+                    />
+                  </Suspense>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Batch Generator Modal */}
+        <Suspense fallback={null}>
+          <BatchGenerator
+            isOpen={showBatchGenerator}
+            onClose={() => setShowBatchGenerator(false)}
+            onSuccess={() => {
+              setShowBatchGenerator(false);
+              setShowQueueDashboard(true);
+            }}
+          />
+        </Suspense>
+
+        {/* Queue Dashboard Modal */}
+        <Suspense fallback={null}>
+          <QueueDashboard
+            isOpen={showQueueDashboard}
+            onClose={() => setShowQueueDashboard(false)}
+            onViewDraft={(draftId) => {
+              setShowQueueDashboard(false);
+              // Navigate to library section to view draft
+              setActiveSection("library");
+            }}
+          />
+        </Suspense>
+
+        {/* Site Builder Wizard Modal */}
+        <Suspense fallback={null}>
+          <SiteBuilderWizard
+            isOpen={showSiteBuilder}
+            onClose={() => setShowSiteBuilder(false)}
+            onSuccess={() => {
+              setShowSiteBuilder(false);
+              // Optionally navigate to queue to see generated pages
+              setShowQueueDashboard(true);
+            }}
+          />
+        </Suspense>
 
         {state.error && (
           <div className={styles.errorContainer}>
@@ -5461,23 +5677,103 @@ export default function Home() {
 
             {state.seoData && (
               <div className={styles.seoSection}>
-                <h3>SEO Data</h3>
+                <div className={styles.seoHeader}>
+                  <h3>SEO Data</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowSEOSidebar(true)}
+                    className={styles.seoAnalyzeBtn}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Full Analysis
+                  </button>
+                </div>
+
+                {/* SERP Preview */}
+                <div className={styles.serpPreview}>
+                  <div className={styles.serpLabel}>Google Search Preview</div>
+                  <div className={styles.serpResult}>
+                    <div className={styles.serpUrl}>
+                      {formData.location ? `yoursite.com › ${formData.location.toLowerCase().replace(/\s+/g, '-')}` : 'yoursite.com › blog'}
+                    </div>
+                    <div className={styles.serpTitle}>{state.seoData.metaTitle || 'Page Title'}</div>
+                    <div className={styles.serpDescription}>{state.seoData.metaDescription || 'Meta description will appear here...'}</div>
+                  </div>
+                  <div className={styles.serpStats}>
+                    <span className={state.seoData.metaTitle.length <= 60 ? styles.serpGood : styles.serpWarning}>
+                      Title: {state.seoData.metaTitle.length}/60
+                    </span>
+                    <span className={state.seoData.metaDescription.length <= 160 ? styles.serpGood : styles.serpWarning}>
+                      Description: {state.seoData.metaDescription.length}/160
+                    </span>
+                  </div>
+                </div>
+
+                {/* Editable SEO Fields */}
                 <div className={styles.seoGrid}>
                   <div className={styles.seoItem}>
-                    <label>Primary Keyword:</label>
-                    <span>{state.seoData.primaryKeyword}</span>
+                    <label>Primary Keyword</label>
+                    <input
+                      type="text"
+                      value={state.seoData.primaryKeyword}
+                      onChange={(e) => setState(prev => ({
+                        ...prev,
+                        seoData: prev.seoData ? { ...prev.seoData, primaryKeyword: e.target.value } : null
+                      }))}
+                      className={styles.seoInput}
+                      placeholder="Enter primary keyword"
+                    />
                   </div>
                   <div className={styles.seoItem}>
-                    <label>Secondary Keywords:</label>
-                    <span>{state.seoData.secondaryKeywords.join(", ")}</span>
+                    <label>Secondary Keywords</label>
+                    <input
+                      type="text"
+                      value={state.seoData.secondaryKeywords.join(", ")}
+                      onChange={(e) => setState(prev => ({
+                        ...prev,
+                        seoData: prev.seoData ? { ...prev.seoData, secondaryKeywords: e.target.value.split(",").map(k => k.trim()).filter(Boolean) } : null
+                      }))}
+                      className={styles.seoInput}
+                      placeholder="keyword1, keyword2, keyword3"
+                    />
                   </div>
                   <div className={styles.seoItem}>
-                    <label>Meta Title:</label>
-                    <span>{state.seoData.metaTitle}</span>
+                    <label>
+                      Meta Title
+                      <span className={`${styles.charCount} ${state.seoData.metaTitle.length > 60 ? styles.charWarning : ''}`}>
+                        {state.seoData.metaTitle.length}/60
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={state.seoData.metaTitle}
+                      onChange={(e) => setState(prev => ({
+                        ...prev,
+                        seoData: prev.seoData ? { ...prev.seoData, metaTitle: e.target.value } : null
+                      }))}
+                      className={`${styles.seoInput} ${state.seoData.metaTitle.length > 60 ? styles.inputWarning : ''}`}
+                      placeholder="Enter meta title"
+                    />
                   </div>
                   <div className={styles.seoItem}>
-                    <label>Meta Description:</label>
-                    <span>{state.seoData.metaDescription}</span>
+                    <label>
+                      Meta Description
+                      <span className={`${styles.charCount} ${state.seoData.metaDescription.length > 160 ? styles.charWarning : ''}`}>
+                        {state.seoData.metaDescription.length}/160
+                      </span>
+                    </label>
+                    <textarea
+                      value={state.seoData.metaDescription}
+                      onChange={(e) => setState(prev => ({
+                        ...prev,
+                        seoData: prev.seoData ? { ...prev.seoData, metaDescription: e.target.value } : null
+                      }))}
+                      className={`${styles.seoTextarea} ${state.seoData.metaDescription.length > 160 ? styles.inputWarning : ''}`}
+                      placeholder="Enter meta description"
+                      rows={3}
+                    />
                   </div>
                 </div>
               </div>
@@ -5558,16 +5854,16 @@ export default function Home() {
           <div className={styles.placeholderSection}>
             <p>Fill in the form above and click "Generate Blog"</p>
             <div className={styles.featuresList}>
-              <h3>Meet Your AI Crew:</h3>
+              <h3>How It Works:</h3>
               <ul>
-                <li><strong>🔍 Scout</strong> - Deep SEO research and competitor analysis</li>
-                <li><strong>📐 Blueprint</strong> - The Architect designs structured, SEO-optimized outlines</li>
-                <li><strong>📸 Snapshot</strong> - Creates stunning, context-aware images for each section</li>
-                <li><strong>👁️ Foreman + Craftsman</strong> - Dual quality review for images</li>
-                <li><strong>🖼️ Touchup</strong> - Remakes images that don't meet quality standards</li>
-                <li><strong>✍️ Craftsman</strong> - The Writer crafts polished, engaging blog content</li>
-                <li><strong>🔧 Foreman</strong> - The Reviewer formats clean HTML code for WordPress</li>
-                <li><strong>📤 WordPress</strong> - Publish, schedule, or save drafts directly</li>
+                <li><strong>🔍 Research</strong> - Deep SEO research and competitor analysis</li>
+                <li><strong>📐 Structure</strong> - AI designs structured, SEO-optimized outlines</li>
+                <li><strong>📸 Images</strong> - Creates stunning, context-aware images for each section</li>
+                <li><strong>👁️ Quality Review</strong> - Dual quality review ensures high standards</li>
+                <li><strong>🖼️ Enhancement</strong> - Remakes images that don't meet quality standards</li>
+                <li><strong>✍️ Writing</strong> - AI crafts polished, engaging blog content</li>
+                <li><strong>🔧 Formatting</strong> - Clean HTML code ready for WordPress</li>
+                <li><strong>📤 Publishing</strong> - Publish, schedule, or save drafts directly</li>
               </ul>
             </div>
           </div>
@@ -5575,7 +5871,7 @@ export default function Home() {
       </main>
 
       <footer className={styles.footer}>
-        <p>Powered by Vercel AI Gateway | Blueprint + Snapshot + Craftsman + Foreman + Touchup + Scout</p>
+        <p>Powered by Advanced AI Technology</p>
       </footer>
 
       {/* SEO Planner Modal */}

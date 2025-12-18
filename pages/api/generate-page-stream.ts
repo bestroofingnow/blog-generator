@@ -98,20 +98,52 @@ async function callInternalApi(endpoint: string, body: unknown): Promise<unknown
 function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
   let result = content;
 
-  // Replace image placeholders
+  // First pass: Replace various src="[IMAGE:X]" formats
   imageUrls.forEach((url, index) => {
-    // Handle src="[IMAGE:X]" format
-    const srcPlaceholder = `src="[IMAGE:${index}]"`;
-    result = result.replace(new RegExp(srcPlaceholder, "g"), `src="${url}"`);
+    if (!url) return;
 
-    // Handle standalone [IMAGE:X] format
-    const placeholder = `[IMAGE:${index}]`;
-    const altText = index === 0
-      ? `${seoData.primaryKeyword} - Featured Image`
-      : `${seoData.primaryKeyword} - Image ${index}`;
-    const imgTag = `<img src="${url}" alt="${altText}" width="800" height="600" loading="lazy" />`;
-    result = result.replace(new RegExp(placeholder.replace(/[[\]]/g, "\\$&"), "g"), imgTag);
+    const srcPatterns = [
+      new RegExp(`src=["']\\[IMAGE:${index}\\]["']`, "gi"),
+      new RegExp(`src=["']\\[IMAGE: ${index}\\]["']`, "gi"),
+      new RegExp(`src=\\[IMAGE:${index}\\]`, "gi"),
+    ];
+
+    srcPatterns.forEach(pattern => {
+      result = result.replace(pattern, `src="${url}"`);
+    });
   });
+
+  // Second pass: Handle standalone [IMAGE:X] format
+  imageUrls.forEach((url, index) => {
+    if (!url) return;
+
+    const placeholders = [`[IMAGE:${index}]`, `[IMAGE: ${index}]`];
+
+    placeholders.forEach(placeholder => {
+      if (result.includes(placeholder)) {
+        const altText = index === 0
+          ? `${seoData.primaryKeyword} - Featured Image`
+          : `${seoData.primaryKeyword} - Image ${index}`;
+        const imgTag = `<figure class="blog-image"><img src="${url}" alt="${altText}" width="800" height="600" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;" /><figcaption>${altText}</figcaption></figure>`;
+        result = result.replace(new RegExp(placeholder.replace(/[[\]]/g, "\\$&"), "g"), imgTag);
+      }
+    });
+  });
+
+  // Third pass: Clean up unfilled placeholders
+  const remaining = result.match(/\[IMAGE:\s*\d+\]/g);
+  if (remaining) {
+    remaining.forEach(placeholder => {
+      const match = placeholder.match(/\d+/);
+      const index = match ? parseInt(match[0], 10) : 0;
+      const fallbackUrl = `https://placehold.co/800x400/667eea/ffffff?text=${encodeURIComponent(`${seoData.primaryKeyword} ${index + 1}`)}`;
+      const altText = `${seoData.primaryKeyword} - Image ${index + 1}`;
+      result = result.replace(
+        placeholder,
+        `<figure class="blog-image"><img src="${fallbackUrl}" alt="${altText}" width="800" height="400" loading="lazy" /></figure>`
+      );
+    });
+  }
 
   return result;
 }
@@ -141,7 +173,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const pageTypeConfig = getPageTypeConfig(pageType);
 
     // STEP 1: Generate page outline
-    sendProgress(res, "outline", `Blueprint is designing your ${pageTypeConfig.label} structure...`);
+    sendProgress(res, "outline", `AI is designing your ${pageTypeConfig.label} structure...`);
 
     const promptParams: PagePromptParams = {
       pageType,
@@ -214,7 +246,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } else {
       // Auto mode: Generate images with AI
-      sendProgress(res, "images", "Snapshot is creating images for your page...");
+      sendProgress(res, "images", "AI is creating images for your page...");
 
       const imagePrompts: { prompt: string; index: number }[] = [];
 
@@ -249,7 +281,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 3: Generate page content
-    sendProgress(res, "content", "Craftsman is writing your page content...");
+    sendProgress(res, "content", "AI is writing your page content...");
 
     const contentPrompt = getPageContentPrompt(pageType, outline, promptParams);
 
@@ -267,7 +299,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 4: Format content
-    sendProgress(res, "format", "Foreman is formatting the HTML...");
+    sendProgress(res, "format", "AI is formatting the HTML...");
 
     // STEP 5: Upload images to WordPress or Vercel Blob
     let imageUrls: string[] = [];

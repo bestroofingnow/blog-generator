@@ -12,6 +12,7 @@ import {
   boolean,
   primaryKey,
   integer,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -186,6 +187,79 @@ export const knowledgeBaseHistory = pgTable("knowledge_base_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ============ AI AUTOMATION TABLES ============
+
+// Daily usage tracking - for enforcing 20 blogs/day limit
+export const dailyUsage = pgTable(
+  "daily_usage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: text("date").notNull(), // YYYY-MM-DD format for easy querying
+    blogsGenerated: integer("blogs_generated").default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => ({
+    // Unique constraint ensures one record per user per day
+    userDateIdx: uniqueIndex("daily_usage_user_date_idx").on(table.userId, table.date),
+  })
+);
+
+// Automation settings - user preferences for AI automation features
+export const automationSettings = pgTable("automation_settings", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  allowBuildEntireSite: boolean("allow_build_entire_site").default(false),
+  allowAutoCreateDailyBlogs: boolean("allow_auto_create_daily_blogs").default(false),
+  allowAutoScheduleBlogs: boolean("allow_auto_schedule_blogs").default(false),
+  allowAutoPostBlogs: boolean("allow_auto_post_blogs").default(false),
+  dailyBlogFrequency: integer("daily_blog_frequency").default(1), // 1-5 blogs per day
+  autoPostPlatform: text("auto_post_platform").default("wordpress"), // wordpress | ghl
+  autoCreateMode: text("auto_create_mode").default("queue_for_review"), // automatic | queue_for_review
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Generation queue - for batch and scheduled blog generation
+export const generationQueue = pgTable("generation_queue", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  batchId: text("batch_id"), // Groups items in a batch together
+  type: text("type").notNull(), // blog | service_page | location_page
+  topic: text("topic").notNull(),
+  keywords: text("keywords"), // comma-separated primary/secondary keywords
+  status: text("status").default("pending"), // pending | generating | generated | scheduled | published | failed
+  priority: integer("priority").default(0), // Higher = process first
+  scheduledFor: timestamp("scheduled_for"), // When to auto-schedule the generated blog
+  generatedDraftId: uuid("generated_draft_id").references(() => drafts.id, { onDelete: "set null" }),
+  errorMessage: text("error_message"),
+  attempts: integer("attempts").default(0), // Retry counter
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Site structure proposals - AI-generated site architecture for user approval
+export const siteStructureProposals = pgTable("site_structure_proposals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").default("draft"), // draft | proposed | approved | generating | completed | failed
+  industry: text("industry"),
+  proposedStructure: jsonb("proposed_structure"), // { homepage, servicePages, locationPages, blogTopics, sitemap }
+  aiReasoning: text("ai_reasoning"), // Why AI proposed this structure
+  userModifications: jsonb("user_modifications"), // { removedPages, addedPages, changedPages }
+  generationProgress: jsonb("generation_progress"), // { total, completed, current, errors }
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // ============ TYPE EXPORTS ============
 
 export type User = typeof users.$inferSelect;
@@ -198,6 +272,57 @@ export type PasswordResetAttempt = typeof passwordResetAttempts.$inferSelect;
 export type KnowledgeBaseEntry = typeof knowledgeBase.$inferSelect;
 export type NewKnowledgeBaseEntry = typeof knowledgeBase.$inferInsert;
 export type KnowledgeBaseHistoryEntry = typeof knowledgeBaseHistory.$inferSelect;
+
+// Automation types
+export type DailyUsage = typeof dailyUsage.$inferSelect;
+export type AutomationSettings = typeof automationSettings.$inferSelect;
+export type GenerationQueueItem = typeof generationQueue.$inferSelect;
+export type NewGenerationQueueItem = typeof generationQueue.$inferInsert;
+export type SiteStructureProposal = typeof siteStructureProposals.$inferSelect;
+
+// Automation status types
+export type QueueStatus = "pending" | "generating" | "generated" | "scheduled" | "published" | "failed";
+export type ProposalStatus = "draft" | "proposed" | "approved" | "generating" | "completed" | "failed";
+export type AutoPostPlatform = "wordpress" | "ghl";
+export type AutoCreateMode = "automatic" | "queue_for_review";
+
+// Proposed site structure interface
+export interface ProposedSiteStructure {
+  homepage?: {
+    title: string;
+    description: string;
+    sections: string[];
+  };
+  servicePages: Array<{
+    title: string;
+    slug: string;
+    description: string;
+    keywords?: string[];
+  }>;
+  locationPages: Array<{
+    city: string;
+    state: string;
+    service: string;
+    slug: string;
+  }>;
+  blogTopics: Array<{
+    title: string;
+    keywords?: string[];
+    priority?: number;
+  }>;
+  sitemap?: {
+    structure: string;
+    internalLinking: string[];
+  };
+}
+
+// Generation progress interface
+export interface GenerationProgress {
+  total: number;
+  completed: number;
+  current?: string;
+  errors?: Array<{ page: string; error: string }>;
+}
 
 // Schedule status types
 export type ScheduleStatus = "unscheduled" | "scheduled" | "published" | "failed";

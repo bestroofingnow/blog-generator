@@ -113,8 +113,8 @@ export default async function handler(
       });
     }
 
-    // STEP 1: Generate outline with Blueprint (the Architect)
-    console.log("Step 1: Blueprint is designing the blog structure...");
+    // STEP 1: Generate outline
+    console.log("Step 1: Designing the blog structure...");
     let outline: BlogOutline;
 
     try {
@@ -145,9 +145,9 @@ export default async function handler(
       metaDescription: request.metaDescription || outline.seo?.metaDescription || `Discover the best ${request.topic.toLowerCase()} solutions in ${request.location}.`,
     };
 
-    // STEP 2: Generate images with Snapshot (the Photographer)
+    // STEP 2: Generate images
     // Generate images in PARALLEL to save time - only generate hero + 2 section images
-    console.log("Step 2: Snapshot is generating images in parallel...");
+    console.log("Step 2: Generating images in parallel...");
     let generatedImages: GeneratedImage[] = [];
 
     // Build image prompts from outline
@@ -333,8 +333,8 @@ export default async function handler(
       }
     }
 
-    // STEP 4: Generate content with Craftsman (the Writer)
-    console.log("Step 4: Craftsman is writing your content...");
+    // STEP 4: Generate content
+    console.log("Step 4: Writing your content...");
 
     const rawContent = await generateContent({
       outline,
@@ -347,7 +347,7 @@ export default async function handler(
     steps.content = true;
 
     // STEP 5: Format final blog HTML
-    // Skip Foreman (Kimi) formatting to save time - use simple image insertion instead
+    // Use simple image insertion for speed
     console.log("Step 5: Formatting blog with image insertion...");
     const htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
     steps.format = true;
@@ -369,45 +369,74 @@ export default async function handler(
   }
 }
 
-// Simple image insertion - replaces [IMAGE:X] placeholders with actual URLs
+// Robust image insertion - replaces [IMAGE:X] placeholders with actual URLs
 function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
   let result = content;
 
   // First pass: Replace src="[IMAGE:X]" with actual URLs (most common case)
   imageUrls.forEach((url, index) => {
-    const srcPattern = new RegExp(`src=["']\\[IMAGE:${index}\\]["']`, 'gi');
-    result = result.replace(srcPattern, `src="${url}"`);
+    if (!url) return;
+
+    // Match various src formats
+    const srcPatterns = [
+      new RegExp(`src=["']\\[IMAGE:${index}\\]["']`, 'gi'),
+      new RegExp(`src=["']\\[IMAGE: ${index}\\]["']`, 'gi'),
+      new RegExp(`src=\\[IMAGE:${index}\\]`, 'gi'),
+    ];
+
+    srcPatterns.forEach(pattern => {
+      result = result.replace(pattern, `src="${url}"`);
+    });
   });
 
   // Second pass: Handle standalone [IMAGE:X] placeholders
   imageUrls.forEach((url, index) => {
-    const placeholder = `[IMAGE:${index}]`;
+    if (!url) return;
 
-    if (result.includes(placeholder)) {
-      const altText = index === 0
-        ? `${seoData.primaryKeyword} - Featured Image`
-        : `${seoData.primaryKeyword} - Image ${index}`;
+    const placeholders = [`[IMAGE:${index}]`, `[IMAGE: ${index}]`];
 
-      const parts = result.split(placeholder);
-      const newParts: string[] = [];
+    placeholders.forEach(placeholder => {
+      if (result.includes(placeholder)) {
+        const altText = index === 0
+          ? `${seoData.primaryKeyword} - Featured Image`
+          : `${seoData.primaryKeyword} - Image ${index}`;
 
-      for (let i = 0; i < parts.length; i++) {
-        newParts.push(parts[i]);
-        if (i < parts.length - 1) {
-          const before = parts[i];
-          const isInsideSrc = before.match(/src=["'][^"']*$/);
+        const parts = result.split(placeholder);
+        const newParts: string[] = [];
 
-          if (isInsideSrc) {
-            newParts.push(url);
-          } else {
-            newParts.push(`<img src="${url}" alt="${altText}" width="800" height="600" />`);
+        for (let i = 0; i < parts.length; i++) {
+          newParts.push(parts[i]);
+          if (i < parts.length - 1) {
+            const before = parts[i];
+            const isInsideSrc = before.match(/src=["'][^"']*$/);
+
+            if (isInsideSrc) {
+              newParts.push(url);
+            } else {
+              newParts.push(`<figure class="blog-image"><img src="${url}" alt="${altText}" width="800" height="600" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;" /><figcaption>${altText}</figcaption></figure>`);
+            }
           }
         }
-      }
 
-      result = newParts.join('');
-    }
+        result = newParts.join('');
+      }
+    });
   });
+
+  // Third pass: Clean up unfilled placeholders
+  const remaining = result.match(/\[IMAGE:\s*\d+\]/g);
+  if (remaining) {
+    remaining.forEach(placeholder => {
+      const match = placeholder.match(/\d+/);
+      const index = match ? parseInt(match[0], 10) : 0;
+      const fallbackUrl = `https://placehold.co/800x400/667eea/ffffff?text=${encodeURIComponent(`${seoData.primaryKeyword} ${index + 1}`)}`;
+      const altText = `${seoData.primaryKeyword} - Image ${index + 1}`;
+      result = result.replace(
+        placeholder,
+        `<figure class="blog-image"><img src="${fallbackUrl}" alt="${altText}" width="800" height="400" loading="lazy" /></figure>`
+      );
+    });
+  }
 
   return result;
 }

@@ -75,17 +75,25 @@ export default function OnboardingTrigger() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save profile");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to save profile (${response.status})`);
       }
 
       // Mark onboarding as complete
-      await fetch("/api/profile/complete-onboarding", {
+      const completeResponse = await fetch("/api/profile/complete-onboarding", {
         method: "POST",
       });
 
+      if (!completeResponse.ok) {
+        const errorData = await completeResponse.json().catch(() => ({}));
+        console.warn("Failed to mark onboarding complete:", errorData.error || completeResponse.status);
+        // Don't throw - profile was saved, just the completion marker failed
+      }
+
       setShowWizard(false);
     } catch (error) {
-      console.error("Failed to complete onboarding:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Failed to complete onboarding:", errorMessage);
       // Still close the wizard, user can retry later
       setShowWizard(false);
     }

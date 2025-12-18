@@ -1535,32 +1535,191 @@
 .seoSection {
   background: #f8f9ff;
   border: 2px solid #e0e5ff;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
+.seoHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
 .seoSection h3 {
-  margin: 0 0 1rem 0;
+  margin: 0;
   color: #667eea;
   font-size: 1.1rem;
 }
 
+.seoAnalyzeBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.seoAnalyzeBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* SERP Preview */
+.serpPreview {
+  background: white;
+  border: 1px solid #e0e5ff;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.serpLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #667eea;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.serpResult {
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.serpUrl {
+  font-size: 12px;
+  color: #202124;
+  margin-bottom: 4px;
+}
+
+.serpTitle {
+  font-size: 18px;
+  color: #1a0dab;
+  line-height: 1.3;
+  margin-bottom: 4px;
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.serpDescription {
+  font-size: 14px;
+  color: #545454;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.serpStats {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.serpGood {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.serpWarning {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+/* SEO Grid - Editable Fields */
 .seoGrid {
   display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
 }
 
 .seoItem {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
+}
+
+.seoItem:nth-child(3),
+.seoItem:nth-child(4) {
+  grid-column: span 2;
 }
 
 .seoItem label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-weight: 600;
   color: #555;
   font-size: 0.85rem;
+}
+
+.charCount {
+  font-weight: 400;
+  font-size: 11px;
+  color: #888;
+}
+
+.charWarning {
+  color: #f59e0b !important;
+}
+
+.seoInput {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: white;
+}
+
+.seoInput:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.seoTextarea {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: white;
+}
+
+.seoTextarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.inputWarning {
+  border-color: #f59e0b !important;
+}
+
+.inputWarning:focus {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
 }
 
 .seoItem span {
@@ -1571,6 +1730,22 @@
   padding: 0.5rem 0.75rem;
   border-radius: 4px;
   border: 1px solid #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .seoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .seoItem:nth-child(3),
+  .seoItem:nth-child(4) {
+    grid-column: span 1;
+  }
+
+  .serpStats {
+    flex-direction: column;
+    gap: 4px;
+  }
 }
 
 .htmlPreview {
@@ -1604,6 +1779,35 @@
   height: auto;
   margin: 1.5rem 0;
   border-radius: 8px;
+  background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+  min-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Image loading state */
+.htmlPreview img[src=""],
+.htmlPreview img:not([src]) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 300px;
+  position: relative;
+}
+
+/* Figure styling for better image presentation */
+.htmlPreview figure {
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.htmlPreview figure img {
+  margin: 0 auto 0.5rem;
+}
+
+.htmlPreview figcaption {
+  font-size: 0.875rem;
+  color: #666;
+  font-style: italic;
+  margin-top: 0.5rem;
 }
 
 .htmlPreview strong {
@@ -4915,4 +5119,89 @@
 .wizardSkip:hover {
   color: var(--text-secondary);
   text-decoration: underline;
+}
+
+/* ===== AUTOMATION SECTION STYLES ===== */
+.automationLayout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  margin-top: 1.5rem;
+}
+
+.automationSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.automationMain {
+  min-width: 0;
+}
+
+.quickActionsCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.quickActionsTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quickActionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quickActionBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quickActionBtn:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.quickActionBtn svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .automationLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .automationSidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .automationSidebar > * {
+    flex: 1;
+    min-width: 200px;
+  }
 }
