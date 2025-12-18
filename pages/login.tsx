@@ -1,5 +1,5 @@
 // pages/login.tsx
-// Login and signup page
+// Login, signup, and password reset page
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
@@ -7,6 +7,7 @@ import { useAuth } from "../lib/auth-context";
 import styles from "../styles/Login.module.css";
 
 type AuthMode = "login" | "signup" | "forgot";
+type ResetStep = "email" | "questions" | "complete";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,12 +22,31 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Password reset states
+  const [resetStep, setResetStep] = useState<ResetStep>("email");
+  const [securityQuestions, setSecurityQuestions] = useState<string[]>([]);
+  const [answer1, setAnswer1] = useState("");
+  const [answer2, setAnswer2] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user && !isLoading) {
       router.push("/");
     }
   }, [user, isLoading, router]);
+
+  const resetForgotState = () => {
+    setResetStep("email");
+    setSecurityQuestions([]);
+    setAnswer1("");
+    setAnswer2("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setAttemptsRemaining(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,13 +80,81 @@ export default function LoginPage() {
           router.push("/");
         }
       } else if (mode === "forgot") {
-        // TODO: Implement password reset
-        setMessage("Password reset is not yet implemented. Please contact support.");
+        await handleForgotPassword();
       }
     } catch (err) {
       setError("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (resetStep === "email") {
+      // Step 1: Get security questions
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "get_questions", email }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        setError(data.error || "Failed to get security questions");
+        return;
+      }
+
+      if (data.questions) {
+        setSecurityQuestions(data.questions);
+        setResetStep("questions");
+      }
+    } else if (resetStep === "questions") {
+      // Step 2: Verify answers and reset password
+      if (!answer1.trim() || !answer2.trim()) {
+        setError("Please answer both security questions");
+        return;
+      }
+
+      if (!newPassword || !confirmNewPassword) {
+        setError("Please enter your new password");
+        return;
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        setError("Password must be at least 6 characters");
+        return;
+      }
+
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify_and_reset",
+          email,
+          answer1,
+          answer2,
+          newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        setError(data.error || "Failed to reset password");
+        if (data.attemptsRemaining !== undefined) {
+          setAttemptsRemaining(data.attemptsRemaining);
+        }
+        return;
+      }
+
+      setResetStep("complete");
+      setMessage(data.message || "Password reset successfully!");
     }
   };
 
@@ -94,90 +182,193 @@ export default function LoginPage() {
         <h1 className={styles.title}>
           {mode === "login" && "Welcome Back"}
           {mode === "signup" && "Create Account"}
-          {mode === "forgot" && "Reset Password"}
+          {mode === "forgot" && resetStep === "email" && "Reset Password"}
+          {mode === "forgot" && resetStep === "questions" && "Security Questions"}
+          {mode === "forgot" && resetStep === "complete" && "Password Reset"}
         </h1>
 
         <p className={styles.subtitle}>
           {mode === "login" && "Sign in to access your blogs and settings"}
           {mode === "signup" && "Start creating SEO-optimized content"}
-          {mode === "forgot" && "Enter your email to receive a reset link"}
+          {mode === "forgot" && resetStep === "email" && "Enter your email to reset your password"}
+          {mode === "forgot" && resetStep === "questions" && "Answer your security questions"}
+          {mode === "forgot" && resetStep === "complete" && "Your password has been reset"}
         </p>
 
         {error && <div className={styles.error}>{error}</div>}
         {message && <div className={styles.success}>{message}</div>}
-
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {mode === "signup" && (
-            <div className={styles.inputGroup}>
-              <label htmlFor="name">Name</label>
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                autoComplete="name"
-              />
-            </div>
-          )}
-
-          <div className={styles.inputGroup}>
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              autoComplete="email"
-            />
+        {attemptsRemaining !== null && attemptsRemaining > 0 && (
+          <div className={styles.warning}>
+            {attemptsRemaining} attempt{attemptsRemaining !== 1 ? "s" : ""} remaining
           </div>
+        )}
 
-          {mode !== "forgot" && (
-            <div className={styles.inputGroup}>
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-                autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              />
-            </div>
-          )}
+        {/* Password Reset Complete - Show success */}
+        {mode === "forgot" && resetStep === "complete" ? (
+          <div className={styles.resetComplete}>
+            <div className={styles.successIcon}>✓</div>
+            <p>You can now sign in with your new password.</p>
+            <button
+              type="button"
+              className={styles.submitButton}
+              onClick={() => {
+                setMode("login");
+                resetForgotState();
+                setEmail("");
+                setPassword("");
+                setError("");
+                setMessage("");
+              }}
+            >
+              Sign In
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className={styles.form}>
+            {mode === "signup" && (
+              <div className={styles.inputGroup}>
+                <label htmlFor="name">Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  autoComplete="name"
+                />
+              </div>
+            )}
 
-          {mode === "signup" && (
-            <div className={styles.inputGroup}>
-              <label htmlFor="confirmPassword">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your password"
-                required
-                autoComplete="new-password"
-              />
-            </div>
-          )}
+            {/* Email input - shown for login, signup, and forgot (email step) */}
+            {(mode !== "forgot" || resetStep === "email") && (
+              <div className={styles.inputGroup}>
+                <label htmlFor="email">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+            )}
 
-          <button
-            type="submit"
-            className={styles.submitButton}
-            disabled={isSubmitting}
-          >
-            {isSubmitting
-              ? "Please wait..."
-              : mode === "login"
-              ? "Sign In"
-              : mode === "signup"
-              ? "Create Account"
-              : "Send Reset Link"}
-          </button>
-        </form>
+            {/* Password for login/signup */}
+            {mode !== "forgot" && (
+              <div className={styles.inputGroup}>
+                <label htmlFor="password">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                />
+              </div>
+            )}
+
+            {mode === "signup" && (
+              <div className={styles.inputGroup}>
+                <label htmlFor="confirmPassword">Confirm Password</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm your password"
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+            )}
+
+            {/* Security Questions Step */}
+            {mode === "forgot" && resetStep === "questions" && (
+              <>
+                <div className={styles.securityQuestionsInfo}>
+                  <span className={styles.infoIcon}>🔒</span>
+                  <span>Resetting password for: <strong>{email}</strong></span>
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="answer1">{securityQuestions[0]}</label>
+                  <input
+                    type="text"
+                    id="answer1"
+                    value={answer1}
+                    onChange={(e) => setAnswer1(e.target.value)}
+                    placeholder="Your answer"
+                    required
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="answer2">{securityQuestions[1]}</label>
+                  <input
+                    type="text"
+                    id="answer2"
+                    value={answer2}
+                    onChange={(e) => setAnswer2(e.target.value)}
+                    placeholder="Your answer"
+                    required
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className={styles.divider}>
+                  <span>New Password</span>
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="newPassword">New Password</label>
+                  <input
+                    type="password"
+                    id="newPassword"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    required
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="confirmNewPassword">Confirm New Password</label>
+                  <input
+                    type="password"
+                    id="confirmNewPassword"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    required
+                    autoComplete="new-password"
+                  />
+                </div>
+              </>
+            )}
+
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? "Please wait..."
+                : mode === "login"
+                ? "Sign In"
+                : mode === "signup"
+                ? "Create Account"
+                : resetStep === "email"
+                ? "Continue"
+                : "Reset Password"}
+            </button>
+          </form>
+        )}
 
         {mode === "login" && (
           <>
@@ -220,6 +411,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setMode("forgot");
+                  resetForgotState();
                   setError("");
                   setMessage("");
                 }}
@@ -246,6 +438,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => {
                 setMode("login");
+                resetForgotState();
                 setError("");
                 setMessage("");
               }}

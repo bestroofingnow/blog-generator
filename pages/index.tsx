@@ -509,8 +509,8 @@ export default function Home() {
   };
 
   // Settings tab state for Create section
-  type SettingsTab = "basic" | "seo" | "images" | "advanced";
-  const [settingsTab, setSettingsTab] = useState<SettingsTab>("basic");
+  type SettingsTab = "images";
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("images");
 
   // Setup Wizard state
   type WizardStep = "welcome" | "researching" | "review";
@@ -2023,249 +2023,46 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Settings Tabs */}
-            <div className={styles.tabNav}>
-              <button
-                type="button"
-                onClick={() => setSettingsTab("basic")}
-                className={`${styles.tabButton} ${settingsTab === "basic" ? styles.active : ""}`}
-              >
-                Basic
-                {formData.location && formData.tone && (
-                  <span className={styles.tabCheck}>&#10003;</span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSettingsTab("seo")}
-                className={`${styles.tabButton} ${settingsTab === "seo" ? styles.active : ""}`}
-              >
-                SEO
-                {formData.primaryKeyword && formData.metaTitle && (
-                  <span className={styles.tabCheck}>&#10003;</span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSettingsTab("images")}
-                className={`${styles.tabButton} ${settingsTab === "images" ? styles.active : ""}`}
-              >
-                Images
-                <span className={styles.tabBadge}>{formData.imageMode}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSettingsTab("advanced")}
-                className={`${styles.tabButton} ${settingsTab === "advanced" ? styles.active : ""}`}
-              >
-                Advanced
-              </button>
-            </div>
-
-            {/* Tab Content */}
+            {/* Image Settings - Only visible option */}
             <div className={styles.tabContent}>
-              {/* Basic Tab */}
-              {settingsTab === "basic" && (
-                <div className={styles.tabSection + " " + styles.visible}>
-                  <div className={styles.formCard}>
-                    <h4 className={styles.formCardTitle}>Content Settings</h4>
-                    <div className={styles.formCardGrid}>
-                      <div className={styles.formGroup}>
-                        <label htmlFor="blogType">Content Type</label>
-                        <select
-                          id="blogType"
-                          name="blogType"
-                          value={formData.blogType}
-                          onChange={handleInputChange}
+              <div className={styles.tabSection + " " + styles.visible}>
+                <div className={styles.formCard}>
+                  <h4 className={styles.formCardTitle}>Image Settings</h4>
+                  <div className={styles.formGroup}>
+                    <label>Image Mode</label>
+                    <div className={styles.quickSelect}>
+                      <div className={styles.buttonGrid}>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, imageMode: "auto" }))}
+                          className={`${styles.quickSelectButton} ${formData.imageMode === "auto" ? styles.active : ""}`}
                         >
-                          <option>Neighborhood Guide</option>
-                          <option>How-To Guide</option>
-                          <option>Trend Report</option>
-                          <option>Property Showcase</option>
-                          <option>Expert Tips</option>
-                          <option>Season-Specific Guide</option>
-                          <option>Before and After</option>
-                          <option>Product Comparison</option>
-                        </select>
-                      </div>
-                      <div className={styles.formGroup}>
-                        <label htmlFor="numberOfSections">Sections</label>
-                        <select
-                          id="numberOfSections"
-                          name="numberOfSections"
-                          value={formData.numberOfSections}
-                          onChange={handleInputChange}
+                          Auto Generate
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, imageMode: "manual" }))}
+                          className={`${styles.quickSelectButton} ${formData.imageMode === "manual" ? styles.active : ""}`}
                         >
-                          {[3, 4, 5, 6, 7, 8].map(n => (
-                            <option key={n} value={n}>{n} sections</option>
-                          ))}
-                        </select>
+                          Manual Upload
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, imageMode: "enhance" }))}
+                          className={`${styles.quickSelectButton} ${formData.imageMode === "enhance" ? styles.active : ""}`}
+                        >
+                          Enhance Uploads
+                        </button>
                       </div>
-                    </div>
-                    <div className={styles.formGroup} style={{ marginTop: "1rem" }}>
-                      <label htmlFor="tone">Writing Tone</label>
-                      <input
-                        type="text"
-                        id="tone"
-                        name="tone"
-                        value={formData.tone}
-                        onChange={handleInputChange}
-                        placeholder="e.g., professional yet friendly"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* SEO Tab */}
-              {settingsTab === "seo" && (
-                <div className={styles.tabSection + " " + styles.visible}>
-                  <div className={styles.formCard}>
-                    <h4 className={styles.formCardTitle}>SEO & Keywords</h4>
-                    <button
-                      type="button"
-                      onClick={handleResearchKeywords}
-                      disabled={isResearching || !formData.topic || !formData.location}
-                      className={styles.researchTypeBtn + " " + styles.primary}
-                      style={{ marginBottom: "1rem" }}
-                    >
-                      {isResearching ? (
-                        <>
-                          <span className={styles.spinner}></span>
-                          Researching...
-                        </>
-                      ) : (
-                        "Research Keywords & SEO"
-                      )}
-                    </button>
-
-                    {researchData && (
-                      <div className={styles.researchInsights} style={{ marginBottom: "1rem" }}>
-                        <h4>AI Research Insights:</h4>
-                        <div className={styles.insightsList}>
-                          <div>
-                            <strong>Competitor Insights:</strong>
-                            <ul>
-                              {researchData.competitorInsights.slice(0, 3).map((insight, i) => (
-                                <li key={i}>{insight}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={styles.formCardGrid + " " + styles.single}>
-                      <div className={styles.formGroup}>
-                        <label htmlFor="seoSecondaryKeywords">Secondary Keywords</label>
-                        <textarea
-                          id="seoSecondaryKeywords"
-                          name="secondaryKeywords"
-                          value={formData.secondaryKeywords}
-                          onChange={handleInputChange}
-                          placeholder="e.g., outdoor lighting, pathway lights, garden illumination"
-                          rows={2}
-                        />
-                      </div>
-                      <div className={styles.formGroup}>
-                        <label htmlFor="seoMetaTitle">Meta Title</label>
-                        <input
-                          type="text"
-                          id="seoMetaTitle"
-                          name="metaTitle"
-                          value={formData.metaTitle}
-                          onChange={handleInputChange}
-                          placeholder="SEO-optimized page title (50-60 chars)"
-                        />
-                      </div>
-                      <div className={styles.formGroup}>
-                        <label htmlFor="seoMetaDescription">Meta Description</label>
-                        <textarea
-                          id="seoMetaDescription"
-                          name="metaDescription"
-                          value={formData.metaDescription}
-                          onChange={handleInputChange}
-                          placeholder="Compelling description for search results (150-160 chars)"
-                          rows={2}
-                        />
-                      </div>
+                      <small>
+                        {formData.imageMode === "auto" && "AI will generate unique images for each section"}
+                        {formData.imageMode === "manual" && "Use only your uploaded images"}
+                        {formData.imageMode === "enhance" && "Combine your images with AI-generated ones"}
+                      </small>
                     </div>
                   </div>
                 </div>
-              )}
-
-              {/* Images Tab */}
-              {settingsTab === "images" && (
-                <div className={styles.tabSection + " " + styles.visible}>
-                  <div className={styles.formCard}>
-                    <h4 className={styles.formCardTitle}>Image Settings</h4>
-                    <div className={styles.formGroup}>
-                      <label>Image Mode</label>
-                      <div className={styles.quickSelect}>
-                        <div className={styles.buttonGrid}>
-                          <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, imageMode: "auto" }))}
-                            className={`${styles.quickSelectButton} ${formData.imageMode === "auto" ? styles.active : ""}`}
-                          >
-                            Auto Generate
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, imageMode: "manual" }))}
-                            className={`${styles.quickSelectButton} ${formData.imageMode === "manual" ? styles.active : ""}`}
-                          >
-                            Manual Upload
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, imageMode: "enhance" }))}
-                            className={`${styles.quickSelectButton} ${formData.imageMode === "enhance" ? styles.active : ""}`}
-                          >
-                            Enhance Uploads
-                          </button>
-                        </div>
-                        <small>
-                          {formData.imageMode === "auto" && "AI will generate unique images for each section"}
-                          {formData.imageMode === "manual" && "Use only your uploaded images"}
-                          {formData.imageMode === "enhance" && "Combine your images with AI-generated ones"}
-                        </small>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Advanced Tab */}
-              {settingsTab === "advanced" && (
-                <div className={styles.tabSection + " " + styles.visible}>
-                  <div className={styles.formCard}>
-                    <h4 className={styles.formCardTitle}>Advanced Options</h4>
-                    <div className={styles.formGroup}>
-                      <label className={styles.checkboxLabel}>
-                        <input
-                          type="checkbox"
-                          checked={formData.useOrchestration}
-                          onChange={(e) => setFormData(prev => ({ ...prev, useOrchestration: e.target.checked }))}
-                        />
-                        Multi-AI Orchestration
-                      </label>
-                      <span className={styles.hint}>Use multiple AI models for better results</span>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.checkboxLabel}>
-                        <input
-                          type="checkbox"
-                          checked={formData.enableQualityReview}
-                          onChange={(e) => setFormData(prev => ({ ...prev, enableQualityReview: e.target.checked }))}
-                        />
-                        Quality Review Pass
-                      </label>
-                      <span className={styles.hint}>Additional AI pass for quality assurance</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Hidden Submit Button (actual submission handled by hero button) */}

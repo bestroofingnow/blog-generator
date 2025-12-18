@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { SessionProvider } from "next-auth/react";
 import { AuthProvider } from "../lib/auth-context";
 import AuthGuard from "../components/AuthGuard";
+import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
 import "../styles/globals.css";
 
 // Pages that don't require authentication
@@ -20,6 +21,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
           <Component {...pageProps} />
         ) : (
           <AuthGuard>
+            <OnboardingTrigger />
             <Component {...pageProps} />
           </AuthGuard>
         )}

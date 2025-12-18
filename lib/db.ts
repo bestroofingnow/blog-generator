@@ -124,6 +124,30 @@ export const draftImages = pgTable("draft_images", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Security questions for password reset
+export const securityQuestions = pgTable("security_questions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  question1: text("question1").notNull(),
+  answer1Hash: text("answer1_hash").notNull(),
+  question2: text("question2").notNull(),
+  answer2Hash: text("answer2_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Password reset attempts (for rate limiting)
+export const passwordResetAttempts = pgTable("password_reset_attempts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull(),
+  attemptCount: integer("attempt_count").default(0),
+  lastAttempt: timestamp("last_attempt").defaultNow(),
+  lockedUntil: timestamp("locked_until"),
+});
+
 // ============ TYPE EXPORTS ============
 
 export type User = typeof users.$inferSelect;
@@ -131,6 +155,8 @@ export type NewUser = typeof users.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type Draft = typeof drafts.$inferSelect;
 export type DraftImage = typeof draftImages.$inferSelect;
+export type SecurityQuestion = typeof securityQuestions.$inferSelect;
+export type PasswordResetAttempt = typeof passwordResetAttempts.$inferSelect;
 
 // Re-export drizzle operators
 export { eq, desc };

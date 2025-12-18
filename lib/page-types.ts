@@ -303,6 +303,59 @@ export const TARGET_AUDIENCE_OPTIONS = [
 
 export type TargetAudienceType = typeof TARGET_AUDIENCE_OPTIONS[number]["value"] | string;
 
+// ============ ADDITIONAL LINKS ============
+
+// Categories for additional business links
+export type LinkCategory =
+  | "manufacturer"      // GAF, Owens Corning, CertainTeed, etc.
+  | "networking"        // BNI, Chamber of Commerce, local groups
+  | "directory"         // BBB, Angi, HomeAdvisor, Thumbtack, Houzz
+  | "association"       // NRCA, trade associations, unions
+  | "review_platform"   // Beyond social - Trustpilot, G2, etc.
+  | "custom";           // User-defined
+
+export const LINK_CATEGORY_OPTIONS: { value: LinkCategory; label: string; description: string }[] = [
+  { value: "manufacturer", label: "Manufacturer", description: "Certified manufacturer partnerships" },
+  { value: "networking", label: "Networking", description: "Business groups and chambers" },
+  { value: "directory", label: "Directory", description: "Business directories and listings" },
+  { value: "association", label: "Association", description: "Trade associations and memberships" },
+  { value: "review_platform", label: "Review Platform", description: "Review and rating sites" },
+  { value: "custom", label: "Custom", description: "Other business links" },
+];
+
+// Additional link interface for manufacturer, directory, networking links
+export interface AdditionalLink {
+  id: string;
+  name: string;
+  url: string;
+  category: LinkCategory;
+  isVerified: boolean;      // User has verified this link is correct
+  isAiSuggested: boolean;   // AI discovered/suggested this link
+  addedAt: string;          // ISO timestamp
+  description?: string;     // Optional description
+}
+
+// Extended social links with more platforms
+export interface SocialLinks {
+  // Core social platforms
+  facebook?: string;
+  instagram?: string;
+  linkedin?: string;
+  twitter?: string;
+  youtube?: string;
+  tiktok?: string;
+  pinterest?: string;
+  nextdoor?: string;
+  // Review/business platforms
+  yelp?: string;
+  googleBusiness?: string;
+  bbb?: string;
+  angieslist?: string;
+  homeadvisor?: string;
+  thumbtack?: string;
+  houzz?: string;
+}
+
 // Company Profile interface
 export interface CompanyProfile {
   // Basic Info
@@ -346,16 +399,11 @@ export interface CompanyProfile {
   customTargetAudience?: string; // Used when targetAudience is "custom"
   competitors?: string[];
 
-  // Social & Online Presence
-  socialLinks?: {
-    facebook?: string;
-    instagram?: string;
-    linkedin?: string;
-    twitter?: string;
-    youtube?: string;
-    yelp?: string;
-    googleBusiness?: string;
-  };
+  // Social & Online Presence (extended)
+  socialLinks?: SocialLinks;
+
+  // Additional Links (manufacturers, directories, networking, etc.)
+  additionalLinks?: AdditionalLink[];
 
   // Certifications & Credibility
   certifications?: string[];
@@ -368,6 +416,56 @@ export interface CompanyProfile {
   includeCTAs?: boolean;
   includeLeadMagnets?: boolean;
   includeStats?: boolean;
+
+  // Onboarding & Profile Metadata
+  onboardingCompletedAt?: string;   // ISO timestamp when onboarding was completed
+  profileCompleteness?: number;      // 0-100 percentage
+  lastResearchedAt?: string;         // ISO timestamp of last AI research
+
+  // AI Research Data (stored from deep research)
+  reviewData?: {
+    platforms: {
+      name: string;
+      rating?: number;
+      reviewCount?: number;
+      url?: string;
+    }[];
+    averageRating?: number;
+    totalReviews?: number;
+  };
+
+  competitorAnalysis?: {
+    competitors: string[];
+    strengthsWeaknesses: string[];
+    opportunities: string[];
+  };
+
+  seoInsights?: {
+    primaryKeywords: string[];
+    secondaryKeywords?: string[];
+    contentGaps: string[];
+    localSEOScore: number;
+    recommendations: string[];
+  };
+
+  conversionInsights?: {
+    uspStrength: number;          // 1-10 score
+    trustSignals: string[];       // What builds trust
+    ctaRecommendations: string[]; // Suggested CTAs
+  };
+
+  websiteAnalysis?: {
+    hasSSL?: boolean;
+    mobileOptimized?: boolean;
+    pageSpeed?: string;
+    contentQuality?: string;
+    missingElements?: string[];
+  };
+
+  aiTeamNotes?: {
+    maverick?: string;  // LLAMA 4 Maverick strategy notes
+    kimi?: string;      // KIMI K2 analysis notes
+  };
 }
 
 // Page Entry for Page Library (internal linking)
