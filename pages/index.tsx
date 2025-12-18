@@ -5,6 +5,7 @@ import styles from "../styles/Home.module.css";
 // Lazy load heavy components for better initial load performance
 const RichTextEditor = lazy(() => import("../components/RichTextEditor"));
 const LocationPageBuilder = lazy(() => import("../components/LocationPageBuilder"));
+const ImageEditModal = lazy(() => import("../components/ImageEditModal"));
 
 // UI Components
 import ThemeToggle from "../components/ui/ThemeToggle";
@@ -38,11 +39,29 @@ interface UserImage {
   caption?: string;
 }
 
+// Word count range options for content generation
+type WordCountRange = "800-1000" | "1000-1400" | "1400-1800" | "1800-2400" | "2400-3000" | "3000-3800" | "3800-4400" | "4400-5200";
+
+const WORD_COUNT_OPTIONS: { value: WordCountRange; label: string; description: string }[] = [
+  { value: "800-1000", label: "800-1,000 words", description: "Quick read, focused content" },
+  { value: "1000-1400", label: "1,000-1,400 words", description: "Standard blog post" },
+  { value: "1400-1800", label: "1,400-1,800 words", description: "Detailed guide" },
+  { value: "1800-2400", label: "1,800-2,400 words", description: "Comprehensive article" },
+  { value: "2400-3000", label: "2,400-3,000 words", description: "In-depth coverage" },
+  { value: "3000-3800", label: "3,000-3,800 words", description: "Authority piece" },
+  { value: "3800-4400", label: "3,800-4,400 words", description: "Pillar content" },
+  { value: "4400-5200", label: "4,400-5,200 words", description: "Ultimate guide" },
+];
+
+const IMAGE_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6];
+
 interface FormData {
   topic: string;
   location: string;
   blogType: string;
   numberOfSections: number;
+  numberOfImages: number;
+  wordCountRange: WordCountRange;
   tone: string;
   readingLevel: string;
   useOrchestration: boolean;
@@ -190,6 +209,8 @@ export default function Home() {
     location: "",
     blogType: "Neighborhood Guide",
     numberOfSections: 5,
+    numberOfImages: 3,
+    wordCountRange: "1800-2400",
     tone: "professional yet friendly",
     readingLevel: "8th Grade",
     useOrchestration: true,
@@ -288,6 +309,68 @@ export default function Home() {
   const [perplexityResearch, setPerplexityResearch] = useState<PerplexityResearch | null>(null);
   const [isResearchingPerplexity, setIsResearchingPerplexity] = useState(false);
   const [showResearchModal, setShowResearchModal] = useState(false);
+
+  // Image Edit Modal state
+  const [imageEditModal, setImageEditModal] = useState<{
+    isOpen: boolean;
+    imageUrl: string;
+    imageSrc: string;
+  }>({
+    isOpen: false,
+    imageUrl: "",
+    imageSrc: "",
+  });
+
+  // Knowledge Base state
+  interface KnowledgeEntry {
+    id: string;
+    type: "sitemap" | "url" | "pdf" | "image" | "text";
+    source: string;
+    title: string;
+    content: string;
+    extractedData?: {
+      services?: string[];
+      usps?: string[];
+      locations?: string[];
+      tone?: string;
+      brandElements?: string[];
+      keywords?: string[];
+      companyInfo?: Record<string, string>;
+    };
+    scrapedAt: string;
+  }
+
+  const [knowledgeBase, setKnowledgeBase] = useState<{
+    entries: KnowledgeEntry[];
+    sitemapUrl: string;
+    urlToAdd: string;
+    textToAdd: string;
+    textTitle: string;
+    isScanning: boolean;
+    isScraping: boolean;
+    scanProgress: string;
+    sitemapPreview: { url: string; lastmod?: string }[];
+    selectedUrls: string[];
+    aggregatedData: {
+      services: string[];
+      usps: string[];
+      locations: string[];
+      keywords: string[];
+      tone: string;
+    } | null;
+  }>({
+    entries: [],
+    sitemapUrl: "",
+    urlToAdd: "",
+    textToAdd: "",
+    textTitle: "",
+    isScanning: false,
+    isScraping: false,
+    scanProgress: "",
+    sitemapPreview: [],
+    selectedUrls: [],
+    aggregatedData: null,
+  });
 
   // SERP Analysis state - Full featured
   interface SerpOrganicResult {
@@ -441,7 +524,7 @@ export default function Home() {
   const [editedContent, setEditedContent] = useState<string>("");
 
   // Sidebar navigation state
-  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "locations";
+  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "locations" | "knowledge";
   const [activeSection, setActiveSection] = useState<SidebarSection>("create");
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
     if (typeof window !== "undefined") {
@@ -1754,6 +1837,69 @@ export default function Home() {
     }
   };
 
+  // Convert HTML to Markdown-like format
+  const htmlToMarkdown = (html: string): string => {
+    let md = html;
+    // Remove script and style tags
+    md = md.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+    md = md.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+    // Headers
+    md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "# $1\n\n");
+    md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "## $1\n\n");
+    md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "### $1\n\n");
+    md = md.replace(/<h4[^>]*>(.*?)<\/h4>/gi, "#### $1\n\n");
+    md = md.replace(/<h5[^>]*>(.*?)<\/h5>/gi, "##### $1\n\n");
+    md = md.replace(/<h6[^>]*>(.*?)<\/h6>/gi, "###### $1\n\n");
+    // Bold and italic
+    md = md.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**");
+    md = md.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**");
+    md = md.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*");
+    md = md.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*");
+    // Images
+    md = md.replace(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']*?)["'][^>]*>/gi, "![$2]($1)");
+    md = md.replace(/<img[^>]*alt=["']([^"']*?)["'][^>]*src=["']([^"']+)["'][^>]*>/gi, "![$1]($2)");
+    md = md.replace(/<img[^>]*src=["']([^"']+)["'][^>]*>/gi, "![]($1)");
+    // Links
+    md = md.replace(/<a[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, "[$2]($1)");
+    // Lists
+    md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, "- $1\n");
+    md = md.replace(/<ul[^>]*>/gi, "\n");
+    md = md.replace(/<\/ul>/gi, "\n");
+    md = md.replace(/<ol[^>]*>/gi, "\n");
+    md = md.replace(/<\/ol>/gi, "\n");
+    // Paragraphs and breaks
+    md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n\n");
+    md = md.replace(/<br\s*\/?>/gi, "\n");
+    md = md.replace(/<hr\s*\/?>/gi, "\n---\n");
+    // Blockquotes
+    md = md.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, "> $1\n");
+    // Remove remaining HTML tags
+    md = md.replace(/<[^>]+>/g, "");
+    // Decode HTML entities
+    md = md.replace(/&nbsp;/g, " ");
+    md = md.replace(/&amp;/g, "&");
+    md = md.replace(/&lt;/g, "<");
+    md = md.replace(/&gt;/g, ">");
+    md = md.replace(/&quot;/g, '"');
+    md = md.replace(/&#39;/g, "'");
+    // Clean up multiple newlines
+    md = md.replace(/\n{3,}/g, "\n\n");
+    return md.trim();
+  };
+
+  const handleDownloadMarkdown = () => {
+    if (state.htmlContent) {
+      const markdown = htmlToMarkdown(state.htmlContent);
+      const element = document.createElement("a");
+      const file = new Blob([markdown], { type: "text/markdown" });
+      element.href = URL.createObjectURL(file);
+      element.download = `blog-${formData.location.replace(/\s+/g, "-")}-${Date.now()}.md`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+  };
+
   const escapeCSV = (str: string): string => {
     if (str.includes(",") || str.includes('"') || str.includes("\n")) {
       return `"${str.replace(/"/g, '""')}"`;
@@ -1789,6 +1935,290 @@ export default function Home() {
       element.click();
       document.body.removeChild(element);
     }
+  };
+
+  // Handle image click in preview for editing
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === "IMG") {
+      const img = target as HTMLImageElement;
+      setImageEditModal({
+        isOpen: true,
+        imageUrl: img.src,
+        imageSrc: img.src,
+      });
+    }
+  };
+
+  // Handle saving edited image
+  const handleImageSave = (newImageUrl: string) => {
+    if (state.htmlContent && imageEditModal.imageSrc) {
+      // Replace the old image URL with the new one in the HTML content
+      const updatedContent = state.htmlContent.replace(
+        new RegExp(imageEditModal.imageSrc.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+        newImageUrl
+      );
+      setState((prev) => ({ ...prev, htmlContent: updatedContent }));
+      setImageEditModal({ isOpen: false, imageUrl: "", imageSrc: "" });
+    }
+  };
+
+  // Knowledge Base handlers
+  const handleScanSitemap = async () => {
+    if (!knowledgeBase.sitemapUrl) return;
+
+    setKnowledgeBase(prev => ({ ...prev, isScanning: true, scanProgress: "Fetching sitemap..." }));
+
+    try {
+      const response = await fetch("/api/knowledge-base", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "scan-sitemap",
+          sitemapUrl: knowledgeBase.sitemapUrl,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setKnowledgeBase(prev => ({
+          ...prev,
+          sitemapPreview: data.entries,
+          selectedUrls: data.entries.slice(0, 10).map((e: { url: string }) => e.url),
+          scanProgress: `Found ${data.totalUrls} URLs`,
+        }));
+      } else {
+        setKnowledgeBase(prev => ({ ...prev, scanProgress: data.error || "Scan failed" }));
+      }
+    } catch (error) {
+      setKnowledgeBase(prev => ({ ...prev, scanProgress: "Error scanning sitemap" }));
+    } finally {
+      setKnowledgeBase(prev => ({ ...prev, isScanning: false }));
+    }
+  };
+
+  const handleScrapeSelectedUrls = async () => {
+    if (knowledgeBase.selectedUrls.length === 0) return;
+
+    setKnowledgeBase(prev => ({ ...prev, isScraping: true, scanProgress: "Scraping pages..." }));
+
+    try {
+      const response = await fetch("/api/knowledge-base", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "scrape-urls",
+          urls: knowledgeBase.selectedUrls,
+          maxPages: 20,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setKnowledgeBase(prev => ({
+          ...prev,
+          entries: [...prev.entries, ...data.entries],
+          scanProgress: `Scraped ${data.processedCount} pages`,
+          sitemapPreview: [],
+          selectedUrls: [],
+        }));
+      } else {
+        setKnowledgeBase(prev => ({ ...prev, scanProgress: data.error || "Scraping failed" }));
+      }
+    } catch (error) {
+      setKnowledgeBase(prev => ({ ...prev, scanProgress: "Error scraping pages" }));
+    } finally {
+      setKnowledgeBase(prev => ({ ...prev, isScraping: false }));
+    }
+  };
+
+  const handleAddSingleUrl = async () => {
+    if (!knowledgeBase.urlToAdd) return;
+
+    setKnowledgeBase(prev => ({ ...prev, isScraping: true, scanProgress: "Scraping URL..." }));
+
+    try {
+      const response = await fetch("/api/knowledge-base", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "scrape-single-url",
+          url: knowledgeBase.urlToAdd,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setKnowledgeBase(prev => ({
+          ...prev,
+          entries: [...prev.entries, data.entry],
+          urlToAdd: "",
+          scanProgress: "URL added successfully",
+        }));
+      } else {
+        setKnowledgeBase(prev => ({ ...prev, scanProgress: data.error || "Failed to add URL" }));
+      }
+    } catch (error) {
+      setKnowledgeBase(prev => ({ ...prev, scanProgress: "Error adding URL" }));
+    } finally {
+      setKnowledgeBase(prev => ({ ...prev, isScraping: false }));
+    }
+  };
+
+  const handleAddText = async () => {
+    if (!knowledgeBase.textToAdd) return;
+
+    setKnowledgeBase(prev => ({ ...prev, isScraping: true, scanProgress: "Processing text..." }));
+
+    try {
+      const response = await fetch("/api/knowledge-base", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "process-text",
+          text: knowledgeBase.textToAdd,
+          title: knowledgeBase.textTitle || "Manual Entry",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setKnowledgeBase(prev => ({
+          ...prev,
+          entries: [...prev.entries, data.entry],
+          textToAdd: "",
+          textTitle: "",
+          scanProgress: "Text added successfully",
+        }));
+      } else {
+        setKnowledgeBase(prev => ({ ...prev, scanProgress: data.error || "Failed to add text" }));
+      }
+    } catch (error) {
+      setKnowledgeBase(prev => ({ ...prev, scanProgress: "Error adding text" }));
+    } finally {
+      setKnowledgeBase(prev => ({ ...prev, isScraping: false }));
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setKnowledgeBase(prev => ({ ...prev, isScraping: true, scanProgress: "Processing file..." }));
+
+    try {
+      const reader = new FileReader();
+
+      reader.onload = async () => {
+        try {
+          const fileContent = reader.result as string;
+
+          // For data URLs, extract the base64 part; for text, use as-is
+          const contentToSend = fileContent.startsWith("data:")
+            ? fileContent.split(",")[1] || fileContent
+            : fileContent;
+
+          const response = await fetch("/api/knowledge-base", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "process-file",
+              fileContent: contentToSend,
+              fileName: file.name,
+              fileType: file.type,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            setKnowledgeBase(prev => ({
+              ...prev,
+              entries: [...prev.entries, data.entry],
+              scanProgress: "File processed successfully",
+              isScraping: false,
+            }));
+          } else {
+            setKnowledgeBase(prev => ({
+              ...prev,
+              scanProgress: data.error || "Failed to process file",
+              isScraping: false,
+            }));
+          }
+        } catch (fetchError) {
+          setKnowledgeBase(prev => ({
+            ...prev,
+            scanProgress: "Error processing file",
+            isScraping: false,
+          }));
+        }
+      };
+
+      reader.onerror = () => {
+        setKnowledgeBase(prev => ({
+          ...prev,
+          scanProgress: "Error reading file",
+          isScraping: false,
+        }));
+      };
+
+      // Read all files as data URL (works for images, PDFs, and text)
+      // Text files will be base64 encoded which is fine for the API
+      if (file.type.startsWith("text/")) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      setKnowledgeBase(prev => ({ ...prev, scanProgress: "Error processing file", isScraping: false }));
+    }
+
+    // Reset input
+    e.target.value = "";
+  };
+
+  const handleAggregateKnowledge = async () => {
+    if (knowledgeBase.entries.length === 0) return;
+
+    setKnowledgeBase(prev => ({ ...prev, isScraping: true, scanProgress: "Aggregating knowledge..." }));
+
+    try {
+      const response = await fetch("/api/knowledge-base", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "aggregate-knowledge",
+          entries: knowledgeBase.entries,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setKnowledgeBase(prev => ({
+          ...prev,
+          aggregatedData: data.aggregatedKnowledge,
+          scanProgress: "Knowledge aggregated successfully",
+        }));
+      } else {
+        setKnowledgeBase(prev => ({ ...prev, scanProgress: data.error || "Failed to aggregate" }));
+      }
+    } catch (error) {
+      setKnowledgeBase(prev => ({ ...prev, scanProgress: "Error aggregating knowledge" }));
+    } finally {
+      setKnowledgeBase(prev => ({ ...prev, isScraping: false }));
+    }
+  };
+
+  const handleRemoveKnowledgeEntry = (id: string) => {
+    setKnowledgeBase(prev => ({
+      ...prev,
+      entries: prev.entries.filter(e => e.id !== id),
+    }));
   };
 
   // Get minimum date for scheduling (tomorrow)
@@ -1934,6 +2364,22 @@ export default function Home() {
             <span className={styles.tooltip}>Locations</span>
           </button>
 
+          <button
+            type="button"
+            className={`${styles.sidebarItem} ${activeSection === "knowledge" ? styles.active : ""}`}
+            onClick={() => setActiveSection("knowledge")}
+            title="Knowledge Base"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>Knowledge</span>
+            <span className={styles.tooltip}>Knowledge Base</span>
+          </button>
+
           {/* User Profile Section */}
           <div className={styles.sidebarDivider} />
           <div className={styles.sidebarUser}>
@@ -2067,13 +2513,55 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Image Settings - Only visible option */}
+            {/* Content Settings */}
             <div className={styles.tabContent}>
               <div className={styles.tabSection + " " + styles.visible}>
+                {/* Word Count Settings */}
+                <div className={styles.formCard}>
+                  <h4 className={styles.formCardTitle}>Content Length</h4>
+                  <div className={styles.formGroup}>
+                    <label>Target Word Count</label>
+                    <div className={styles.wordCountGrid}>
+                      {WORD_COUNT_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, wordCountRange: option.value }))}
+                          className={`${styles.wordCountOption} ${formData.wordCountRange === option.value ? styles.active : ""}`}
+                        >
+                          <span className={styles.wordCountLabel}>{option.label}</span>
+                          <span className={styles.wordCountDesc}>{option.description}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Image Settings */}
                 <div className={styles.formCard}>
                   <h4 className={styles.formCardTitle}>Image Settings</h4>
+
+                  {/* Image Count */}
                   <div className={styles.formGroup}>
-                    <label>Image Mode</label>
+                    <label>Number of Images</label>
+                    <div className={styles.imageCountGrid}>
+                      {IMAGE_COUNT_OPTIONS.map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, numberOfImages: count }))}
+                          className={`${styles.imageCountBtn} ${formData.numberOfImages === count ? styles.active : ""}`}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                    </div>
+                    <small>First image is the hero/featured image</small>
+                  </div>
+
+                  {/* Image Mode */}
+                  <div className={styles.formGroup}>
+                    <label>Image Source</label>
                     <div className={styles.quickSelect}>
                       <div className={styles.buttonGrid}>
                         <button
@@ -2099,9 +2587,9 @@ export default function Home() {
                         </button>
                       </div>
                       <small>
-                        {formData.imageMode === "auto" && "AI will generate unique images for each section"}
+                        {formData.imageMode === "auto" && "AI will generate unique images for your content"}
                         {formData.imageMode === "manual" && "Use only your uploaded images"}
-                        {formData.imageMode === "enhance" && "Combine your images with AI-generated ones"}
+                        {formData.imageMode === "enhance" && "AI will enhance your uploaded images"}
                       </small>
                     </div>
                   </div>
@@ -2782,37 +3270,6 @@ export default function Home() {
             </div>
             {/* End Legacy Company Profile */}
 
-            {/* Legacy Generation Mode Toggle - Now in Hero Area */}
-            <div style={{ display: "none" }}>
-            {/* Generation Mode Toggle */}
-            <div className={styles.modeToggleRow}>
-              <div className={styles.modeToggle}>
-                <button
-                  type="button"
-                  onClick={() => setGenerationMode("blog")}
-                  className={`${styles.modeBtn} ${generationMode === "blog" ? styles.active : ""}`}
-                >
-                  Blog Post
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGenerationMode("page")}
-                  className={`${styles.modeBtn} ${generationMode === "page" ? styles.active : ""}`}
-                >
-                  Website Page
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPageLibrary(true)}
-                className={styles.libraryButton}
-                title="View Page Library"
-              >
-                <span className={styles.libraryIcon}>📚</span>
-                {pageLibrary.length > 0 && <span className={styles.libraryCount}>{pageLibrary.length}</span>}
-              </button>
-            </div>
-
             {/* Page Type Selector (Page Mode) */}
             {generationMode === "page" && (
               <div className={styles.pageTypeSection}>
@@ -2990,14 +3447,10 @@ export default function Home() {
                 </button>
               </div>
             )}
-            </div>
-            {/* End Legacy Generation Mode Toggle */}
 
-            {/* Legacy Blog Settings - Now in Hero Area and Tabs */}
-            <div style={{ display: "none" }}>
             {/* Blog Settings (Blog Mode) */}
             {generationMode === "blog" && (
-              <>
+              <div className={styles.blogSettingsSection}>
             <div className={styles.formGroup}>
               <label htmlFor="topic">Blog Topic</label>
               <input
@@ -3364,10 +3817,8 @@ export default function Home() {
             >
               {state.isLoading ? "Generating..." : "Generate Blog"}
             </button>
-              </>
+              </div>
             )}
-            </div>
-            {/* End Legacy Blog Settings */}
           </form>
 
           {/* Progress Indicator */}
@@ -4318,6 +4769,325 @@ export default function Home() {
               )}
             </div>
           )}
+
+          {/* Knowledge Base Section */}
+          {activeSection === "knowledge" && (
+            <div className={styles.sectionContent}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2 className={styles.sectionTitle}>Knowledge Base</h2>
+                  <p className={styles.sectionDescription}>
+                    The core knowledge hub for AI content generation - add your website, documents, and brand info
+                  </p>
+                </div>
+                {knowledgeBase.entries.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleAggregateKnowledge}
+                    disabled={knowledgeBase.isScraping}
+                    className={styles.primaryBtn}
+                  >
+                    {knowledgeBase.isScraping ? "Processing..." : "Aggregate All Knowledge"}
+                  </button>
+                )}
+              </div>
+
+              {/* Progress/Status Message */}
+              {knowledgeBase.scanProgress && (
+                <div className={styles.knowledgeStatus}>
+                  {knowledgeBase.scanProgress}
+                </div>
+              )}
+
+              <div className={styles.knowledgeSection}>
+                {/* Sitemap Scanner */}
+                <div className={styles.knowledgeCard}>
+                  <h3>Scan Website Sitemap</h3>
+                  <p>Enter your sitemap URL to scan and extract knowledge from all pages. The AI will analyze each page for services, USPs, tone, and brand elements.</p>
+                  <div className={styles.knowledgeInputGroup}>
+                    <input
+                      type="url"
+                      value={knowledgeBase.sitemapUrl}
+                      onChange={(e) => setKnowledgeBase(prev => ({ ...prev, sitemapUrl: e.target.value }))}
+                      placeholder="https://example.com/sitemap.xml"
+                      className={styles.knowledgeInput}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleScanSitemap}
+                      disabled={knowledgeBase.isScanning || !knowledgeBase.sitemapUrl}
+                      className={styles.knowledgeBtn}
+                    >
+                      {knowledgeBase.isScanning ? "Scanning..." : "Scan Sitemap"}
+                    </button>
+                  </div>
+
+                  {/* Sitemap Preview */}
+                  {knowledgeBase.sitemapPreview.length > 0 && (
+                    <div className={styles.sitemapPreview}>
+                      <div className={styles.sitemapHeader}>
+                        <span>Found {knowledgeBase.sitemapPreview.length} URLs</span>
+                        <button
+                          type="button"
+                          onClick={() => setKnowledgeBase(prev => ({
+                            ...prev,
+                            selectedUrls: prev.sitemapPreview.map(e => e.url),
+                          }))}
+                          className={styles.selectAllBtn}
+                        >
+                          Select All
+                        </button>
+                      </div>
+                      <div className={styles.sitemapList}>
+                        {knowledgeBase.sitemapPreview.slice(0, 20).map((entry, i) => (
+                          <label key={i} className={styles.sitemapItem}>
+                            <input
+                              type="checkbox"
+                              checked={knowledgeBase.selectedUrls.includes(entry.url)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setKnowledgeBase(prev => ({ ...prev, selectedUrls: [...prev.selectedUrls, entry.url] }));
+                                } else {
+                                  setKnowledgeBase(prev => ({ ...prev, selectedUrls: prev.selectedUrls.filter(u => u !== entry.url) }));
+                                }
+                              }}
+                            />
+                            <span className={styles.sitemapUrl}>{entry.url}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {knowledgeBase.selectedUrls.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleScrapeSelectedUrls}
+                          disabled={knowledgeBase.isScraping}
+                          className={styles.primaryBtn}
+                        >
+                          {knowledgeBase.isScraping ? "Scraping..." : `Scrape ${knowledgeBase.selectedUrls.length} Pages`}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Single URL Scraper */}
+                <div className={styles.knowledgeCard}>
+                  <h3>Add Single URL</h3>
+                  <p>Scrape a specific webpage to extract knowledge. Great for competitor pages, industry resources, or reference content.</p>
+                  <div className={styles.knowledgeInputGroup}>
+                    <input
+                      type="url"
+                      value={knowledgeBase.urlToAdd}
+                      onChange={(e) => setKnowledgeBase(prev => ({ ...prev, urlToAdd: e.target.value }))}
+                      placeholder="https://example.com/page"
+                      className={styles.knowledgeInput}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSingleUrl}
+                      disabled={knowledgeBase.isScraping || !knowledgeBase.urlToAdd}
+                      className={styles.knowledgeBtn}
+                    >
+                      {knowledgeBase.isScraping ? "Adding..." : "Add URL"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* File Upload */}
+                <div className={styles.knowledgeCard}>
+                  <h3>Upload Files</h3>
+                  <p>Upload PDFs, images, or documents containing company information, brochures, or brand guidelines.</p>
+                  <label className={styles.fileUploadLabel}>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.doc,.docx"
+                      onChange={handleFileUpload}
+                      style={{ display: "none" }}
+                    />
+                    <span className={styles.fileUploadBtn}>
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      Choose File
+                    </span>
+                  </label>
+                </div>
+
+                {/* Plain Text Input */}
+                <div className={styles.knowledgeCard}>
+                  <h3>Add Text Knowledge</h3>
+                  <p>Paste company descriptions, about us content, testimonials, or any text the AI should know about.</p>
+                  <input
+                    type="text"
+                    value={knowledgeBase.textTitle}
+                    onChange={(e) => setKnowledgeBase(prev => ({ ...prev, textTitle: e.target.value }))}
+                    placeholder="Entry title (e.g., About Us, Company History)"
+                    className={styles.knowledgeInput}
+                    style={{ marginBottom: "0.5rem" }}
+                  />
+                  <textarea
+                    value={knowledgeBase.textToAdd}
+                    onChange={(e) => setKnowledgeBase(prev => ({ ...prev, textToAdd: e.target.value }))}
+                    placeholder="Paste your company information, brand guidelines, testimonials, or any relevant text..."
+                    className={styles.knowledgeTextarea}
+                    rows={4}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddText}
+                    disabled={knowledgeBase.isScraping || !knowledgeBase.textToAdd}
+                    className={styles.knowledgeBtn}
+                    style={{ marginTop: "0.5rem" }}
+                  >
+                    {knowledgeBase.isScraping ? "Processing..." : "Add Text"}
+                  </button>
+                </div>
+
+                {/* Knowledge Entries List */}
+                {knowledgeBase.entries.length > 0 && (
+                  <div className={styles.knowledgeCard}>
+                    <h3>Knowledge Sources ({knowledgeBase.entries.length})</h3>
+                    <div className={styles.knowledgeEntries}>
+                      {knowledgeBase.entries.map((entry) => (
+                        <div key={entry.id} className={styles.knowledgeEntry}>
+                          <div className={styles.entryHeader}>
+                            <span className={styles.entryType}>{entry.type}</span>
+                            <span className={styles.entryTitle}>{entry.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveKnowledgeEntry(entry.id)}
+                              className={styles.entryRemove}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                          <div className={styles.entrySource}>{entry.source}</div>
+                          {entry.extractedData && (
+                            <div className={styles.entryExtracted}>
+                              {entry.extractedData.services && entry.extractedData.services.length > 0 && (
+                                <span>Services: {entry.extractedData.services.length}</span>
+                              )}
+                              {entry.extractedData.keywords && entry.extractedData.keywords.length > 0 && (
+                                <span>Keywords: {entry.extractedData.keywords.length}</span>
+                              )}
+                              {entry.extractedData.tone && (
+                                <span>Tone: Detected</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Aggregated Knowledge */}
+                {knowledgeBase.aggregatedData && (
+                  <div className={styles.knowledgeCard} style={{ background: "linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)" }}>
+                    <h3>Aggregated Knowledge</h3>
+                    <p>Combined insights from all sources ({knowledgeBase.entries.length} sources analyzed)</p>
+
+                    {knowledgeBase.aggregatedData.tone && (
+                      <div className={styles.aggregatedSection}>
+                        <strong>Brand Tone:</strong>
+                        <p>{knowledgeBase.aggregatedData.tone}</p>
+                      </div>
+                    )}
+
+                    {knowledgeBase.aggregatedData.services.length > 0 && (
+                      <div className={styles.aggregatedSection}>
+                        <strong>Services ({knowledgeBase.aggregatedData.services.length}):</strong>
+                        <div className={styles.aggregatedTags}>
+                          {knowledgeBase.aggregatedData.services.map((s, i) => (
+                            <span key={i} className={styles.aggregatedTag}>{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {knowledgeBase.aggregatedData.usps.length > 0 && (
+                      <div className={styles.aggregatedSection}>
+                        <strong>USPs ({knowledgeBase.aggregatedData.usps.length}):</strong>
+                        <ul className={styles.knowledgeList}>
+                          {knowledgeBase.aggregatedData.usps.map((u, i) => (
+                            <li key={i}>{u}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {knowledgeBase.aggregatedData.locations.length > 0 && (
+                      <div className={styles.aggregatedSection}>
+                        <strong>Locations ({knowledgeBase.aggregatedData.locations.length}):</strong>
+                        <div className={styles.aggregatedTags}>
+                          {knowledgeBase.aggregatedData.locations.map((l, i) => (
+                            <span key={i} className={styles.aggregatedTag}>{l}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {knowledgeBase.aggregatedData.keywords.length > 0 && (
+                      <div className={styles.aggregatedSection}>
+                        <strong>Keywords ({knowledgeBase.aggregatedData.keywords.length}):</strong>
+                        <div className={styles.aggregatedTags}>
+                          {knowledgeBase.aggregatedData.keywords.slice(0, 20).map((k, i) => (
+                            <span key={i} className={styles.aggregatedTag}>{k}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Original Company Profile Cards */}
+                <div className={styles.knowledgeCard}>
+                  <h3>Company Profile</h3>
+                  <p>Data from your company profile setup.</p>
+                  {companyProfile.name ? (
+                    <div className={styles.knowledgeItems}>
+                      <div className={styles.knowledgeItem}>
+                        <strong>Company Name:</strong> {companyProfile.name}
+                      </div>
+                      {companyProfile.website && (
+                        <div className={styles.knowledgeItem}>
+                          <strong>Website:</strong> {companyProfile.website}
+                        </div>
+                      )}
+                      {companyProfile.headquarters && (
+                        <div className={styles.knowledgeItem}>
+                          <strong>Location:</strong> {companyProfile.headquarters}, {companyProfile.state}
+                        </div>
+                      )}
+                      {companyProfile.services.length > 0 && (
+                        <div className={styles.knowledgeItem}>
+                          <strong>Services:</strong> {companyProfile.services.length} defined
+                        </div>
+                      )}
+                      {companyProfile.usps.length > 0 && (
+                        <div className={styles.knowledgeItem}>
+                          <strong>USPs:</strong> {companyProfile.usps.length} defined
+                        </div>
+                      )}
+                      {companyProfile.cities.length > 0 && (
+                        <div className={styles.knowledgeItem}>
+                          <strong>Service Areas:</strong> {companyProfile.cities.length} cities
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className={styles.knowledgeEmpty}>
+                      <a onClick={() => setActiveSection("profile")} style={{ cursor: "pointer", color: "var(--primary-color)" }}>
+                        Set up your company profile first
+                      </a>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {state.error && (
@@ -4335,13 +5105,10 @@ export default function Home() {
                   {state.copiedToClipboard ? "Copied!" : "Copy HTML"}
                 </button>
                 <button onClick={handleDownloadHTML} className={styles.actionButton}>
-                  HTML
+                  Download HTML
                 </button>
-                <button
-                  onClick={handleDownloadCSV}
-                  className={`${styles.actionButton} ${styles.primaryAction}`}
-                >
-                  Download CSV
+                <button onClick={handleDownloadMarkdown} className={`${styles.actionButton} ${styles.primaryAction}`}>
+                  Download MD
                 </button>
               </div>
             </div>
@@ -4576,7 +5343,14 @@ export default function Home() {
                 </Suspense>
               ) : (
                 <div className={styles.htmlPreview}>
-                  <div dangerouslySetInnerHTML={{ __html: state.htmlContent }} />
+                  <div className={styles.imageClickHint}>
+                    <span>Click any image to edit with AI</span>
+                  </div>
+                  <div
+                    className={styles.clickableImages}
+                    onClick={handleImageClick}
+                    dangerouslySetInnerHTML={{ __html: state.htmlContent }}
+                  />
                 </div>
               )}
             </div>
@@ -5508,6 +6282,17 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Image Edit Modal */}
+      <Suspense fallback={null}>
+        <ImageEditModal
+          isOpen={imageEditModal.isOpen}
+          imageUrl={imageEditModal.imageUrl}
+          imageSrc={imageEditModal.imageSrc}
+          onClose={() => setImageEditModal({ isOpen: false, imageUrl: "", imageSrc: "" })}
+          onSave={handleImageSave}
+        />
+      </Suspense>
 
       {/* Toast Notifications */}
       <div className={styles.toastContainer}>

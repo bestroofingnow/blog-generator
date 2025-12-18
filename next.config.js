@@ -14,6 +14,11 @@ const nextConfig = {
       },
     ],
   },
+  env: {
+    // Provide default NEXTAUTH_URL for build process
+    // This will be overridden by Vercel's environment variables at runtime
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL || "http://localhost:3000",
+  },
 };
 
 module.exports = nextConfig;

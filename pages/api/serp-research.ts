@@ -184,10 +184,20 @@ export default async function handler(
     return res.status(400).json({ error: "Search query is required" });
   }
 
-  const apiKey = process.env.BRIGHTDATA_API_KEY;
+  // Use SERP_API1 env variable (user's Bright Data SERP zone)
+  const apiKey = process.env.SERP_API1 || process.env.BRIGHTDATA_API_KEY;
+  const serpZone = "serp_api1";
 
+  // If no API key, return helpful error message
   if (!apiKey) {
-    return res.status(500).json({ error: "SERP API not configured" });
+    console.warn("BRIGHTDATA_API_KEY not configured");
+    return res.status(200).json({
+      query,
+      organic: [],
+      peopleAlsoAsk: [],
+      relatedSearches: [],
+      error: "SERP API not configured. Please add BRIGHTDATA_API_KEY to environment variables.",
+    } as SerpResponse & { error: string });
   }
 
   try {
@@ -207,21 +217,27 @@ export default async function handler(
     }
 
     // Make request to Bright Data SERP API
-    const response = await fetch("https://api.brightdata.com/request", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        zone: "serp_api",
-        url: searchUrl,
-        format: "raw",
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch("https://api.brightdata.com/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          zone: serpZone,
+          url: searchUrl,
+          format: "raw",
+        }),
+      });
+    } catch (fetchErr) {
+      throw new Error(`Failed to connect to SERP API: ${(fetchErr as Error).message}`);
+    }
 
     if (!response.ok) {
-      throw new Error(`SERP API error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`SERP API error: ${response.status} - ${errorText.substring(0, 200)}`);
     }
 
     const html = await response.text();

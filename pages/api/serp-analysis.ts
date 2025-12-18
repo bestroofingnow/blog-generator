@@ -152,10 +152,39 @@ export default async function handler(
     return res.status(400).json({ error: "Keyword is required" });
   }
 
-  const apiKey = process.env.BRIGHTDATA_API_KEY;
+  // Use SERP_API1 env variable (user's Bright Data SERP zone)
+  const apiKey = process.env.SERP_API1 || process.env.BRIGHTDATA_API_KEY;
+  const serpZone = "serp_api1";
 
+  // If no API key, return mock data for development
   if (!apiKey) {
-    return res.status(500).json({ error: "SERP API not configured" });
+    console.warn("BRIGHTDATA_API_KEY not configured - returning mock SERP data");
+    return res.status(200).json({
+      keyword,
+      location,
+      country,
+      language,
+      device,
+      searchType,
+      serpData: {
+        organic: [],
+        localPack: [],
+        peopleAlsoAsk: [],
+        relatedSearches: [],
+        shopping: [],
+        news: [],
+        images: [],
+        videos: [],
+        ads: { top: [], bottom: [] },
+        searchInfo: {},
+      },
+      analysis: {
+        error: "SERP API not configured. Please add BRIGHTDATA_API_KEY to environment variables.",
+        searchIntent: { primary: "unknown", signals: [], recommendation: "Configure Bright Data API key" },
+        difficulty: { score: 0, level: "unknown", factors: ["API not configured"] },
+      },
+      generatedAt: new Date().toISOString(),
+    });
   }
 
   try {
@@ -199,23 +228,45 @@ export default async function handler(
 
     const searchUrl = `https://www.google.com/search?${searchParams.toString()}`;
 
-    // Fetch SERP data from Bright Data
-    const serpResponse = await fetch("https://api.brightdata.com/request", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        zone: "serp_api1",
-        url: searchUrl,
-        format: "raw",
-      }),
-    });
+    // Try Bright Data SERP API with Web Scraper zone first
+    let serpResponse: Response;
+    let fetchError: Error | null = null;
 
-    if (!serpResponse.ok) {
-      const errorText = await serpResponse.text();
-      throw new Error(`SERP API error: ${serpResponse.status} - ${errorText}`);
+    // Try Web Scraper Browser API format
+    try {
+      serpResponse = await fetch("https://api.brightdata.com/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          zone: serpZone,
+          url: searchUrl,
+          format: "raw",
+        }),
+      });
+    } catch (e) {
+      fetchError = e as Error;
+      // Fallback: try basic proxy format
+      const proxyUrl = `https://brd-customer-${process.env.BRIGHTDATA_CUSTOMER_ID || "customer"}-zone-${serpZone}:${apiKey}@brd.superproxy.io:22225`;
+
+      try {
+        serpResponse = await fetch(searchUrl, {
+          headers: {
+            "User-Agent": device === "mobile"
+              ? "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1"
+              : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          },
+        });
+      } catch (e2) {
+        throw new Error(`SERP API connection failed: ${(fetchError || e2 as Error).message}`);
+      }
+    }
+
+    if (!serpResponse!.ok) {
+      const errorText = await serpResponse!.text();
+      throw new Error(`SERP API error: ${serpResponse!.status} - ${errorText.substring(0, 200)}`);
     }
 
     const responseText = await serpResponse.text();
