@@ -9,23 +9,30 @@ const gateway = createGateway({
 
 // Language Model assignments based on user specification
 // Using correct Vercel AI Gateway model IDs with provider prefix
+// Trade Services AI Team:
+// - Blueprint (Llama 4) - The Architect, designs structured outlines
+// - Craftsman (Claude) - The Writer, crafts quality content
+// - Foreman (Kimi) - The Reviewer, oversees code and quality
+// - Snapshot (Imagen) - The Photographer, creates images
+// - Touchup (Gemini Pro) - The Finisher, remakes/enhances images
+// - Scout (Perplexity) - The Researcher, finds SEO opportunities
 export const MODELS = {
-  // Llama 4 Maverick - AI Conductor/Orchestrator (Archie)
+  // Llama 4 Maverick - AI Conductor/Orchestrator (Blueprint)
   conductor: gateway("meta/llama-4-maverick"),
 
-  // Claude Sonnet 4.5 - Content writer (Penelope)
+  // Claude Sonnet 4.5 - Content writer (Craftsman)
   contentWriter: gateway("anthropic/claude-sonnet-4.5"),
 
-  // Kimi K2 - Code writer for blog posts and image review (Felix)
+  // Kimi K2 - Code writer for blog posts and image review (Foreman)
   codeWriter: gateway("moonshotai/kimi-k2"),
 
   // Gemini 2.5 Flash - For image generation prompts
   geminiFlash: gateway("google/gemini-2.5-flash"),
 
-  // Gemini 3 Pro - For image editing/remaking (Mona)
+  // Gemini 3 Pro - For image editing/remaking (Touchup)
   geminiPro: gateway("google/gemini-3-pro-preview"),
 
-  // Perplexity Sonar - Deep SEO research (Sherlock)
+  // Perplexity Sonar - Deep SEO research (Scout)
   researcher: gateway("perplexity/sonar"),
 };
 
@@ -176,7 +183,7 @@ Respond with ONLY valid JSON in this exact format:
 Generate exactly ${numberOfSections} sections.`;
 
   try {
-    console.log("[Archie] Generating outline with meta/llama-4-maverick...");
+    console.log("[Blueprint] Generating outline with meta/llama-4-maverick...");
     const result = await generateText({
       model: MODELS.conductor,
       system: "You are an expert content strategist. Always respond with valid JSON only, no markdown formatting or code blocks.",
@@ -187,7 +194,7 @@ Generate exactly ${numberOfSections} sections.`;
 
     // Clean and parse the response
     let cleanedResponse = result.text.trim();
-    console.log("[Archie] Raw response length:", cleanedResponse.length);
+    console.log("[Blueprint] Raw response length:", cleanedResponse.length);
 
     if (cleanedResponse.startsWith("```json")) {
       cleanedResponse = cleanedResponse.slice(7);
@@ -202,12 +209,12 @@ Generate exactly ${numberOfSections} sections.`;
     try {
       return JSON.parse(cleanedResponse.trim());
     } catch (parseError) {
-      console.error("[Archie] JSON parse error. Response starts with:", cleanedResponse.substring(0, 200));
-      throw new Error(`Archie (Llama) returned invalid JSON: ${cleanedResponse.substring(0, 100)}...`);
+      console.error("[Blueprint] JSON parse error. Response starts with:", cleanedResponse.substring(0, 200));
+      throw new Error(`Blueprint (Llama) returned invalid JSON: ${cleanedResponse.substring(0, 100)}...`);
     }
   } catch (error) {
-    console.error("[Archie] Error calling meta/llama-4-maverick:", error);
-    throw new Error(`Archie (meta/llama-4-maverick) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    console.error("[Blueprint] Error calling meta/llama-4-maverick:", error);
+    throw new Error(`Blueprint (meta/llama-4-maverick) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 
@@ -262,7 +269,7 @@ Respond in this exact JSON format:
 }`;
 
   try {
-    console.log("[Sherlock] Researching keywords with perplexity/sonar...");
+    console.log("[Scout] Researching keywords with perplexity/sonar...");
     const result = await generateText({
       model: MODELS.researcher,
       prompt,
@@ -270,7 +277,7 @@ Respond in this exact JSON format:
       temperature: 0.5,
     });
 
-    console.log("[Sherlock] Research complete, response length:", result.text.length);
+    console.log("[Scout] Research complete, response length:", result.text.length);
 
     // Clean and parse response
     let cleanedText = result.text.trim();
@@ -287,12 +294,12 @@ Respond in this exact JSON format:
     try {
       return JSON.parse(cleanedText.trim());
     } catch (parseError) {
-      console.error("[Sherlock] JSON parse error. Response starts with:", cleanedText.substring(0, 200));
+      console.error("[Scout] JSON parse error. Response starts with:", cleanedText.substring(0, 200));
       // Return fallback if parsing fails
       return createFallbackKeywordResearch(topic, location);
     }
   } catch (error) {
-    console.error("[Sherlock] Error calling perplexity/sonar:", error);
+    console.error("[Scout] Error calling perplexity/sonar:", error);
     // Return fallback on API error
     return createFallbackKeywordResearch(topic, location);
   }
@@ -457,7 +464,7 @@ IMPORTANT:
 - Do NOT wrap in any header or footer tags`;
 
   try {
-    console.log("[Penelope] Generating content with anthropic/claude-sonnet-4.5...");
+    console.log("[Craftsman] Generating content with anthropic/claude-sonnet-4.5...");
     const result = await generateText({
       model: MODELS.contentWriter,
       system: `You are an expert blog content writer who sounds like a real person, not a robot. Write engaging, SEO-optimized content in HTML format that feels natural and conversational. Your writing should pass as human-written content - avoid stiff, formulaic language. Match the specified reading level precisely. Output ONLY the HTML content, no explanations or markdown.`,
@@ -466,11 +473,11 @@ IMPORTANT:
       temperature: 0.75,
     });
 
-    console.log("[Penelope] Content generated, length:", result.text.length);
+    console.log("[Craftsman] Content generated, length:", result.text.length);
     return result.text;
   } catch (error) {
-    console.error("[Penelope] Error calling anthropic/claude-sonnet-4.5:", error);
-    throw new Error(`Penelope (anthropic/claude-sonnet-4.5) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    console.error("[Craftsman] Error calling anthropic/claude-sonnet-4.5:", error);
+    throw new Error(`Craftsman (anthropic/claude-sonnet-4.5) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 
@@ -543,7 +550,7 @@ Respond in JSON:
       };
     }
   } catch (error) {
-    console.error("Penelope review error:", error);
+    console.error("Craftsman review error:", error);
   }
   return { approved: true };
 }
@@ -598,7 +605,7 @@ Respond ONLY in JSON format:
       };
     }
   } catch (error) {
-    console.error("Felix review error:", error);
+    console.error("Foreman review error:", error);
   }
   return { approved: true };
 }
@@ -618,8 +625,8 @@ export async function reviewImageQuality(params: {
     reviewWithKimi({ imageBase64, originalPrompt, sectionContext }),
   ]);
 
-  console.log(`Penelope review: ${claudeReview.approved ? "APPROVED" : "REJECTED"}`);
-  console.log(`Felix review: ${kimiReview.approved ? "APPROVED" : "REJECTED"}`);
+  console.log(`Craftsman review: ${claudeReview.approved ? "APPROVED" : "REJECTED"}`);
+  console.log(`Foreman review: ${kimiReview.approved ? "APPROVED" : "REJECTED"}`);
 
   // If EITHER reviewer rejects, the image needs to be remade
   if (!claudeReview.approved || !kimiReview.approved) {
@@ -629,11 +636,11 @@ export async function reviewImageQuality(params: {
     let remakePrompt = "";
 
     if (!claudeReview.approved && claudeReview.feedback) {
-      combinedFeedback += `Penelope: ${claudeReview.feedback}. `;
+      combinedFeedback += `Craftsman: ${claudeReview.feedback}. `;
       remakePrompt = claudeReview.remakePrompt || "";
     }
     if (!kimiReview.approved && kimiReview.feedback) {
-      combinedFeedback += `Felix: ${kimiReview.feedback}. `;
+      combinedFeedback += `Foreman: ${kimiReview.feedback}. `;
       if (!remakePrompt && kimiReview.remakePrompt) {
         remakePrompt = kimiReview.remakePrompt;
       }
@@ -722,8 +729,8 @@ export async function remakeBlogImage(params: {
   const { improvedPrompt, index } = params;
 
   try {
-    // First, use Mona to enhance the prompt
-    console.log(`Mona is enhancing the prompt for image ${index}...`);
+    // First, use Touchup to enhance the prompt
+    console.log(`Touchup is enhancing the prompt for image ${index}...`);
     const enhancementResult = await generateText({
       model: MODELS.geminiPro,
       prompt: `You are an expert image prompt engineer. Enhance this image prompt to produce a better, more professional marketing photograph:
@@ -832,7 +839,7 @@ EXAMPLE INTERACTIVE ELEMENTS TO INCLUDE:
 Return ONLY the formatted HTML with embedded styles and scripts, no explanations.`;
 
   try {
-    console.log("[Felix] Formatting blog code with moonshotai/kimi-k2...");
+    console.log("[Foreman] Formatting blog code with moonshotai/kimi-k2...");
     const result = await generateText({
       model: MODELS.codeWriter,
       system: "You are an expert web developer. Return only clean HTML code with inline CSS and JavaScript for interactive effects. No explanations.",
@@ -841,10 +848,10 @@ Return ONLY the formatted HTML with embedded styles and scripts, no explanations
       temperature: 0.4,
     });
 
-    console.log("[Felix] Code formatted, length:", result.text.length);
+    console.log("[Foreman] Code formatted, length:", result.text.length);
     return result.text;
   } catch (error) {
-    console.error("[Felix] Error calling moonshotai/kimi-k2:", error);
-    throw new Error(`Felix (moonshotai/kimi-k2) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    console.error("[Foreman] Error calling moonshotai/kimi-k2:", error);
+    throw new Error(`Foreman (moonshotai/kimi-k2) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }

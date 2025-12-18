@@ -814,7 +814,7 @@ export default function Home() {
     setIsGeneratingPage(true);
     setState(prev => ({
       ...prev,
-      progress: { step: "outline", message: "Archie is designing your page structure..." },
+      progress: { step: "outline", message: "Blueprint is designing your page structure..." },
     }));
 
     try {
@@ -1595,7 +1595,7 @@ export default function Home() {
       seoData: null,
       featuredImageId: null,
       copiedToClipboard: false,
-      progress: { step: "outline", message: "Archie is designing your blog structure..." },
+      progress: { step: "outline", message: "Blueprint is designing your blog structure..." },
       publishedPost: null,
     });
     // Auto-show publish settings when WordPress is connected
@@ -3010,9 +3010,9 @@ export default function Home() {
                 disabled={isResearching || !formData.topic || !formData.location}
                 className={styles.researchButton}
               >
-                {isResearching ? "Sherlock is investigating..." : "Research Keywords & SEO"}
+                {isResearching ? "Scout is investigating..." : "Research Keywords & SEO"}
               </button>
-              <small>Sherlock analyzes competitors and suggests optimal keywords</small>
+              <small>Scout analyzes competitors and suggests optimal keywords</small>
             </div>
 
             {/* SEO Settings Toggle */}
@@ -3175,7 +3175,7 @@ export default function Home() {
               </label>
               <small className={styles.hint}>
                 {formData.useOrchestration
-                  ? "Archie (outlines) + Picasso (images) + Penelope (content) + Felix (formatting)"
+                  ? "Blueprint (outlines) + Snapshot (images) + Craftsman (content) + Foreman (formatting)"
                   : "Single AI mode (faster, no image generation)"}
               </small>
             </div>
@@ -3192,7 +3192,7 @@ export default function Home() {
                   <span>Enable Image Quality Review</span>
                 </label>
                 <small className={styles.hint}>
-                  Felix and Penelope review images, Mona remakes any that don't meet quality standards (slower but better results)
+                  Foreman and Craftsman review images, Touchup remakes any that don't meet quality standards (slower but better results)
                 </small>
               </div>
             )}
@@ -3225,7 +3225,7 @@ export default function Home() {
                   </button>
                 </div>
                 <small className={styles.hint}>
-                  {formData.imageMode === "auto" && "Picasso will generate unique images for your blog"}
+                  {formData.imageMode === "auto" && "Snapshot will generate unique images for your blog"}
                   {formData.imageMode === "manual" && "Use your own images - add URLs or upload files"}
                   {formData.imageMode === "enhance" && "Upload images and AI will enhance/edit them for your blog"}
                 </small>
@@ -3335,22 +3335,22 @@ export default function Home() {
                 <div className={`${styles.progressStep} ${["research", "outline", "images", "content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>1</span>
                   <span>Outline</span>
-                  <small>Archie</small>
+                  <small>Blueprint</small>
                 </div>
                 <div className={`${styles.progressStep} ${["images", "content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>2</span>
                   <span>Images</span>
-                  <small>Picasso</small>
+                  <small>Snapshot</small>
                 </div>
                 <div className={`${styles.progressStep} ${["content", "format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>3</span>
                   <span>Content</span>
-                  <small>Penelope</small>
+                  <small>Craftsman</small>
                 </div>
                 <div className={`${styles.progressStep} ${["format", "upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>4</span>
                   <span>Format</span>
-                  <small>Felix</small>
+                  <small>Foreman</small>
                 </div>
                 <div className={`${styles.progressStep} ${["upload", "publishing", "complete"].includes(state.progress.step) ? styles.active : ""}`}>
                   <span className={styles.stepNumber}>5</span>
@@ -4540,15 +4540,15 @@ export default function Home() {
           <div className={styles.placeholderSection}>
             <p>Fill in the form above and click "Generate Blog"</p>
             <div className={styles.featuresList}>
-              <h3>Meet Your AI Content Team:</h3>
+              <h3>Meet Your AI Crew:</h3>
               <ul>
-                <li><strong>🔍 Sherlock</strong> - Deep SEO research and competitor analysis</li>
-                <li><strong>📐 Archie</strong> - The Architect designs structured, SEO-optimized outlines</li>
-                <li><strong>🎨 Picasso</strong> - Creates stunning, context-aware images for each section</li>
-                <li><strong>👁️ Felix + Penelope</strong> - Dual quality review for images</li>
-                <li><strong>🖼️ Mona</strong> - Remakes images that don't meet quality standards</li>
-                <li><strong>✍️ Penelope</strong> - The Writer crafts polished, engaging blog content</li>
-                <li><strong>🔧 Felix</strong> - The Fixer formats clean HTML code for WordPress</li>
+                <li><strong>🔍 Scout</strong> - Deep SEO research and competitor analysis</li>
+                <li><strong>📐 Blueprint</strong> - The Architect designs structured, SEO-optimized outlines</li>
+                <li><strong>📸 Snapshot</strong> - Creates stunning, context-aware images for each section</li>
+                <li><strong>👁️ Foreman + Craftsman</strong> - Dual quality review for images</li>
+                <li><strong>🖼️ Touchup</strong> - Remakes images that don't meet quality standards</li>
+                <li><strong>✍️ Craftsman</strong> - The Writer crafts polished, engaging blog content</li>
+                <li><strong>🔧 Foreman</strong> - The Reviewer formats clean HTML code for WordPress</li>
                 <li><strong>📤 WordPress</strong> - Publish, schedule, or save drafts directly</li>
               </ul>
             </div>
@@ -4557,7 +4557,7 @@ export default function Home() {
       </main>
 
       <footer className={styles.footer}>
-        <p>Powered by Vercel AI Gateway | Archie + Picasso + Penelope + Felix + Mona + Sherlock</p>
+        <p>Powered by Vercel AI Gateway | Blueprint + Snapshot + Craftsman + Foreman + Touchup + Scout</p>
       </footer>
 
       {/* SEO Planner Modal */}

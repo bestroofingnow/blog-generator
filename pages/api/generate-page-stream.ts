@@ -141,7 +141,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const pageTypeConfig = getPageTypeConfig(pageType);
 
     // STEP 1: Generate page outline
-    sendProgress(res, "outline", `Archie is designing your ${pageTypeConfig.label} structure...`);
+    sendProgress(res, "outline", `Blueprint is designing your ${pageTypeConfig.label} structure...`);
 
     const promptParams: PagePromptParams = {
       pageType,
@@ -214,7 +214,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } else {
       // Auto mode: Generate images with AI
-      sendProgress(res, "images", "Picasso is creating images for your page...");
+      sendProgress(res, "images", "Snapshot is creating images for your page...");
 
       const imagePrompts: { prompt: string; index: number }[] = [];
 
@@ -249,7 +249,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 3: Generate page content
-    sendProgress(res, "content", "Penelope is writing your page content...");
+    sendProgress(res, "content", "Craftsman is writing your page content...");
 
     const contentPrompt = getPageContentPrompt(pageType, outline, promptParams);
 
@@ -267,7 +267,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 4: Format content
-    sendProgress(res, "format", "Felix is formatting the HTML...");
+    sendProgress(res, "format", "Foreman is formatting the HTML...");
 
     // STEP 5: Upload images to WordPress or Vercel Blob
     let imageUrls: string[] = [];

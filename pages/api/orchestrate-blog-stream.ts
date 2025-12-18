@@ -201,8 +201,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
-    // STEP 1: Generate outline with Archie
-    sendProgress(res, "outline", "Archie is designing your blog structure...");
+    // STEP 1: Generate outline with Blueprint
+    sendProgress(res, "outline", "Blueprint is designing your blog structure...");
 
     let outline: BlogOutline;
     try {
@@ -263,7 +263,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } else {
       // Auto mode: Generate images with AI (default behavior)
-      sendProgress(res, "images", "Picasso is creating stunning images...");
+      sendProgress(res, "images", "Snapshot is creating stunning images...");
 
       const imagePrompts: { prompt: string; index: number }[] = [];
 
@@ -302,8 +302,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // STEP 3: Generate content with Penelope
-    sendProgress(res, "content", "Penelope is writing engaging content...");
+    // STEP 3: Generate content with Craftsman
+    sendProgress(res, "content", "Craftsman is writing engaging content...");
 
     const rawContent = await generateContent({
       outline,
@@ -314,8 +314,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       companyName,
     });
 
-    // STEP 4: Format content with Felix
-    sendProgress(res, "format", "Felix is formatting the HTML...");
+    // STEP 4: Format content with Foreman
+    sendProgress(res, "format", "Foreman is formatting the HTML...");
 
     // STEP 5: Upload to WordPress (if configured) or use external URLs
     let imageUrls: string[] = [];

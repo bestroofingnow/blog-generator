@@ -416,12 +416,12 @@ function ResearchStep({ progress, phases }: {
         </div>
         <div className={styles.aiTeamMember}>
           <span className={styles.memberIcon}>🔍</span>
-          <span className={styles.memberName}>Sherlock</span>
+          <span className={styles.memberName}>Scout</span>
           <span className={styles.memberRole}>Research (Perplexity)</span>
         </div>
         <div className={styles.aiTeamMember}>
           <span className={styles.memberIcon}>📊</span>
-          <span className={styles.memberName}>KIMI</span>
+          <span className={styles.memberName}>Foreman</span>
           <span className={styles.memberRole}>Analysis (K2)</span>
         </div>
       </div>

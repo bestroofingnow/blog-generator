@@ -113,8 +113,8 @@ export default async function handler(
       });
     }
 
-    // STEP 1: Generate outline with Archie (the Architect)
-    console.log("Step 1: Archie is designing the blog structure...");
+    // STEP 1: Generate outline with Blueprint (the Architect)
+    console.log("Step 1: Blueprint is designing the blog structure...");
     let outline: BlogOutline;
 
     try {
@@ -145,9 +145,9 @@ export default async function handler(
       metaDescription: request.metaDescription || outline.seo?.metaDescription || `Discover the best ${request.topic.toLowerCase()} solutions in ${request.location}.`,
     };
 
-    // STEP 2: Generate images with Picasso (the Artist)
+    // STEP 2: Generate images with Snapshot (the Photographer)
     // Generate images in PARALLEL to save time - only generate hero + 2 section images
-    console.log("Step 2: Picasso is generating images in parallel...");
+    console.log("Step 2: Snapshot is generating images in parallel...");
     let generatedImages: GeneratedImage[] = [];
 
     // Build image prompts from outline
@@ -333,8 +333,8 @@ export default async function handler(
       }
     }
 
-    // STEP 4: Generate content with Penelope (the Writer)
-    console.log("Step 4: Penelope is writing your content...");
+    // STEP 4: Generate content with Craftsman (the Writer)
+    console.log("Step 4: Craftsman is writing your content...");
 
     const rawContent = await generateContent({
       outline,
@@ -347,7 +347,7 @@ export default async function handler(
     steps.content = true;
 
     // STEP 5: Format final blog HTML
-    // Skip Felix (Kimi) formatting to save time - use simple image insertion instead
+    // Skip Foreman (Kimi) formatting to save time - use simple image insertion instead
     console.log("Step 5: Formatting blog with image insertion...");
     const htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
     steps.format = true;

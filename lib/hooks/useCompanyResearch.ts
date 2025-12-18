@@ -42,14 +42,14 @@ export interface ResearchResult {
 
 // Research phases with AI team members
 const RESEARCH_PHASES = [
-  { phase: "strategy", label: "Maverick creating research strategy...", aiTeam: "🎯 Maverick (LLAMA 4)" },
-  { phase: "website", label: "Sherlock analyzing website...", aiTeam: "🔍 Sherlock (Perplexity)" },
-  { phase: "social", label: "Sherlock finding social profiles...", aiTeam: "🔍 Sherlock (Perplexity)" },
-  { phase: "directories", label: "Sherlock searching directories...", aiTeam: "🔍 Sherlock (Perplexity)" },
-  { phase: "competitors", label: "Sherlock analyzing competitors...", aiTeam: "🔍 Sherlock (Perplexity)" },
-  { phase: "analysis", label: "KIMI structuring data...", aiTeam: "📊 KIMI (K2)" },
-  { phase: "seo", label: "Maverick generating SEO strategy...", aiTeam: "🎯 Maverick (LLAMA 4)" },
-  { phase: "complete", label: "Research complete!", aiTeam: "✅ AI Team" },
+  { phase: "strategy", label: "Blueprint creating research strategy...", aiTeam: "🎯 Blueprint (LLAMA 4)" },
+  { phase: "website", label: "Scout analyzing website...", aiTeam: "🔍 Scout (Perplexity)" },
+  { phase: "social", label: "Scout finding social profiles...", aiTeam: "🔍 Scout (Perplexity)" },
+  { phase: "directories", label: "Scout searching directories...", aiTeam: "🔍 Scout (Perplexity)" },
+  { phase: "competitors", label: "Scout analyzing competitors...", aiTeam: "🔍 Scout (Perplexity)" },
+  { phase: "analysis", label: "Foreman structuring data...", aiTeam: "📊 Foreman (K2)" },
+  { phase: "seo", label: "Blueprint generating SEO strategy...", aiTeam: "🎯 Blueprint (LLAMA 4)" },
+  { phase: "complete", label: "Research complete!", aiTeam: "✅ AI Crew" },
 ];
 
 export function useCompanyResearch() {

@@ -8,25 +8,25 @@ import { generateText } from "ai";
 import { MODELS } from "../../../lib/ai-gateway";
 import type { CompanyProfile, SocialLinks, AdditionalLink } from "../../../lib/page-types";
 
-// AI Team Personas
+// AI Crew Personas - Trade Services Themed
 const AI_MANAGERS = {
-  maverick: {
-    name: "Maverick",
+  blueprint: {
+    name: "Blueprint",
     role: "Chief Strategy Officer",
     model: MODELS.conductor,
-    description: "LLAMA 4 Maverick - Orchestrates research strategy and SEO planning",
+    description: "LLAMA 4 Blueprint - Orchestrates research strategy and SEO planning",
   },
-  kimi: {
-    name: "KIMI",
+  foreman: {
+    name: "Foreman",
     role: "Data Intelligence Director",
     model: MODELS.codeWriter,
-    description: "KIMI K2 - Analyzes data, structures findings, ensures quality",
+    description: "Foreman (K2) - Analyzes data, structures findings, ensures quality",
   },
-  sherlock: {
-    name: "Sherlock",
+  scout: {
+    name: "Scout",
     role: "Research Specialist",
     model: MODELS.researcher,
-    description: "Perplexity Sonar - Deep web research and competitive analysis",
+    description: "Scout (Perplexity) - Deep web research and competitive analysis",
   },
 };
 
@@ -127,7 +127,7 @@ export default async function handler(
     console.log(`Target: ${websiteUrl || companyName}`);
 
     // PHASE 1: Maverick creates research strategy
-    console.log("\n📋 PHASE 1: Maverick creating research strategy...");
+    console.log("\n📋 PHASE 1: Blueprint creating research strategy...");
     const strategy = await createResearchStrategy({
       websiteUrl,
       companyName,
@@ -135,8 +135,8 @@ export default async function handler(
       industryType,
     });
 
-    // PHASE 2: Sherlock executes deep research
-    console.log("\n🔍 PHASE 2: Sherlock executing deep research...");
+    // PHASE 2: Scout executes deep research
+    console.log("\n🔍 PHASE 2: Scout executing deep research...");
     const researchData = await executeDeepResearch({
       websiteUrl,
       companyName: companyName || strategy.suggestedCompanyName,
@@ -145,16 +145,16 @@ export default async function handler(
       strategy,
     });
 
-    // PHASE 3: KIMI analyzes and structures data
-    console.log("\n📊 PHASE 3: KIMI analyzing and structuring data...");
+    // PHASE 3: Foreman analyzes and structures data
+    console.log("\n📊 PHASE 3: Foreman analyzing and structuring data...");
     const structuredData = await analyzeAndStructureData({
       rawResearch: researchData,
       websiteUrl,
       companyName: companyName || strategy.suggestedCompanyName,
     });
 
-    // PHASE 4: Maverick provides final SEO recommendations
-    console.log("\n🎯 PHASE 4: Maverick providing SEO recommendations...");
+    // PHASE 4: Blueprint provides final SEO recommendations
+    console.log("\n🎯 PHASE 4: Blueprint providing SEO recommendations...");
     const seoRecommendations = await generateSEORecommendations({
       profile: structuredData.profile,
       competitorData: structuredData.competitorAnalysis,
@@ -241,8 +241,8 @@ Respond in this JSON format:
 
   try {
     const result = await generateText({
-      model: AI_MANAGERS.maverick.model,
-      system: "You are Maverick, an AI strategist. Always respond with valid JSON only.",
+      model: AI_MANAGERS.blueprint.model,
+      system: "You are Blueprint, an AI strategist. Always respond with valid JSON only.",
       prompt,
       maxOutputTokens: 2000,
       temperature: 0.7,
@@ -251,7 +251,7 @@ Respond in this JSON format:
     const cleaned = cleanJsonResponse(result.text);
     return JSON.parse(cleaned);
   } catch (error) {
-    console.error("Maverick strategy error:", error);
+    console.error("Blueprint strategy error:", error);
     return {
       searchQueries: [
         `"${params.companyName || ""}" site:facebook.com`,
@@ -265,7 +265,7 @@ Respond in this JSON format:
   }
 }
 
-// Phase 2: Sherlock executes deep research
+// Phase 2: Scout executes deep research
 async function executeDeepResearch(params: {
   websiteUrl?: string;
   companyName?: string;
@@ -281,7 +281,7 @@ async function executeDeepResearch(params: {
   websiteAnalysis: Record<string, unknown>;
   sources: string[];
 }> {
-  const researchPrompt = `You are Sherlock, an expert research investigator. Conduct COMPREHENSIVE research on this company to gather ALL available information for SEO and conversion optimization.
+  const researchPrompt = `You are Scout, an expert research investigator for trade services. Conduct COMPREHENSIVE research on this company to gather ALL available information for SEO and conversion optimization.
 
 TARGET:
 - Website: ${params.websiteUrl || "Not provided"}
@@ -354,7 +354,7 @@ Respond with comprehensive JSON:
 
   try {
     const result = await generateText({
-      model: AI_MANAGERS.sherlock.model,
+      model: AI_MANAGERS.scout.model,
       prompt: researchPrompt,
       maxOutputTokens: 4000,
       temperature: 0.5,
@@ -363,7 +363,7 @@ Respond with comprehensive JSON:
     const cleaned = cleanJsonResponse(result.text);
     return JSON.parse(cleaned);
   } catch (error) {
-    console.error("Sherlock research error:", error);
+    console.error("Scout research error:", error);
     return {
       companyInfo: { name: params.companyName },
       socialProfiles: {},
@@ -376,7 +376,7 @@ Respond with comprehensive JSON:
   }
 }
 
-// Phase 3: KIMI analyzes and structures the data
+// Phase 3: Foreman analyzes and structures the data
 async function analyzeAndStructureData(params: {
   rawResearch: Record<string, unknown>;
   websiteUrl?: string;
@@ -469,8 +469,8 @@ Respond with structured JSON:
 
   try {
     const result = await generateText({
-      model: AI_MANAGERS.kimi.model,
-      system: "You are KIMI, a data analyst. Always respond with valid JSON only, no markdown.",
+      model: AI_MANAGERS.foreman.model,
+      system: "You are Foreman, a data analyst. Always respond with valid JSON only, no markdown.",
       prompt: analysisPrompt,
       maxOutputTokens: 4000,
       temperature: 0.4,
@@ -550,8 +550,8 @@ Respond in JSON:
 
   try {
     const result = await generateText({
-      model: AI_MANAGERS.maverick.model,
-      system: "You are Maverick, an SEO strategist. Respond with valid JSON only.",
+      model: AI_MANAGERS.blueprint.model,
+      system: "You are Blueprint, an SEO strategist. Respond with valid JSON only.",
       prompt: seoPrompt,
       maxOutputTokens: 2000,
       temperature: 0.6,
@@ -560,7 +560,7 @@ Respond in JSON:
     const cleaned = cleanJsonResponse(result.text);
     return JSON.parse(cleaned);
   } catch (error) {
-    console.error("Maverick SEO error:", error);
+    console.error("Blueprint SEO error:", error);
     return {
       seoInsights: {
         primaryKeywords: [],

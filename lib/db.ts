@@ -13,7 +13,7 @@ import {
   primaryKey,
   integer,
 } from "drizzle-orm/pg-core";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 // Get the database URL from environment
 const sql = neon(process.env.DATABASE_URL!);
@@ -148,6 +148,41 @@ export const passwordResetAttempts = pgTable("password_reset_attempts", {
   lockedUntil: timestamp("locked_until"),
 });
 
+// Knowledge Base - stores company facts, services, USPs for AI to reference
+export const knowledgeBase = pgTable("knowledge_base", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  category: text("category").notNull(), // services, usps, facts, locations, certifications, team, faqs, testimonials
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  isAiGenerated: boolean("is_ai_generated").default(false),
+  isVerified: boolean("is_verified").default(false), // User has reviewed and approved
+  priority: integer("priority").default(0), // Higher priority = more likely to be included
+  usageCount: integer("usage_count").default(0), // Track how often AI uses this
+  lastUsedAt: timestamp("last_used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Knowledge Base history - track changes and AI updates
+export const knowledgeBaseHistory = pgTable("knowledge_base_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  entryId: uuid("entry_id")
+    .notNull()
+    .references(() => knowledgeBase.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(), // created, updated, deleted, ai_suggested, verified
+  previousContent: text("previous_content"),
+  newContent: text("new_content"),
+  changeSource: text("change_source"), // user, ai_research, ai_content, import
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ============ TYPE EXPORTS ============
 
 export type User = typeof users.$inferSelect;
@@ -157,6 +192,9 @@ export type Draft = typeof drafts.$inferSelect;
 export type DraftImage = typeof draftImages.$inferSelect;
 export type SecurityQuestion = typeof securityQuestions.$inferSelect;
 export type PasswordResetAttempt = typeof passwordResetAttempts.$inferSelect;
+export type KnowledgeBaseEntry = typeof knowledgeBase.$inferSelect;
+export type NewKnowledgeBaseEntry = typeof knowledgeBase.$inferInsert;
+export type KnowledgeBaseHistoryEntry = typeof knowledgeBaseHistory.$inferSelect;
 
 // Re-export drizzle operators
-export { eq, desc };
+export { eq, desc, and };
