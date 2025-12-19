@@ -1,5 +1,7 @@
 // pages/api/gohighlevel-upload.ts
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 
 interface GHLCredentials {
   apiToken: string;
@@ -79,6 +81,12 @@ export default async function handler(
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Method not allowed" });
+  }
+
+  // Auth check
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
   const { action, credentials, post, imageBase64, filename } = req.body;

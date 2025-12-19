@@ -1,6 +1,8 @@
 // pages/api/research-keywords.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { researchKeywords, KeywordResearch } from "../../lib/ai-gateway";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 
 interface ResearchRequest {
   topic: string;
@@ -22,6 +24,12 @@ export default async function handler(
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Method not allowed" });
+  }
+
+  // Auth check
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
   if (!process.env.AI_GATEWAY_API_KEY) {

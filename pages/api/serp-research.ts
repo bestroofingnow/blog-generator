@@ -2,6 +2,8 @@
 // SERP API integration using Bright Data for real search engine results
 
 import { NextApiRequest, NextApiResponse } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 
 export const maxDuration = 60;
 
@@ -176,6 +178,12 @@ export default async function handler(
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  // Auth check
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const { query, location, searchType = "organic", numResults = 10 }: SerpRequest = req.body;

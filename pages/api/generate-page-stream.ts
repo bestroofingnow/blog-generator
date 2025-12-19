@@ -1,6 +1,8 @@
 // pages/api/generate-page-stream.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { generateText } from "ai";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 import {
   MODELS,
   generateBlogImage,
@@ -151,6 +153,12 @@ function insertImagesIntoContent(content: string, imageUrls: string[], seoData: 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  // Auth check
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   // Set up SSE headers

@@ -4,6 +4,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { generateText } from "ai";
 import { MODELS } from "../../lib/ai-gateway";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 
 interface SuggestedContent {
   type: "blog" | "service_page" | "location_page";
@@ -285,6 +287,12 @@ async function fetchWebsiteContent(url: string): Promise<{ text: string; html: s
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ResearchResult>) {
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, error: "Method not allowed" });
+  }
+
+  // Auth check
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
   const { url, deepResearch = true } = req.body;

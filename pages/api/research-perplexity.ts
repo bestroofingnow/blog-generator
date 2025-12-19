@@ -4,6 +4,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { gateway } from "@ai-sdk/gateway";
 import { generateText } from "ai";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 
 export const maxDuration = 120;
 
@@ -18,6 +20,12 @@ interface ResearchRequest {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  // Auth check
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const { topic, industry, location, companyName, researchType }: ResearchRequest = req.body;

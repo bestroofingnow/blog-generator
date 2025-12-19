@@ -1,5 +1,7 @@
 // pages/api/orchestrate-blog-stream.ts
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 import {
   generateOutline,
   generateContent,
@@ -214,6 +216,12 @@ function createFallbackOutline(topic: string, location: string, numberOfSections
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  // Auth check
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
   // Validate required fields before setting up SSE
