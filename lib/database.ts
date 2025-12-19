@@ -656,12 +656,33 @@ export async function loadScheduledBlogs(
       });
     }
 
+    // Get featured images for these blogs
+    const blogIds = filteredResults.map((b) => b.id);
+    const featuredImages = blogIds.length > 0
+      ? await db
+          .select({
+            draftId: draftImages.draftId,
+            storagePath: draftImages.storagePath,
+          })
+          .from(draftImages)
+          .where(eq(draftImages.isFeatured, true))
+      : [];
+
+    // Create a map of blog ID to featured image URL
+    const imageMap = new Map<string, string>();
+    featuredImages.forEach((img) => {
+      if (img.draftId && blogIds.includes(img.draftId)) {
+        imageMap.set(img.draftId, img.storagePath);
+      }
+    });
+
     return filteredResults.map((blog) => ({
       id: blog.id,
       title: blog.title,
       type: blog.type,
       scheduledPublishAt: blog.scheduledPublishAt,
       scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
+      featuredImageUrl: imageMap.get(blog.id),
     }));
   } catch (error) {
     console.error("Error loading scheduled blogs:", error);
@@ -693,12 +714,33 @@ export async function loadUnscheduledBlogs(
       )
       .orderBy(desc(drafts.updatedAt));
 
+    // Get featured images for these blogs
+    const blogIds = result.map((b) => b.id);
+    const featuredImages = blogIds.length > 0
+      ? await db
+          .select({
+            draftId: draftImages.draftId,
+            storagePath: draftImages.storagePath,
+          })
+          .from(draftImages)
+          .where(eq(draftImages.isFeatured, true))
+      : [];
+
+    // Create a map of blog ID to featured image URL
+    const imageMap = new Map<string, string>();
+    featuredImages.forEach((img) => {
+      if (img.draftId && blogIds.includes(img.draftId)) {
+        imageMap.set(img.draftId, img.storagePath);
+      }
+    });
+
     return result.map((blog) => ({
       id: blog.id,
       title: blog.title,
       type: blog.type,
       scheduledPublishAt: blog.scheduledPublishAt,
       scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
+      featuredImageUrl: imageMap.get(blog.id),
     }));
   } catch (error) {
     console.error("Error loading unscheduled blogs:", error);
