@@ -48,6 +48,29 @@ export default async function handler(
       });
     }
 
+    // Validate content type - only allow images
+    const allowedContentTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"];
+    if (!allowedContentTypes.includes(contentType)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid content type. Only images are allowed.",
+      });
+    }
+
+    // Sanitize filename - remove path traversal attempts and special characters
+    const sanitizedFilename = filename
+      .replace(/\.\./g, "") // Remove path traversal
+      .replace(/[/\\]/g, "") // Remove slashes
+      .replace(/[^a-zA-Z0-9._-]/g, "-") // Replace special chars with dash
+      .substring(0, 255); // Limit filename length
+
+    if (!sanitizedFilename || sanitizedFilename.length < 3) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid filename",
+      });
+    }
+
     // Strip data URI prefix if present
     let cleanBase64 = base64;
     if (cleanBase64.includes(",")) {
@@ -57,8 +80,17 @@ export default async function handler(
     // Convert base64 to Buffer
     const buffer = Buffer.from(cleanBase64, "base64");
 
+    // Validate buffer size (max 10MB for images)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (buffer.length > maxSize) {
+      return res.status(400).json({
+        success: false,
+        error: "Image too large. Maximum size is 10MB.",
+      });
+    }
+
     // Upload to Vercel Blob
-    const blob = await put(filename, buffer, {
+    const blob = await put(sanitizedFilename, buffer, {
       access: "public",
       contentType,
     });
