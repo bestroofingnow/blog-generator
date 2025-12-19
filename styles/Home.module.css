@@ -14466,3 +14466,727 @@
 :global([data-theme="dark"]) .statusStepLabel {
   color: var(--text-secondary);
 }
+
+/* ========================================
+   ROUND 16: ACCORDION VARIANTS & COLLAPSIBLES
+   ======================================== */
+
+/* Base Accordion */
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordionItem {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accordionItem:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.accordionItemOpen {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.accordionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.accordionHeader:hover {
+  background: rgba(139, 92, 246, 0.03);
+}
+
+.accordionHeaderOpen {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(6, 182, 212, 0.03) 100%);
+}
+
+.accordionTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.accordionTitleIcon {
+  width: 20px;
+  height: 20px;
+  color: #8b5cf6;
+}
+
+.accordionChevron {
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordionChevronOpen {
+  transform: rotate(180deg);
+  color: #8b5cf6;
+}
+
+.accordionContent {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordionContentOpen {
+  max-height: 500px;
+}
+
+.accordionBody {
+  padding: 0 20px 20px 20px;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+/* Bordered Accordion */
+.accordionBordered .accordionItem {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.accordionBordered .accordionItem:first-child {
+  border-top: 1px solid #e5e7eb;
+}
+
+.accordionBordered .accordionHeader {
+  padding: 20px 0;
+}
+
+.accordionBordered .accordionBody {
+  padding: 0 0 20px 0;
+}
+
+/* Flush Accordion (No Borders) */
+.accordionFlush .accordionItem {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.accordionFlush .accordionHeader {
+  padding: 16px 0;
+}
+
+.accordionFlush .accordionBody {
+  padding: 0 0 16px 0;
+}
+
+/* Card Accordion */
+.accordionCard .accordionItem {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: none;
+  margin-bottom: 12px;
+}
+
+.accordionCard .accordionItemOpen {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.accordionCard .accordionHeader {
+  padding: 20px 24px;
+}
+
+.accordionCard .accordionBody {
+  padding: 0 24px 24px 24px;
+}
+
+/* Icon Accordion (With Left Icon) */
+.accordionIconed .accordionHeader {
+  padding-left: 16px;
+}
+
+.accordionIcon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.accordionIconInner {
+  width: 20px;
+  height: 20px;
+  color: #8b5cf6;
+}
+
+/* Numbered Accordion */
+.accordionNumbered .accordionNumber {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 14px;
+  flex-shrink: 0;
+}
+
+/* FAQ Accordion */
+.accordionFaq .accordionItem {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: none;
+  margin-bottom: 12px;
+}
+
+.accordionFaq .accordionItemOpen {
+  background: white;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.1);
+}
+
+.accordionFaq .accordionHeader {
+  padding: 20px 24px;
+}
+
+.accordionFaq .accordionTitle {
+  font-size: 16px;
+}
+
+.accordionFaq .accordionTitle::before {
+  content: 'Q.';
+  color: #8b5cf6;
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.accordionFaq .accordionBody::before {
+  content: 'A.';
+  color: #22c55e;
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+/* Collapsible Panel */
+.collapsiblePanel {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.collapsiblePanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  cursor: pointer;
+}
+
+.collapsiblePanelTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.collapsiblePanelToggle {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.collapsiblePanelToggle:hover {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.collapsiblePanelIcon {
+  width: 14px;
+  height: 14px;
+  color: #6b7280;
+  transition: transform 0.3s ease;
+}
+
+.collapsiblePanelOpen .collapsiblePanelIcon {
+  transform: rotate(180deg);
+}
+
+.collapsiblePanelContent {
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Expandable Section */
+.expandableSection {
+  margin-bottom: 8px;
+}
+
+.expandableTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.expandableTrigger:hover {
+  background: rgba(139, 92, 246, 0.05);
+  color: #8b5cf6;
+}
+
+.expandableTriggerIcon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.expandableOpen .expandableTriggerIcon {
+  transform: rotate(90deg);
+}
+
+.expandableContent {
+  padding-left: 36px;
+  overflow: hidden;
+}
+
+/* Drawer Accordion (Side panel style) */
+.accordionDrawer {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.accordionDrawer .accordionItem {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.accordionDrawer .accordionItem:last-child {
+  border-bottom: none;
+}
+
+.accordionDrawer .accordionHeader {
+  background: #f9fafb;
+  padding: 14px 16px;
+}
+
+.accordionDrawer .accordionHeaderOpen {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.03) 100%);
+}
+
+.accordionDrawer .accordionBody {
+  padding: 16px;
+  background: white;
+}
+
+/* Plus/Minus Accordion */
+.accordionPlusMinus .accordionChevron {
+  display: none;
+}
+
+.accordionPlusIcon,
+.accordionMinusIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.accordionPlusIcon::before {
+  content: '+';
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.accordionMinusIcon::before {
+  content: '−';
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.accordionItemOpen .accordionPlusIcon {
+  display: none;
+}
+
+.accordionItem:not(.accordionItemOpen) .accordionMinusIcon {
+  display: none;
+}
+
+.accordionItemOpen .accordionMinusIcon {
+  background: #8b5cf6;
+  color: white;
+}
+
+/* Gradient Accordion */
+.accordionGradient .accordionItem {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(6, 182, 212, 0.02) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.accordionGradient .accordionItemOpen {
+  background: white;
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.15);
+}
+
+.accordionGradient .accordionHeader {
+  padding: 18px 20px;
+}
+
+.accordionGradient .accordionTitle {
+  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Compact Accordion */
+.accordionCompact .accordionItem {
+  border-radius: 8px;
+}
+
+.accordionCompact .accordionHeader {
+  padding: 12px 16px;
+}
+
+.accordionCompact .accordionTitle {
+  font-size: 14px;
+}
+
+.accordionCompact .accordionChevron {
+  width: 16px;
+  height: 16px;
+}
+
+.accordionCompact .accordionBody {
+  padding: 0 16px 16px 16px;
+  font-size: 13px;
+}
+
+/* Nested Accordion */
+.accordionNested {
+  margin-left: 20px;
+  margin-top: 12px;
+  padding-left: 16px;
+  border-left: 2px solid rgba(139, 92, 246, 0.2);
+}
+
+.accordionNested .accordionItem {
+  background: rgba(139, 92, 246, 0.02);
+}
+
+/* Toggle Switch Accordion */
+.accordionToggle .accordionHeader {
+  justify-content: flex-start;
+}
+
+.accordionToggleSwitch {
+  width: 44px;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  position: relative;
+  margin-left: auto;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.accordionToggleSwitch::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.accordionItemOpen .accordionToggleSwitch {
+  background: #8b5cf6;
+}
+
+.accordionItemOpen .accordionToggleSwitch::after {
+  transform: translateX(20px);
+}
+
+/* Steps Accordion */
+.accordionSteps .accordionItem {
+  position: relative;
+  padding-left: 48px;
+}
+
+.accordionSteps .accordionItem::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  bottom: -8px;
+  width: 2px;
+  background: #e5e7eb;
+}
+
+.accordionSteps .accordionItem:last-child::before {
+  display: none;
+}
+
+.accordionStepMarker {
+  position: absolute;
+  left: 8px;
+  top: 16px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.accordionSteps .accordionItemOpen .accordionStepMarker {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+  color: white;
+}
+
+/* Dark Mode - Accordions */
+:global([data-theme="dark"]) .accordionItem {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .accordionItem:hover {
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+:global([data-theme="dark"]) .accordionItemOpen {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .accordionHeader:hover {
+  background: rgba(167, 139, 250, 0.05);
+}
+
+:global([data-theme="dark"]) .accordionHeaderOpen {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(34, 211, 238, 0.05) 100%);
+}
+
+:global([data-theme="dark"]) .accordionTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .accordionTitleIcon {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .accordionChevron {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .accordionChevronOpen {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .accordionBody {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .accordionBordered .accordionItem {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .accordionCard .accordionItem {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .accordionCard .accordionItemOpen {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .accordionIcon {
+  background: rgba(167, 139, 250, 0.15);
+}
+
+:global([data-theme="dark"]) .accordionIconInner {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .accordionNumbered .accordionNumber {
+  background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+}
+
+:global([data-theme="dark"]) .accordionFaq .accordionItem {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+:global([data-theme="dark"]) .accordionFaq .accordionItemOpen {
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 16px rgba(167, 139, 250, 0.15);
+}
+
+:global([data-theme="dark"]) .collapsiblePanel {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .collapsiblePanelHeader {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+}
+
+:global([data-theme="dark"]) .collapsiblePanelTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .collapsiblePanelToggle {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .collapsiblePanelToggle:hover {
+  border-color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+}
+
+:global([data-theme="dark"]) .collapsiblePanelIcon {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .collapsiblePanelContent {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .expandableTrigger {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .expandableTrigger:hover {
+  background: rgba(167, 139, 250, 0.1);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .accordionDrawer {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .accordionDrawer .accordionItem {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .accordionDrawer .accordionHeader {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .accordionDrawer .accordionHeaderOpen {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(167, 139, 250, 0.05) 100%);
+}
+
+:global([data-theme="dark"]) .accordionDrawer .accordionBody {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .accordionPlusIcon,
+:global([data-theme="dark"]) .accordionMinusIcon {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .accordionItemOpen .accordionMinusIcon {
+  background: #a78bfa;
+  color: white;
+}
+
+:global([data-theme="dark"]) .accordionGradient .accordionItem {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.05) 0%, rgba(34, 211, 238, 0.03) 100%);
+  border-color: rgba(167, 139, 250, 0.15);
+}
+
+:global([data-theme="dark"]) .accordionGradient .accordionItemOpen {
+  background: var(--bg-secondary);
+  border-color: #a78bfa;
+  box-shadow: 0 4px 16px rgba(167, 139, 250, 0.2);
+}
+
+:global([data-theme="dark"]) .accordionNested {
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+:global([data-theme="dark"]) .accordionNested .accordionItem {
+  background: rgba(167, 139, 250, 0.05);
+}
+
+:global([data-theme="dark"]) .accordionToggleSwitch {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .accordionToggleSwitch::after {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .accordionItemOpen .accordionToggleSwitch {
+  background: #a78bfa;
+}
+
+:global([data-theme="dark"]) .accordionSteps .accordionItem::before {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .accordionStepMarker {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .accordionSteps .accordionItemOpen .accordionStepMarker {
+  background: #a78bfa;
+  border-color: #a78bfa;
+  color: white;
+}
