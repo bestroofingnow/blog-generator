@@ -11951,3 +11951,538 @@
   background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
   color: #a78bfa;
 }
+
+/* ===== ROUND 12: INLINE EDITING, FABs, SNACKBARS ===== */
+
+/* ===== INLINE EDITING ===== */
+.inlineEdit {
+  position: relative;
+  display: inline-block;
+}
+
+.inlineEditValue {
+  padding: 4px 8px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inlineEditValue:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.inlineEditValue::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z'/%3E%3C/svg%3E");
+  background-size: contain;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.inlineEditValue:hover::after {
+  opacity: 1;
+}
+
+.inlineEditInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font: inherit;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+  outline: none;
+  animation: inlineEditFocus 0.2s ease;
+}
+
+@keyframes inlineEditFocus {
+  from {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+  to {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+  }
+}
+
+.inlineEditActions {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  gap: 4px;
+  z-index: 10;
+  animation: slideDown 0.15s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inlineEditSave,
+.inlineEditCancel {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.inlineEditSave {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+}
+
+.inlineEditSave:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.inlineEditCancel {
+  background: rgba(0, 0, 0, 0.05);
+  color: #64748b;
+}
+
+.inlineEditCancel:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Inline edit loading state */
+.inlineEditLoading {
+  position: relative;
+  pointer-events: none;
+}
+
+.inlineEditLoading::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  transform: translateY(-50%);
+}
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+}
+
+.fabButton {
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fabButton:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+}
+
+.fabButton:active {
+  transform: scale(0.95);
+}
+
+.fabIcon {
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+.fab.open .fabIcon {
+  transform: rotate(45deg);
+}
+
+/* FAB Menu */
+.fabMenu {
+  position: absolute;
+  bottom: 72px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fab.open .fabMenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.fabMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fabItemIn 0.3s ease backwards;
+}
+
+.fabMenuItem:nth-child(1) { animation-delay: 0ms; }
+.fabMenuItem:nth-child(2) { animation-delay: 50ms; }
+.fabMenuItem:nth-child(3) { animation-delay: 100ms; }
+.fabMenuItem:nth-child(4) { animation-delay: 150ms; }
+
+@keyframes fabItemIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fabMenuLabel {
+  padding: 8px 14px;
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+
+.fabMenuButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  border: none;
+  background: white;
+  color: #667eea;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.fabMenuButton:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: scale(1.1);
+}
+
+/* FAB Variants */
+.fabSmall .fabButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+}
+
+.fabSmall .fabIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.fabExtended .fabButton {
+  width: auto;
+  padding: 0 24px;
+  gap: 8px;
+}
+
+.fabExtendedLabel {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* FAB Colors */
+.fabSuccess .fabButton {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+}
+
+.fabDanger .fabButton {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+}
+
+.fabWarning .fabButton {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+}
+
+/* ===== SNACKBAR / TOAST ===== */
+.snackbarContainer {
+  position: fixed;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.snackbarContainer.bottomCenter {
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.snackbarContainer.bottomRight {
+  bottom: 24px;
+  right: 24px;
+  align-items: flex-end;
+}
+
+.snackbarContainer.bottomLeft {
+  bottom: 24px;
+  left: 24px;
+  align-items: flex-start;
+}
+
+.snackbarContainer.topCenter {
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.snackbarContainer.topRight {
+  top: 24px;
+  right: 24px;
+  align-items: flex-end;
+}
+
+.snackbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 480px;
+  padding: 14px 16px;
+  background: #1e293b;
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  pointer-events: all;
+  animation: snackbarIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes snackbarIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.snackbar.exiting {
+  animation: snackbarOut 0.2s ease forwards;
+}
+
+@keyframes snackbarOut {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+}
+
+.snackbarIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.snackbarMessage {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.snackbarAction {
+  padding: 6px 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.snackbarAction:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.snackbarClose {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.snackbarClose:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Snackbar progress bar */
+.snackbarProgress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 0 0 12px 12px;
+  animation: snackbarProgress linear forwards;
+}
+
+@keyframes snackbarProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0;
+  }
+}
+
+/* Snackbar variants */
+.snackbarSuccess {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.snackbarError {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.snackbarWarning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #1e293b;
+}
+
+.snackbarWarning .snackbarAction {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1e293b;
+}
+
+.snackbarInfo {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* Snackbar with leading icon */
+.snackbarSuccess .snackbarIcon {
+  color: white;
+}
+
+.snackbarError .snackbarIcon {
+  color: white;
+}
+
+/* Multi-line snackbar */
+.snackbarMultiline {
+  flex-wrap: wrap;
+  padding: 16px;
+}
+
+.snackbarMultiline .snackbarMessage {
+  width: 100%;
+}
+
+.snackbarMultiline .snackbarAction {
+  margin-top: 8px;
+  margin-left: auto;
+}
+
+/* Stacked snackbars */
+.snackbar + .snackbar {
+  margin-top: 8px;
+}
+
+/* ===== DARK MODE FOR ROUND 12 ===== */
+:global([data-theme="dark"]) .inlineEditValue:hover {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-color: rgba(167, 139, 250, 0.2);
+}
+
+:global([data-theme="dark"]) .inlineEditInput {
+  background: var(--bg-secondary);
+  border-color: #a78bfa;
+  color: var(--text-primary);
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15);
+}
+
+:global([data-theme="dark"]) .inlineEditCancel {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .fabButton {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+}
+
+:global([data-theme="dark"]) .fabMenuLabel {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .fabMenuButton {
+  background: var(--bg-secondary);
+  color: #a78bfa;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .fabMenuButton:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+  color: white;
+}
+
+:global([data-theme="dark"]) .snackbar {
+  background: #374151;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
