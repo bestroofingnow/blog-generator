@@ -49882,3 +49882,1997 @@
 :global([data-theme="dark"]) .wizardFormInput:focus {
   border-color: #8b5cf6;
 }
+
+/* ==========================================================================
+   ROUND 47: MEDIA GALLERY COMPONENTS
+   - Gallery grid layouts (standard, masonry, justified)
+   - Thumbnail cards with hover effects
+   - Lightbox/modal viewer
+   - Image zoom and pan
+   - Gallery carousel/slider
+   - Upload dropzone
+   - Image metadata display
+   - Gallery filtering and sorting
+   - Full dark mode support
+   ========================================================================== */
+
+/* Gallery Container */
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.galleryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.galleryTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.galleryCount {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.galleryControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.galleryViewToggle {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.galleryViewBtn {
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.galleryViewBtn:hover {
+  color: #0f172a;
+}
+
+.galleryViewBtn.active {
+  background: white;
+  color: #8b5cf6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.galleryViewBtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.gallerySearch {
+  position: relative;
+}
+
+.gallerySearchInput {
+  width: 200px;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.gallerySearchInput:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  width: 280px;
+}
+
+.gallerySearchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  width: 16px;
+  height: 16px;
+}
+
+.gallerySort {
+  position: relative;
+}
+
+.gallerySortBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #475569;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gallerySortBtn:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.gallerySortDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 50;
+  padding: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+}
+
+.gallerySortDropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.gallerySortOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.gallerySortOption:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.gallerySortOption.active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1));
+  color: #8b5cf6;
+}
+
+.gallerySortOption svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Gallery Grid Layout */
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.galleryGridCompact {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.galleryGridLarge {
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+/* Masonry Layout */
+.galleryMasonry {
+  column-count: 4;
+  column-gap: 20px;
+}
+
+.galleryMasonry .galleryItem {
+  break-inside: avoid;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1200px) {
+  .galleryMasonry {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .galleryMasonry {
+    column-count: 2;
+    column-gap: 12px;
+  }
+
+  .galleryMasonry .galleryItem {
+    margin-bottom: 12px;
+  }
+}
+
+/* Justified Layout */
+.galleryJustified {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.galleryJustified .galleryItem {
+  flex-grow: 1;
+  height: 240px;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+/* Gallery Item/Card */
+.galleryItem {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.galleryItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.galleryItemImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.galleryItem:hover .galleryItemImage {
+  transform: scale(1.05);
+}
+
+.galleryItemOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.galleryItem:hover .galleryItemOverlay {
+  opacity: 1;
+}
+
+.galleryItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.galleryItemMeta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.galleryItemActions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.galleryItem:hover .galleryItemActions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.galleryItemActionBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.galleryItemActionBtn:hover {
+  background: white;
+  color: #8b5cf6;
+  transform: scale(1.1);
+}
+
+.galleryItemActionBtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Gallery Item Selection */
+.galleryItemCheckbox {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.galleryItem:hover .galleryItemCheckbox,
+.galleryItem.selected .galleryItemCheckbox {
+  opacity: 1;
+}
+
+.galleryItem.selected .galleryItemCheckbox {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.galleryItemCheckbox svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+  opacity: 0;
+}
+
+.galleryItem.selected .galleryItemCheckbox svg {
+  opacity: 1;
+}
+
+.galleryItem.selected {
+  outline: 3px solid #8b5cf6;
+  outline-offset: -3px;
+}
+
+/* Gallery Item Badge */
+.galleryItemBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+}
+
+.galleryItemBadge.new {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+}
+
+.galleryItemBadge.featured {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+/* Gallery List View */
+.galleryList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.galleryListItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.galleryListItem:hover {
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+}
+
+.galleryListThumb {
+  width: 80px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.galleryListInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.galleryListTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.galleryListDetails {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  gap: 16px;
+}
+
+.galleryListActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.lightbox.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.lightboxContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightboxImage {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: lightboxZoomIn 0.4s ease;
+}
+
+@keyframes lightboxZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lightboxClose {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.lightboxClose:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.lightboxClose svg {
+  width: 24px;
+  height: 24px;
+}
+
+.lightboxNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.lightboxNav:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.lightboxNav svg {
+  width: 28px;
+  height: 28px;
+}
+
+.lightboxPrev {
+  left: 20px;
+}
+
+.lightboxNext {
+  right: 20px;
+}
+
+.lightboxInfo {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 32px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.lightboxTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 4px 0;
+}
+
+.lightboxMeta {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.lightboxCounter {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.lightboxActions {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.lightboxActionBtn {
+  padding: 10px 16px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.lightboxActionBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lightboxActionBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Lightbox Thumbnails Strip */
+.lightboxThumbs {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  max-width: 80vw;
+  overflow-x: auto;
+}
+
+.lightboxThumb {
+  width: 60px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.lightboxThumb:hover {
+  opacity: 0.8;
+}
+
+.lightboxThumb.active {
+  opacity: 1;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* Lightbox Zoom */
+.lightboxZoomable {
+  cursor: zoom-in;
+}
+
+.lightboxZoomable.zoomed {
+  cursor: zoom-out;
+  max-width: none;
+  max-height: none;
+}
+
+.lightboxZoomControls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  padding: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.lightboxZoomBtn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.lightboxZoomBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lightboxZoomBtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.lightboxZoomLevel {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+}
+
+/* Gallery Carousel */
+.galleryCarousel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.galleryCarouselTrack {
+  display: flex;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.galleryCarouselSlide {
+  min-width: 100%;
+  position: relative;
+}
+
+.galleryCarouselImage {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+}
+
+.galleryCarouselCaption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+}
+
+.galleryCarouselTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 8px 0;
+}
+
+.galleryCarouselDescription {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+.galleryCarouselNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.galleryCarouselNav:hover {
+  background: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.galleryCarouselNav.prev {
+  left: 16px;
+}
+
+.galleryCarouselNav.next {
+  right: 16px;
+}
+
+.galleryCarouselNav svg {
+  width: 24px;
+  height: 24px;
+}
+
+.galleryCarouselDots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.galleryCarouselDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.galleryCarouselDot:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.galleryCarouselDot.active {
+  background: white;
+  transform: scale(1.2);
+}
+
+/* Carousel Progress Bar */
+.galleryCarouselProgress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.galleryCarouselProgressBar {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+  transition: width 0.3s ease;
+}
+
+/* Thumbnail Carousel */
+.galleryThumbCarousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 12px 0;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.galleryThumbCarousel::-webkit-scrollbar {
+  display: none;
+}
+
+.galleryThumbItem {
+  flex-shrink: 0;
+  width: 120px;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.galleryThumbItem:hover {
+  opacity: 1;
+}
+
+.galleryThumbItem.active {
+  opacity: 1;
+  outline: 3px solid #8b5cf6;
+  outline-offset: 2px;
+}
+
+.galleryThumbItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Upload Dropzone */
+.uploadDropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  background: #fafafa;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.uploadDropzone:hover {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.02);
+}
+
+.uploadDropzone.dragging {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.05);
+  transform: scale(1.01);
+}
+
+.uploadDropzoneIcon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  color: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.uploadDropzone:hover .uploadDropzoneIcon,
+.uploadDropzone.dragging .uploadDropzoneIcon {
+  color: #8b5cf6;
+  transform: scale(1.1);
+}
+
+.uploadDropzoneTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.uploadDropzoneText {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+}
+
+.uploadDropzoneBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.uploadDropzoneBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.uploadDropzoneFormats {
+  margin-top: 16px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Upload Progress */
+.uploadProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.uploadProgressItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.uploadProgressThumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+
+.uploadProgressInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.uploadProgressName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.uploadProgressBar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.uploadProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.uploadProgressSize {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.uploadProgressStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.uploadProgressStatus.success {
+  color: #22c55e;
+}
+
+.uploadProgressStatus.error {
+  color: #ef4444;
+}
+
+.uploadProgressCancel {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.uploadProgressCancel:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* Image Metadata Panel */
+.imageMetadata {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.imageMetadataHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.imageMetadataTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.imageMetadataBody {
+  padding: 16px;
+}
+
+.imageMetadataRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.imageMetadataRow:last-child {
+  border-bottom: none;
+}
+
+.imageMetadataLabel {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.imageMetadataValue {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  text-align: right;
+}
+
+.imageMetadataTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.imageMetadataTag {
+  padding: 4px 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  border-radius: 20px;
+}
+
+/* Gallery Filters */
+.galleryFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.galleryFilterChip {
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.galleryFilterChip:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.galleryFilterChip.active {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  border-color: transparent;
+  color: white;
+}
+
+.galleryFilterClear {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.galleryFilterClear:hover {
+  text-decoration: underline;
+}
+
+/* Gallery Empty State */
+.galleryEmpty {
+  text-align: center;
+  padding: 80px 24px;
+}
+
+.galleryEmptyIcon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  color: #d1d5db;
+}
+
+.galleryEmptyTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.galleryEmptyText {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0 0 24px 0;
+}
+
+.galleryEmptyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.galleryEmptyBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+}
+
+/* Gallery Bulk Actions */
+.galleryBulkBar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: #0f172a;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  animation: bulkBarSlideUp 0.3s ease;
+}
+
+@keyframes bulkBarSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.galleryBulkCount {
+  font-size: 14px;
+  color: white;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.galleryBulkCount span {
+  background: #8b5cf6;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.galleryBulkDivider {
+  width: 1px;
+  height: 24px;
+  background: #334155;
+}
+
+.galleryBulkActions {
+  display: flex;
+  gap: 8px;
+}
+
+.galleryBulkBtn {
+  padding: 10px 16px;
+  background: #1e293b;
+  border: none;
+  color: #e2e8f0;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.galleryBulkBtn:hover {
+  background: #334155;
+}
+
+.galleryBulkBtn.danger:hover {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+.galleryBulkBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.galleryBulkClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.galleryBulkClose:hover {
+  background: #334155;
+  color: white;
+}
+
+/* Image Comparison Slider */
+.imageCompare {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  user-select: none;
+}
+
+.imageCompareBefore,
+.imageCompareAfter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.imageCompareBefore img,
+.imageCompareAfter img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imageCompareAfter {
+  clip-path: inset(0 50% 0 0);
+}
+
+.imageCompareSlider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  background: white;
+  cursor: ew-resize;
+  transform: translateX(-50%);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.imageCompareHandle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.imageCompareHandle svg {
+  width: 24px;
+  height: 24px;
+  color: #475569;
+}
+
+.imageCompareLabel {
+  position: absolute;
+  top: 12px;
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+}
+
+.imageCompareLabel.before {
+  left: 12px;
+}
+
+.imageCompareLabel.after {
+  right: 12px;
+}
+
+/* Image Crop Tool */
+.imageCropper {
+  position: relative;
+  background: #0f172a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.imageCropperCanvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.imageCropperOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.imageCropperSelection {
+  position: absolute;
+  border: 2px dashed white;
+  background: transparent;
+  cursor: move;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.imageCropperHandle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.imageCropperHandle.nw {
+  top: -6px;
+  left: -6px;
+  cursor: nw-resize;
+}
+
+.imageCropperHandle.ne {
+  top: -6px;
+  right: -6px;
+  cursor: ne-resize;
+}
+
+.imageCropperHandle.sw {
+  bottom: -6px;
+  left: -6px;
+  cursor: sw-resize;
+}
+
+.imageCropperHandle.se {
+  bottom: -6px;
+  right: -6px;
+  cursor: se-resize;
+}
+
+.imageCropperToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: #1e293b;
+}
+
+.imageCropperAspect {
+  display: flex;
+  gap: 8px;
+}
+
+.imageCropperAspectBtn {
+  padding: 8px 16px;
+  background: #334155;
+  border: none;
+  color: #e2e8f0;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.imageCropperAspectBtn:hover {
+  background: #475569;
+}
+
+.imageCropperAspectBtn.active {
+  background: #8b5cf6;
+  color: white;
+}
+
+/* Gallery Skeleton Loading */
+.gallerySkeleton {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.gallerySkeletonItem {
+  aspect-ratio: 4/3;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 12px;
+  animation: gallerySkeletonShimmer 1.5s infinite;
+}
+
+@keyframes gallerySkeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Gallery Infinite Scroll Loader */
+.galleryLoadMore {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.galleryLoadMoreBtn {
+  padding: 12px 32px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.galleryLoadMoreBtn:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.galleryLoadMoreSpinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: gallerySpinner 0.8s linear infinite;
+}
+
+@keyframes gallerySpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Folder Navigation */
+.galleryFolders {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.galleryFolderChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.galleryFolderChip:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.galleryFolderChip.active {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  border-color: transparent;
+  color: white;
+}
+
+.galleryFolderChip svg {
+  width: 18px;
+  height: 18px;
+}
+
+.galleryFolderCount {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.galleryFolderChip.active .galleryFolderCount {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Breadcrumb Navigation */
+.galleryBreadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.galleryBreadcrumbItem {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.galleryBreadcrumbItem:hover {
+  color: #8b5cf6;
+}
+
+.galleryBreadcrumbItem.current {
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.galleryBreadcrumbSep {
+  color: #d1d5db;
+}
+
+/* ============================================
+   MEDIA GALLERY DARK MODE
+   ============================================ */
+
+:global([data-theme="dark"]) .galleryTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .galleryCount {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .galleryViewToggle {
+  background: #1e293b;
+}
+
+:global([data-theme="dark"]) .galleryViewBtn {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .galleryViewBtn:hover {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .galleryViewBtn.active {
+  background: #334155;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .gallerySearchInput {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .gallerySearchInput:focus {
+  border-color: #8b5cf6;
+}
+
+:global([data-theme="dark"]) .gallerySearchIcon {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .gallerySortBtn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .gallerySortBtn:hover {
+  border-color: #8b5cf6;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .gallerySortDropdown {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .gallerySortOption {
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .gallerySortOption:hover {
+  background: #334155;
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .gallerySortOption.active {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .galleryItem {
+  background: #1e293b;
+}
+
+:global([data-theme="dark"]) .galleryItemCheckbox {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .galleryItem.selected .galleryItemCheckbox {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+:global([data-theme="dark"]) .galleryItem.selected {
+  outline-color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .galleryListItem {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .galleryListItem:hover {
+  border-color: #8b5cf6;
+}
+
+:global([data-theme="dark"]) .galleryListTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .galleryListDetails {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .uploadDropzone {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .uploadDropzone:hover {
+  background: rgba(139, 92, 246, 0.05);
+  border-color: #8b5cf6;
+}
+
+:global([data-theme="dark"]) .uploadDropzone.dragging {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: #8b5cf6;
+}
+
+:global([data-theme="dark"]) .uploadDropzoneIcon {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .uploadDropzone:hover .uploadDropzoneIcon,
+:global([data-theme="dark"]) .uploadDropzone.dragging .uploadDropzoneIcon {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .uploadDropzoneTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .uploadDropzoneText {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .uploadDropzoneFormats {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .uploadProgressItem {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .uploadProgressThumb {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .uploadProgressName {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .uploadProgressBar {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .uploadProgressSize {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .uploadProgressCancel {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .uploadProgressCancel:hover {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+:global([data-theme="dark"]) .imageMetadata {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .imageMetadataHeader {
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .imageMetadataTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .imageMetadataRow {
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .imageMetadataLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .imageMetadataValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .imageMetadataTag {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .galleryFilters {
+  background: #0f172a;
+}
+
+:global([data-theme="dark"]) .galleryFilterChip {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .galleryFilterChip:hover {
+  border-color: #8b5cf6;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .galleryEmptyIcon {
+  color: #475569;
+}
+
+:global([data-theme="dark"]) .galleryEmptyTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .galleryEmptyText {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .gallerySkeletonItem {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+:global([data-theme="dark"]) .galleryLoadMoreBtn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .galleryLoadMoreBtn:hover {
+  border-color: #8b5cf6;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .galleryLoadMoreSpinner {
+  border-color: #334155;
+  border-top-color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .galleryFolderChip {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .galleryFolderChip:hover {
+  border-color: #8b5cf6;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .galleryFolderCount {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme="dark"]) .galleryBreadcrumbItem {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .galleryBreadcrumbItem:hover {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .galleryBreadcrumbItem.current {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .galleryBreadcrumbSep {
+  color: #475569;
+}
+
+:global([data-theme="dark"]) .imageCropper {
+  background: #0f172a;
+}
+
+:global([data-theme="dark"]) .imageCropperToolbar {
+  background: #1e293b;
+}
+
+:global([data-theme="dark"]) .imageCropperAspectBtn {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .imageCropperAspectBtn:hover {
+  background: #475569;
+}
+
+:global([data-theme="dark"]) .imageCropperAspectBtn.active {
+  background: #8b5cf6;
+  color: white;
+}
+
+:global([data-theme="dark"]) .galleryCarouselNav {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .galleryCarouselNav:hover {
+  background: #1e293b;
+}
+
+:global([data-theme="dark"]) .galleryThumbItem {
+  opacity: 0.6;
+}
+
+:global([data-theme="dark"]) .galleryThumbItem:hover {
+  opacity: 0.9;
+}
+
+:global([data-theme="dark"]) .galleryThumbItem.active {
+  opacity: 1;
+  outline-color: #a78bfa;
+}
