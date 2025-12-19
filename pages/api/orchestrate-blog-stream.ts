@@ -216,16 +216,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  // Validate required fields before setting up SSE
+  const { topic, location, blogType } = req.body || {};
+  if (!topic || !location || !blogType) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing required fields: topic, location, and blogType are required",
+    });
+  }
+
   // Set up SSE headers
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
 
+  // Extract remaining fields (topic, location, blogType already validated above)
   const {
-    topic,
-    location,
-    blogType,
     numberOfSections = 5,
     numberOfImages = 3,
     wordCountRange = "1800-2400",
@@ -241,9 +248,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     imageMode = "auto",
     userImages = [],
   } = req.body as {
-    topic: string;
-    location: string;
-    blogType: string;
     numberOfSections: number;
     numberOfImages: number;
     wordCountRange: string;
