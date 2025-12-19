@@ -12997,3 +12997,550 @@
   border-color: rgba(167, 139, 250, 0.2);
   border-top-color: #a78bfa;
 }
+
+/* ===== ROUND 14: KEYBOARD SHORTCUTS, MENU BARS, HOVER CARDS ===== */
+
+/* ===== KEYBOARD SHORTCUT BADGES ===== */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  font-family: 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.kbdGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kbdPlus {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* Keyboard shortcut sizes */
+.kbdSmall {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 9px;
+  border-radius: 4px;
+}
+
+.kbdLarge {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+/* Special keys */
+.kbdIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.kbdWide {
+  min-width: 48px;
+}
+
+/* Active/pressed state */
+.kbd.pressed,
+.kbd:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+/* Keyboard hint tooltip */
+.kbdHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #1e293b;
+  color: white;
+  font-size: 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.kbdHint .kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: none;
+}
+
+/* Shortcut list */
+.shortcutList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcutItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.shortcutItem:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.shortcutLabel {
+  font-size: 14px;
+  color: #475569;
+}
+
+/* ===== MENU BAR ===== */
+.menuBar {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 8px;
+  background: linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.menuBarItem {
+  position: relative;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #374151;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+}
+
+.menuBarItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.menuBarItem.active {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.menuBarDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  margin-top: 4px;
+  padding: 6px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.15s ease;
+  z-index: 1000;
+}
+
+.menuBarItem:hover .menuBarDropdown,
+.menuBarItem.active .menuBarDropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.menuBarDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.menuBarDropdownItem:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  color: #667eea;
+}
+
+.menuBarDropdownItemIcon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.menuBarDropdownItemLabel {
+  flex: 1;
+}
+
+.menuBarDropdownItemShortcut {
+  display: flex;
+  gap: 2px;
+}
+
+.menuBarDropdownDivider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 6px 0;
+}
+
+.menuBarDropdownHeader {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Submenu arrow */
+.menuBarDropdownItem.hasSubmenu::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4px solid #94a3b8;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  margin-left: auto;
+}
+
+.menuBarSubmenu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  min-width: 180px;
+  padding: 6px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-8px);
+  transition: all 0.15s ease;
+}
+
+.menuBarDropdownItem.hasSubmenu:hover .menuBarSubmenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(4px);
+}
+
+/* ===== HOVER CARD / PREVIEW ===== */
+.hoverCard {
+  position: relative;
+  display: inline-block;
+}
+
+.hoverCardTrigger {
+  cursor: pointer;
+}
+
+.hoverCardContent {
+  position: absolute;
+  z-index: 1000;
+  width: 320px;
+  padding: 16px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.03);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px) scale(0.95);
+  transform-origin: top center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hoverCard:hover .hoverCardContent {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+/* Hover card positions */
+.hoverCardTop .hoverCardContent {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px) scale(0.95);
+  margin-bottom: 8px;
+  transform-origin: bottom center;
+}
+
+.hoverCardTop:hover .hoverCardContent {
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.hoverCardBottom .hoverCardContent {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px) scale(0.95);
+  margin-top: 8px;
+}
+
+.hoverCardBottom:hover .hoverCardContent {
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.hoverCardLeft .hoverCardContent {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-8px) scale(0.95);
+  margin-right: 8px;
+  transform-origin: right center;
+}
+
+.hoverCardLeft:hover .hoverCardContent {
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+.hoverCardRight .hoverCardContent {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(8px) scale(0.95);
+  margin-left: 8px;
+  transform-origin: left center;
+}
+
+.hoverCardRight:hover .hoverCardContent {
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+/* Hover card arrow */
+.hoverCardContent::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  transform: rotate(45deg);
+  box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.hoverCardBottom .hoverCardContent::before {
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+
+.hoverCardTop .hoverCardContent::before {
+  bottom: -6px;
+  left: 50%;
+  margin-left: -6px;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* User hover card */
+.hoverCardUser {
+  display: flex;
+  gap: 16px;
+}
+
+.hoverCardAvatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.hoverCardUserInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.hoverCardUserName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.hoverCardUserHandle {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.hoverCardUserBio {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.hoverCardUserStats {
+  display: flex;
+  gap: 16px;
+}
+
+.hoverCardUserStat {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.hoverCardUserStatValue {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Link preview hover card */
+.hoverCardLink {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hoverCardLinkImage {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #f1f5f9;
+}
+
+.hoverCardLinkDomain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.hoverCardLinkFavicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.hoverCardLinkTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.hoverCardLinkDescription {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ===== DARK MODE FOR ROUND 14 ===== */
+:global([data-theme="dark"]) .kbd {
+  background: linear-gradient(180deg, #374151 0%, #1f2937 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+:global([data-theme="dark"]) .kbd.pressed,
+:global([data-theme="dark"]) .kbd:active {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+}
+
+:global([data-theme="dark"]) .shortcutItem:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+:global([data-theme="dark"]) .shortcutLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .menuBar {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .menuBarItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .menuBarItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+:global([data-theme="dark"]) .menuBarItem.active {
+  background: rgba(167, 139, 250, 0.1);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .menuBarDropdown {
+  background: var(--bg-secondary);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .menuBarDropdownItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .menuBarDropdownItem:hover {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .menuBarDropdownDivider {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .menuBarSubmenu {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .hoverCardContent {
+  background: var(--bg-secondary);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .hoverCardContent::before {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .hoverCardUserName,
+:global([data-theme="dark"]) .hoverCardLinkTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .hoverCardUserHandle,
+:global([data-theme="dark"]) .hoverCardUserStat,
+:global([data-theme="dark"]) .hoverCardLinkDomain,
+:global([data-theme="dark"]) .hoverCardLinkDescription {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .hoverCardUserBio {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .hoverCardUserStatValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .hoverCardLinkImage {
+  background: var(--bg-tertiary);
+}
