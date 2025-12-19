@@ -1423,6 +1423,226 @@
   cursor: not-allowed;
 }
 
+/* ===== DARK MODE OVERRIDES ===== */
+:global([data-theme="dark"]) .usageMeter,
+:global([data-theme="dark"]) .settingsContainer,
+:global([data-theme="dark"]) .batchModal,
+:global([data-theme="dark"]) .queueModal,
+:global([data-theme="dark"]) .siteBuilderContent {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .settingsHeader,
+:global([data-theme="dark"]) .modalHeader,
+:global([data-theme="dark"]) .siteBuilderHeader,
+:global([data-theme="dark"]) .stepIndicator,
+:global([data-theme="dark"]) .siteBuilderFooter,
+:global([data-theme="dark"]) .filterTabs {
+  border-color: var(--border-light);
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .quickAction,
+:global([data-theme="dark"]) .toggleItem,
+:global([data-theme="dark"]) .topicItem,
+:global([data-theme="dark"]) .usageIndicator,
+:global([data-theme="dark"]) .queueItem,
+:global([data-theme="dark"]) .proposalSection,
+:global([data-theme="dark"]) .confirmSummary,
+:global([data-theme="dark"]) .currentItem {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .quickAction:hover,
+:global([data-theme="dark"]) .toggleItem:hover,
+:global([data-theme="dark"]) .queueItem:hover {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .select,
+:global([data-theme="dark"]) .topicInput,
+:global([data-theme="dark"]) .keywordsInput,
+:global([data-theme="dark"]) .customIndustryInput {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .typeSelector select {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .filterTab {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .filterTab:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .filterTab.active {
+  background: var(--bg-primary);
+  color: var(--primary-color);
+}
+
+:global([data-theme="dark"]) .filterCount {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .queueItemIcon,
+:global([data-theme="dark"]) .retryButton,
+:global([data-theme="dark"]) .viewButton,
+:global([data-theme="dark"]) .deleteButton,
+:global([data-theme="dark"]) .refreshButton,
+:global([data-theme="dark"]) .closeButton {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .industryOption {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .industryOption:hover,
+:global([data-theme="dark"]) .industryOption.selected {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-color);
+}
+
+:global([data-theme="dark"]) .proposalSectionHeader {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pageItem {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .cancelButton,
+:global([data-theme="dark"]) .backButton {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .cancelButton:hover,
+:global([data-theme="dark"]) .backButton:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .modalFooter {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .addTopicButton {
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .addTopicButton:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: rgba(129, 140, 248, 0.1);
+}
+
+:global([data-theme="dark"]) .errorMessage {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+:global([data-theme="dark"]) .toggle {
+  background: var(--border-medium);
+}
+
+:global([data-theme="dark"]) .gaugeBg {
+  stroke: var(--border-light);
+}
+
+:global([data-theme="dark"]) .spinner {
+  border-color: var(--border-light);
+  border-top-color: var(--primary-color);
+}
+
+:global([data-theme="dark"]) .aiSpinner {
+  border-color: var(--border-light);
+  border-top-color: var(--primary-color);
+}
+
+:global([data-theme="dark"]) .aiReasoning {
+  background: rgba(129, 140, 248, 0.1);
+  border-color: rgba(129, 140, 248, 0.3);
+}
+
+:global([data-theme="dark"]) .aiReasoningHeader {
+  background: rgba(129, 140, 248, 0.15);
+}
+
+:global([data-theme="dark"]) .reasoningContent {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .estimatedTime {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fcd34d;
+}
+
+:global([data-theme="dark"]) .retryButton:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+:global([data-theme="dark"]) .viewButton:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+:global([data-theme="dark"]) .deleteButton:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+:global([data-theme="dark"]) .removeTopicButton:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+:global([data-theme="dark"]) .stepDot {
+  background: var(--border-medium);
+}
+
+:global([data-theme="dark"]) .stepLine {
+  background: var(--border-medium);
+}
+
+:global([data-theme="dark"]) .modalOverlay,
+:global([data-theme="dark"]) .siteBuilderOverlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+:global([data-theme="dark"]) .closeButton:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .automationDashboard {

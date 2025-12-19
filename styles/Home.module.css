@@ -5205,3 +5205,207 @@
     min-width: 200px;
   }
 }
+
+/* ===== DARK MODE OVERRIDES ===== */
+:global([data-theme="dark"]) .formSection,
+:global([data-theme="dark"]) .outputSection,
+:global([data-theme="dark"]) .libraryCard,
+:global([data-theme="dark"]) .knowledgeCard,
+:global([data-theme="dark"]) .knowledgeSection,
+:global([data-theme="dark"]) .placeholderSection,
+:global([data-theme="dark"]) .pillarCard,
+:global([data-theme="dark"]) .pageConfigForm,
+:global([data-theme="dark"]) .contentHubModal,
+:global([data-theme="dark"]) .seoPlannerModal {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .sidebarItem:hover,
+:global([data-theme="dark"]) .sidebarItem.active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+:global([data-theme="dark"]) .modePill,
+:global([data-theme="dark"]) .filterBtn,
+:global([data-theme="dark"]) .sortSelect,
+:global([data-theme="dark"]) .modeBtn,
+:global([data-theme="dark"]) .wordCountOption,
+:global([data-theme="dark"]) .imageCountBtn,
+:global([data-theme="dark"]) .quickSelectButton,
+:global([data-theme="dark"]) .pageTypeCard,
+:global([data-theme="dark"]) .seoPlanTab,
+:global([data-theme="dark"]) .publishActionBtn {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .modePill:hover,
+:global([data-theme="dark"]) .filterBtn:hover,
+:global([data-theme="dark"]) .modeBtn:hover,
+:global([data-theme="dark"]) .quickSelectButton:hover,
+:global([data-theme="dark"]) .pageTypeCard:hover,
+:global([data-theme="dark"]) .seoPlanTab:hover,
+:global([data-theme="dark"]) .publishActionBtn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-color);
+}
+
+:global([data-theme="dark"]) .modePill.active,
+:global([data-theme="dark"]) .filterBtn.active,
+:global([data-theme="dark"]) .modeBtn.active,
+:global([data-theme="dark"]) .wordCountOption.selected,
+:global([data-theme="dark"]) .imageCountBtn.active,
+:global([data-theme="dark"]) .pageTypeCard.selected,
+:global([data-theme="dark"]) .seoPlanTab.active {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+:global([data-theme="dark"]) .libraryFilters,
+:global([data-theme="dark"]) .libraryGrid,
+:global([data-theme="dark"]) .aggregatedTags,
+:global([data-theme="dark"]) .checkboxGrid,
+:global([data-theme="dark"]) .pillarPagesGrid,
+:global([data-theme="dark"]) .pageLibraryContent,
+:global([data-theme="dark"]) .suggestedContentList {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .aggregatedTag {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .seoInput,
+:global([data-theme="dark"]) .seoTextarea,
+:global([data-theme="dark"]) .heroRow input,
+:global([data-theme="dark"]) .heroRow select,
+:global([data-theme="dark"]) .heroRow textarea {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .seoInput::placeholder,
+:global([data-theme="dark"]) .seoTextarea::placeholder,
+:global([data-theme="dark"]) .heroRow input::placeholder,
+:global([data-theme="dark"]) .heroRow textarea::placeholder {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .serpPreview {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .researchInsights {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .publishActionButtons {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .seoSettings h3 {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .error {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+:global([data-theme="dark"]) .buttonGrid {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .seoItem span {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .heroButton,
+:global([data-theme="dark"]) .seoAnalyzeBtn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .sidebarDivider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme="dark"]) .librarySort label {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .inputWarning:focus {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .submitButton:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+/* Dark mode for modals and overlays */
+:global([data-theme="dark"]) .modal,
+:global([data-theme="dark"]) .modalContent {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .modalHeader,
+:global([data-theme="dark"]) .modalFooter {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+/* Dark mode for cards and sections */
+:global([data-theme="dark"]) .card,
+:global([data-theme="dark"]) .section,
+:global([data-theme="dark"]) .panel {
+  background: var(--bg-primary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+/* Dark mode text colors */
+:global([data-theme="dark"]) .libraryCard h3,
+:global([data-theme="dark"]) .knowledgeCard h3,
+:global([data-theme="dark"]) .pillarCard h3 {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .libraryCard p,
+:global([data-theme="dark"]) .knowledgeCard p,
+:global([data-theme="dark"]) .pillarCard p {
+  color: var(--text-secondary);
+}
+
+/* Dark mode for dropdowns and selects */
+:global([data-theme="dark"]) .sortSelect option,
+:global([data-theme="dark"]) .heroRow select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Dark mode for tags and badges */
+:global([data-theme="dark"]) .tag,
+:global([data-theme="dark"]) .badge {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+/* Ensure proper contrast on gradient containers in dark mode */
+:global([data-theme="dark"]) .container {
+  background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
+}
