@@ -13544,3 +13544,925 @@
 :global([data-theme="dark"]) .hoverCardLinkImage {
   background: var(--bg-tertiary);
 }
+
+/* ========================================
+   ROUND 15: TIMELINE & STEPPER COMPONENTS
+   ======================================== */
+
+/* Vertical Timeline */
+.timeline {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.timelineLine {
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #8b5cf6 0%, #06b6d4 50%, #22c55e 100%);
+  border-radius: 1px;
+}
+
+.timelineItem {
+  position: relative;
+  padding-left: 56px;
+  padding-bottom: 32px;
+}
+
+.timelineItem:last-child {
+  padding-bottom: 0;
+}
+
+.timelineMarker {
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border: 3px solid #8b5cf6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timelineMarker::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.timelineItem:hover .timelineMarker::before {
+  opacity: 1;
+}
+
+.timelineMarkerIcon {
+  width: 12px;
+  height: 12px;
+  color: #8b5cf6;
+}
+
+.timelineMarkerActive {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+  animation: timelinePulse 2s ease-in-out infinite;
+}
+
+.timelineMarkerActive .timelineMarkerIcon {
+  color: white;
+}
+
+@keyframes timelinePulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.1); }
+}
+
+.timelineMarkerComplete {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-color: #22c55e;
+}
+
+.timelineMarkerComplete .timelineMarkerIcon {
+  color: white;
+}
+
+.timelineContent {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.timelineItem:hover .timelineContent {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateX(4px);
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.timelineTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.timelineDate {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.timelineDescription {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.timelineTags {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.timelineTag {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  color: #8b5cf6;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Horizontal Timeline */
+.timelineHorizontal {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding: 20px 0;
+  gap: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 #f3f4f6;
+}
+
+.timelineHorizontal::-webkit-scrollbar {
+  height: 6px;
+}
+
+.timelineHorizontal::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.timelineHorizontal::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #8b5cf6 0%, #06b6d4 100%);
+  border-radius: 3px;
+}
+
+.timelineHorizontalItem {
+  flex: 0 0 200px;
+  position: relative;
+  text-align: center;
+}
+
+.timelineHorizontalLine {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  right: -50%;
+  height: 2px;
+  background: linear-gradient(90deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+.timelineHorizontalItem:last-child .timelineHorizontalLine {
+  display: none;
+}
+
+.timelineHorizontalMarker {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  background: white;
+  border: 3px solid #8b5cf6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.timelineHorizontalItem:hover .timelineHorizontalMarker {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.timelineHorizontalContent {
+  padding: 0 16px;
+}
+
+.timelineHorizontalTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.timelineHorizontalDate {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Stepper Component */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+}
+
+.stepperStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.stepperConnector {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  right: -50%;
+  height: 2px;
+  background: #e5e7eb;
+  transition: background 0.3s ease;
+}
+
+.stepperStep:last-child .stepperConnector {
+  display: none;
+}
+
+.stepperConnectorActive {
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.stepperConnectorComplete {
+  background: #22c55e;
+}
+
+.stepperMarker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stepperMarkerActive {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  border-color: #8b5cf6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  animation: stepperPulse 2s ease-in-out infinite;
+}
+
+@keyframes stepperPulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5); }
+}
+
+.stepperMarkerComplete {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-color: #22c55e;
+  color: white;
+}
+
+.stepperMarkerError {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-color: #ef4444;
+  color: white;
+}
+
+.stepperLabel {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.stepperTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  transition: color 0.3s ease;
+}
+
+.stepperStep:hover .stepperTitle {
+  color: #8b5cf6;
+}
+
+.stepperTitleActive,
+.stepperTitleComplete {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.stepperDescription {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+  max-width: 120px;
+}
+
+/* Vertical Stepper */
+.stepperVertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.stepperVerticalStep {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 32px;
+}
+
+.stepperVerticalStep:last-child {
+  padding-bottom: 0;
+}
+
+.stepperVerticalConnector {
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  bottom: 0;
+  width: 2px;
+  background: #e5e7eb;
+}
+
+.stepperVerticalConnectorActive {
+  background: linear-gradient(180deg, #8b5cf6 0%, rgba(139, 92, 246, 0.3) 100%);
+}
+
+.stepperVerticalConnectorComplete {
+  background: #22c55e;
+}
+
+.stepperVerticalMarker {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.stepperVerticalContent {
+  flex: 1;
+  padding-top: 8px;
+}
+
+.stepperVerticalTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.stepperVerticalDescription {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.stepperVerticalActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Progress Steps (Compact) */
+.progressSteps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progressStep {
+  width: 32px;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.progressStep:hover {
+  background: #d1d5db;
+}
+
+.progressStepActive {
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+}
+
+.progressStepComplete {
+  background: #22c55e;
+}
+
+/* Numbered Steps */
+.numberedSteps {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.numberedStep {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.numberedStep:hover {
+  background: #e5e7eb;
+}
+
+.numberedStepActive {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  color: white;
+  border-color: #8b5cf6;
+}
+
+.numberedStepComplete {
+  background: #22c55e;
+  color: white;
+}
+
+.numberedStepConnector {
+  width: 24px;
+  height: 2px;
+  background: #e5e7eb;
+}
+
+.numberedStepConnectorComplete {
+  background: #22c55e;
+}
+
+/* Breadcrumb Stepper */
+.breadcrumbStepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 4px;
+  overflow: hidden;
+}
+
+.breadcrumbStep {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.breadcrumbStep:hover {
+  color: #8b5cf6;
+}
+
+.breadcrumbStep::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-left: 10px solid #f9fafb;
+}
+
+.breadcrumbStep:last-child::after {
+  display: none;
+}
+
+.breadcrumbStepActive {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  color: white;
+  border-radius: 6px;
+}
+
+.breadcrumbStepActive::after {
+  border-left-color: #a78bfa;
+}
+
+.breadcrumbStepComplete {
+  color: #22c55e;
+}
+
+.breadcrumbStepNumber {
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  margin-right: 8px;
+}
+
+.breadcrumbStepActive .breadcrumbStepNumber {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Wizard Progress */
+.wizardProgress {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.wizardStep {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.wizardStep:last-child {
+  flex: 0;
+}
+
+.wizardStepIndicator {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.wizardStepIndicatorActive {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  border-color: #8b5cf6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.wizardStepIndicatorComplete {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: white;
+}
+
+.wizardStepInfo {
+  margin-left: 12px;
+  margin-right: 24px;
+}
+
+.wizardStepTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.wizardStepSubtitle {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.wizardStepConnector {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 0 12px;
+}
+
+.wizardStepConnectorActive {
+  background: linear-gradient(90deg, #8b5cf6 0%, rgba(139, 92, 246, 0.3) 100%);
+}
+
+.wizardStepConnectorComplete {
+  background: #22c55e;
+}
+
+/* Timeline Card Variant */
+.timelineCard {
+  position: relative;
+  padding-left: 80px;
+  margin-bottom: 24px;
+}
+
+.timelineCardDate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 64px;
+  text-align: center;
+}
+
+.timelineCardDay {
+  font-size: 24px;
+  font-weight: 700;
+  color: #8b5cf6;
+  line-height: 1;
+}
+
+.timelineCardMonth {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timelineCardContent {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #8b5cf6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.timelineCard:hover .timelineCardContent {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateX(4px);
+}
+
+.timelineCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.timelineCardText {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+/* Status Stepper */
+.statusStepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.statusStepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.statusStepDotComplete {
+  background: #22c55e;
+}
+
+.statusStepDotActive {
+  background: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+  50% { box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.1); }
+}
+
+.statusStepLine {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+}
+
+.statusStepLineComplete {
+  background: #22c55e;
+}
+
+.statusStepLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  padding: 0 8px;
+}
+
+.statusStepLabelActive {
+  color: #8b5cf6;
+}
+
+.statusStepLabelComplete {
+  color: #22c55e;
+}
+
+/* Dark Mode - Timelines & Steppers */
+:global([data-theme="dark"]) .timelineLine {
+  background: linear-gradient(180deg, #a78bfa 0%, #22d3ee 50%, #4ade80 100%);
+}
+
+:global([data-theme="dark"]) .timelineMarker {
+  background: var(--bg-secondary);
+  border-color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .timelineMarkerActive {
+  background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+}
+
+:global([data-theme="dark"]) .timelineMarkerComplete {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+}
+
+:global([data-theme="dark"]) .timelineContent {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .timelineTitle,
+:global([data-theme="dark"]) .timelineHorizontalTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .timelineDate {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .timelineDescription,
+:global([data-theme="dark"]) .timelineHorizontalDate {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .timelineTag {
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .timelineHorizontal::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .timelineHorizontalMarker {
+  background: var(--bg-secondary);
+  border-color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .stepperMarker,
+:global([data-theme="dark"]) .stepperVerticalMarker {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .stepperConnector,
+:global([data-theme="dark"]) .stepperVerticalConnector {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .stepperTitle {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .stepperTitleActive,
+:global([data-theme="dark"]) .stepperTitleComplete {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .stepperDescription,
+:global([data-theme="dark"]) .stepperVerticalDescription {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .stepperVerticalTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .progressStep {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .numberedStep {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .numberedStepConnector {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .breadcrumbStepper {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .breadcrumbStep {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .breadcrumbStep::after {
+  border-left-color: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .wizardProgress {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+:global([data-theme="dark"]) .wizardStepIndicator {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .wizardStepTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .wizardStepSubtitle {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .wizardStepConnector {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .timelineCardContent {
+  background: var(--bg-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .timelineCardTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .timelineCardText {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .statusStepper {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .statusStepDot {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .statusStepLine {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .statusStepLabel {
+  color: var(--text-secondary);
+}
