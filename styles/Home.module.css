@@ -20519,3 +20519,738 @@
   background: var(--bg-tertiary);
   color: var(--text-secondary);
 }
+
+/* ==========================================================================
+   ROUND 23: PRICING TABLES
+   ========================================================================== */
+
+/* Pricing Container */
+.pricingContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Pricing Toggle */
+.pricingToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.pricingToggleLabel {
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.pricingToggleLabelActive {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.pricingToggleSwitch {
+  position: relative;
+  width: 56px;
+  height: 28px;
+  background: rgba(139, 92, 246, 0.1);
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pricingToggleSwitch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.pricingToggleSwitchYearly::after {
+  transform: translateX(28px);
+}
+
+.pricingToggleSave {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border-radius: 20px;
+}
+
+/* Pricing Card */
+.pricingCard {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  background: white;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.pricingCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* Popular Card */
+.pricingCardPopular {
+  position: relative;
+  border: 2px solid #8b5cf6;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+}
+
+.pricingCardPopular:hover {
+  box-shadow: 0 16px 48px rgba(139, 92, 246, 0.2);
+}
+
+.pricingCardPopularBadge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Card Header */
+.pricingCardHeader {
+  text-align: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+.pricingCardIcon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+  border-radius: 16px;
+  color: #8b5cf6;
+}
+
+.pricingCardName {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.pricingCardDescription {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Pricing */
+.pricingCardPrice {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.pricingCardAmount {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+}
+
+.pricingCardCurrency {
+  font-size: 24px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.pricingCardValue {
+  font-size: 56px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.pricingCardPeriod {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-top: 8px;
+}
+
+.pricingCardOriginal {
+  font-size: 16px;
+  color: #94a3b8;
+  text-decoration: line-through;
+  margin-top: 4px;
+}
+
+/* Features List */
+.pricingCardFeatures {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.pricingCardFeature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.pricingCardFeatureIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #22c55e;
+}
+
+.pricingCardFeatureDisabled {
+  color: #94a3b8;
+}
+
+.pricingCardFeatureDisabled .pricingCardFeatureIcon {
+  color: #cbd5e1;
+}
+
+.pricingCardFeatureHighlight {
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+/* CTA Button */
+.pricingCardCta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pricingCardCta:hover {
+  background: rgba(139, 92, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.pricingCardCtaPrimary {
+  color: white;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+}
+
+.pricingCardCtaPrimary:hover {
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+}
+
+/* Enterprise Card */
+.pricingCardEnterprise {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-color: transparent;
+}
+
+.pricingCardEnterprise .pricingCardName,
+.pricingCardEnterprise .pricingCardValue {
+  color: white;
+}
+
+.pricingCardEnterprise .pricingCardDescription,
+.pricingCardEnterprise .pricingCardPeriod,
+.pricingCardEnterprise .pricingCardCurrency {
+  color: #94a3b8;
+}
+
+.pricingCardEnterprise .pricingCardFeature {
+  color: #cbd5e1;
+}
+
+.pricingCardEnterprise .pricingCardHeader {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Pricing Comparison Table */
+.pricingCompare {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 64px;
+}
+
+.pricingCompareTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 800px;
+}
+
+.pricingCompareHeader {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(6, 182, 212, 0.03) 100%);
+}
+
+.pricingCompareHeaderCell {
+  padding: 24px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: center;
+  border-bottom: 2px solid rgba(139, 92, 246, 0.1);
+}
+
+.pricingCompareHeaderCell:first-child {
+  text-align: left;
+}
+
+.pricingCompareHeaderPopular {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  color: #8b5cf6;
+}
+
+.pricingCompareCategory {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.02);
+  padding: 12px 20px;
+}
+
+.pricingCompareRow {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.pricingCompareRow:hover {
+  background: rgba(139, 92, 246, 0.02);
+}
+
+.pricingCompareCell {
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #475569;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.pricingCompareCell:first-child {
+  text-align: left;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.pricingCompareCellPopular {
+  background: rgba(139, 92, 246, 0.03);
+}
+
+.pricingCompareCheck {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border-radius: 50%;
+  font-size: 10px;
+}
+
+.pricingCompareCross {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  color: #94a3b8;
+  border-radius: 50%;
+  font-size: 10px;
+}
+
+.pricingCompareValue {
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+/* Pricing FAQ */
+.pricingFaq {
+  max-width: 800px;
+  margin: 80px auto 0;
+}
+
+.pricingFaqTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+/* Simple Pricing (Horizontal) */
+.pricingSimple {
+  display: flex;
+  align-items: stretch;
+  background: white;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.pricingSimpleItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.pricingSimpleItem:last-child {
+  border-right: none;
+}
+
+.pricingSimpleItem:hover {
+  background: rgba(139, 92, 246, 0.02);
+}
+
+.pricingSimpleItemPopular {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(6, 182, 212, 0.03) 100%);
+}
+
+.pricingSimpleName {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.pricingSimplePrice {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.pricingSimplePrice span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.pricingSimpleDesc {
+  font-size: 14px;
+  color: #64748b;
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+/* Mini Pricing Card */
+.pricingMini {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.pricingMini:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.pricingMiniContent {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pricingMiniIcon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+  border-radius: 12px;
+  color: #8b5cf6;
+}
+
+.pricingMiniName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.pricingMiniDesc {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.pricingMiniPrice {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pricingMiniPrice span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+/* Lifetime Deal Badge */
+.pricingLifetime {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border-radius: 20px;
+}
+
+/* Money Back Guarantee */
+.pricingGuarantee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: rgba(34, 197, 94, 0.05);
+  border-radius: 12px;
+  margin-top: 24px;
+}
+
+.pricingGuaranteeIcon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border-radius: 50%;
+}
+
+.pricingGuaranteeText {
+  font-size: 14px;
+  color: #166534;
+  font-weight: 500;
+}
+
+/* Round 23: Dark Mode */
+:global([data-theme="dark"]) .pricingToggleLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingToggleLabelActive {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingToggleSwitch {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .pricingCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingCard:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .pricingCardPopular {
+  border-color: #a78bfa;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+}
+
+:global([data-theme="dark"]) .pricingCardHeader {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingCardName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingCardDescription {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingCardCurrency {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingCardValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingCardPeriod {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingCardOriginal {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingCardFeature {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingCardFeatureDisabled {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+:global([data-theme="dark"]) .pricingCardCta {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .pricingCardCta:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+:global([data-theme="dark"]) .pricingCompareHeader {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+:global([data-theme="dark"]) .pricingCompareHeaderCell {
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingCompareCategory {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .pricingCompareRow {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingCompareRow:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+:global([data-theme="dark"]) .pricingCompareCell {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingCompareCell:first-child {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingCompareCellPopular {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+:global([data-theme="dark"]) .pricingCompareCross {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .pricingFaqTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingSimple {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingSimpleItem {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingSimpleItem:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+:global([data-theme="dark"]) .pricingSimpleItemPopular {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+:global([data-theme="dark"]) .pricingSimpleName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingSimplePrice {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingSimplePrice span {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingSimpleDesc {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingMini {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingMini:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+:global([data-theme="dark"]) .pricingMiniName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingMiniDesc {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingMiniPrice {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .pricingMiniPrice span {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .pricingGuarantee {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+:global([data-theme="dark"]) .pricingGuaranteeText {
+  color: #4ade80;
+}
