@@ -21254,3 +21254,786 @@
 :global([data-theme="dark"]) .pricingGuaranteeText {
   color: #4ade80;
 }
+
+/* ==========================================================================
+   ROUND 24: STAT CARDS & COUNTERS
+   ========================================================================== */
+
+/* Stat Card */
+.statCard {
+  padding: 24px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.statCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.statCardIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+  border-radius: 12px;
+  color: #8b5cf6;
+}
+
+.statCardIconBlue {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+  color: #3b82f6;
+}
+
+.statCardIconGreen {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+  color: #22c55e;
+}
+
+.statCardIconOrange {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);
+  color: #f97316;
+}
+
+.statCardIconRed {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+  color: #ef4444;
+}
+
+.statCardTrend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+}
+
+.statCardTrendUp {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.statCardTrendDown {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.statCardTrendNeutral {
+  background: rgba(100, 116, 139, 0.1);
+  color: #64748b;
+}
+
+.statCardTrendIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.statCardValue {
+  font-size: 36px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.statCardValueSmall {
+  font-size: 28px;
+}
+
+.statCardLabel {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.statCardCompare {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 13px;
+  color: #64748b;
+}
+
+.statCardCompareValue {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.statsGridDense {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+/* Mini Stat */
+.miniStat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.miniStatIcon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+  border-radius: 10px;
+  color: #8b5cf6;
+}
+
+.miniStatContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.miniStatValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.miniStatLabel {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Inline Stat Row */
+.statRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.statRowLabel {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.statRowValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.statRowTrend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Counter Animation */
+.counter {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes countUp {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.counterAnimated {
+  animation: countUp 0.5s ease-out forwards;
+}
+
+/* Progress Stat */
+.progressStat {
+  padding: 20px;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.progressStatHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.progressStatLabel {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.progressStatValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.progressStatBar {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progressStatFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6 0%, #06b6d4 100%);
+  border-radius: 10px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progressStatFillGreen {
+  background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+}
+
+.progressStatFillOrange {
+  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+}
+
+.progressStatFillRed {
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+
+.progressStatMeta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Comparison Stat */
+.comparisonStat {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.comparisonStatItem {
+  flex: 1;
+  text-align: center;
+}
+
+.comparisonStatValue {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.comparisonStatLabel {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.comparisonStatDivider {
+  width: 2px;
+  height: 48px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+}
+
+.comparisonStatVs {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: #8b5cf6;
+}
+
+/* Metric Card (with sparkline area) */
+.metricCard {
+  position: relative;
+  padding: 24px 24px 64px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.metricCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.metricCardLabel {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.metricCardBadge {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border-radius: 20px;
+}
+
+.metricCardValue {
+  font-size: 40px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.1;
+}
+
+.metricCardChange {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.metricCardChangeUp {
+  color: #22c55e;
+}
+
+.metricCardChangeDown {
+  color: #ef4444;
+}
+
+.metricCardChangeIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.metricCardSparkline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+}
+
+/* KPI Card */
+.kpiCard {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-radius: 16px;
+  color: white;
+}
+
+.kpiCardLabel {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.kpiCardValue {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+.kpiCardChange {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+}
+
+.kpiCardFooter {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Stat List */
+.statList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.statListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.statListItem:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  padding-bottom: 12px;
+}
+
+.statListItemLabel {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.statListItemValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Live Counter */
+.liveCounter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 20px;
+}
+
+.liveCounterDot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.liveCounterValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #166534;
+}
+
+.liveCounterLabel {
+  font-size: 13px;
+  color: #22c55e;
+}
+
+/* Goal Stat */
+.goalStat {
+  padding: 20px;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.goalStatHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.goalStatTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.goalStatPercent {
+  font-size: 14px;
+  font-weight: 700;
+  color: #8b5cf6;
+}
+
+.goalStatProgress {
+  position: relative;
+  height: 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.goalStatProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+  border-radius: 10px;
+  transition: width 0.8s ease;
+}
+
+.goalStatValues {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.goalStatCurrent {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.goalStatTarget {
+  color: #94a3b8;
+}
+
+/* Delta Stat */
+.deltaStat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.deltaStatMain {
+  flex: 1;
+}
+
+.deltaStatValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.deltaStatLabel {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.deltaStatChange {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+.deltaStatChangeUp {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.deltaStatChangeDown {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.deltaStatChangeValue {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.deltaStatChangeUp .deltaStatChangeValue {
+  color: #22c55e;
+}
+
+.deltaStatChangeDown .deltaStatChangeValue {
+  color: #ef4444;
+}
+
+.deltaStatChangePeriod {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+/* Round 24: Dark Mode */
+:global([data-theme="dark"]) .statCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .statCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .statCardValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .statCardLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .statCardCompare {
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .statCardCompareValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .miniStat {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .miniStatValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .miniStatLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .statRow {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .statRowLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .statRowValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .progressStat {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .progressStatLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .progressStatValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .progressStatBar {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .progressStatMeta {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .comparisonStat {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .comparisonStatValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .comparisonStatLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .metricCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .metricCardLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .metricCardValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .statList {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .statListItem {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .statListItemLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .statListItemValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .liveCounter {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+:global([data-theme="dark"]) .liveCounterValue {
+  color: #4ade80;
+}
+
+:global([data-theme="dark"]) .goalStat {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .goalStatTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .goalStatProgress {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .goalStatCurrent {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .goalStatTarget {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .deltaStat {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .deltaStatValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .deltaStatLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .deltaStatChangeUp {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+:global([data-theme="dark"]) .deltaStatChangeDown {
+  background: rgba(239, 68, 68, 0.15);
+}
