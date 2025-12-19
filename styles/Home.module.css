@@ -514,41 +514,55 @@
 /* ===== TAB NAVIGATION ===== */
 .tabNav {
   display: flex;
-  border-bottom: 1px solid var(--border-light);
-  background: var(--bg-secondary);
-  padding: 0 1rem;
+  border-bottom: 2px solid var(--border-light);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(248, 250, 252, 0.5) 100%);
+  padding: 0 1.25rem;
+  gap: 0.25rem;
 }
 
 .tabButton {
-  padding: 0.875rem 1.25rem;
+  padding: 1rem 1.5rem;
   background: transparent;
   border: none;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
   position: relative;
-  transition: color 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px 8px 0 0;
 }
 
 .tabButton:hover {
   color: var(--text-primary);
+  background: rgba(102, 126, 234, 0.05);
 }
 
 .tabButton.active {
   color: var(--primary-color);
   font-weight: 600;
+  background: rgba(102, 126, 234, 0.08);
 }
 
 .tabButton.active::after {
   content: "";
   position: absolute;
-  bottom: -1px;
+  bottom: -2px;
   left: 0;
   right: 0;
-  height: 2px;
-  background: var(--primary-color);
-  border-radius: 2px 2px 0 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
+  border-radius: 3px 3px 0 0;
+  animation: slideInTab 0.3s ease-out;
+}
+
+@keyframes slideInTab {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .tabCheck {
@@ -839,14 +853,35 @@
 }
 
 .connectedBadge {
-  display: inline-block;
-  background: var(--success-light);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
   color: var(--success-color);
   font-size: 0.7rem;
   font-weight: 600;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 20px;
   margin-left: 0.5rem;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  animation: pulseGreen 2s infinite;
+}
+
+.connectedBadge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--success-color);
+  border-radius: 50%;
+}
+
+@keyframes pulseGreen {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  }
 }
 
 /* Research Section */
@@ -1148,16 +1183,41 @@
 }
 
 .knowledgeCard {
-  background: white;
+  background: linear-gradient(135deg, white 0%, rgba(248, 250, 252, 1) 100%);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: 1.75rem;
   border: 1px solid var(--border-light);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.knowledgeCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 50%, #22c55e 100%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.knowledgeCard:hover::before {
+  opacity: 1;
+}
+
+.knowledgeCard:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .knowledgeCard h3 {
   margin: 0 0 0.75rem;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   color: var(--text-primary);
+  font-weight: 600;
 }
 
 .knowledgeCard > p {
@@ -1561,27 +1621,52 @@
 }
 
 .researchButton {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.researchButton::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.researchButton:hover:not(:disabled)::after {
+  width: 200px;
+  height: 200px;
 }
 
 .researchButton:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+}
+
+.researchButton:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .researchButton:disabled {
-  background: #ccc;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
   cursor: not-allowed;
   transform: none;
+  opacity: 0.7;
 }
 
 .submitButton {
@@ -1608,14 +1693,27 @@
 }
 
 .outputSection {
-  background: white;
-  border-radius: 12px;
+  background: linear-gradient(180deg, white 0%, rgba(248, 250, 252, 1) 100%);
+  border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(102, 126, 234, 0.1);
   overflow-y: auto;
   height: calc(100vh - 6rem);
   position: sticky;
   top: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  animation: slideInFromRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .outputHeader {
@@ -4381,27 +4479,60 @@
 }
 
 .toast {
-  padding: 1rem 1.25rem;
-  border-radius: var(--radius-md);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
   background: white;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 8px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  animation: slideInRight 0.3s ease-out;
+  gap: 0.875rem;
+  animation: toastSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 4px solid;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.toast::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: currentColor;
+  animation: toastTimer 5s linear forwards;
+  opacity: 0.3;
+}
+
+@keyframes toastTimer {
+  from { width: 100%; }
+  to { width: 0%; }
 }
 
 .toast.success {
   border-left-color: var(--success-color);
+  background: linear-gradient(135deg, white 0%, rgba(34, 197, 94, 0.05) 100%);
 }
 
 .toast.error {
   border-left-color: var(--error-color);
+  background: linear-gradient(135deg, white 0%, rgba(239, 68, 68, 0.05) 100%);
 }
 
 .toast.info {
   border-left-color: var(--primary-color);
+  background: linear-gradient(135deg, white 0%, rgba(102, 126, 234, 0.05) 100%);
 }
 
 .toastIcon {
