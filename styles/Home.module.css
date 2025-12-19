@@ -44250,3 +44250,1098 @@
 :global([data-theme="dark"]) .pricingTestimonialRole {
   color: #94a3b8;
 }
+
+/* ==========================================================================
+   ROUND 43: TIMELINE COMPONENTS
+   - Vertical and horizontal timelines
+   - Timeline items with icons
+   - Activity feeds
+   - Changelog/history views
+   - Project milestones
+   - Status indicators
+   ========================================================================== */
+
+/* Vertical Timeline Container */
+.timeline {
+  position: relative;
+  padding: 24px 0;
+}
+
+.timelineVertical {
+  padding-left: 32px;
+}
+
+/* Timeline Line */
+.timelineLine {
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.timelineLineGradient {
+  background: linear-gradient(180deg, #8b5cf6 0%, #22c55e 100%);
+}
+
+.timelineLineDashed {
+  background: repeating-linear-gradient(
+    180deg,
+    #e2e8f0 0px,
+    #e2e8f0 8px,
+    transparent 8px,
+    transparent 16px
+  );
+}
+
+/* Timeline Item */
+.timelineItem {
+  position: relative;
+  padding-bottom: 32px;
+  padding-left: 40px;
+}
+
+.timelineItem:last-child {
+  padding-bottom: 0;
+}
+
+/* Timeline Node */
+.timelineNode {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #8b5cf6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.timelineNodeFilled {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #8b5cf6;
+}
+
+.timelineNodeSuccess {
+  border-color: #22c55e;
+}
+
+.timelineNodeSuccess.timelineNodeFilled {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.timelineNodeWarning {
+  border-color: #f59e0b;
+}
+
+.timelineNodeWarning.timelineNodeFilled {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.timelineNodeError {
+  border-color: #ef4444;
+}
+
+.timelineNodeError.timelineNodeFilled {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.timelineNodeInfo {
+  border-color: #3b82f6;
+}
+
+.timelineNodeInfo.timelineNodeFilled {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.timelineNode svg {
+  width: 12px;
+  height: 12px;
+  color: #8b5cf6;
+}
+
+.timelineNodeFilled svg {
+  color: white;
+}
+
+/* Large Timeline Node */
+.timelineNodeLarge {
+  width: 40px;
+  height: 40px;
+  left: -8px;
+}
+
+.timelineNodeLarge svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Timeline Content */
+.timelineContent {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.2s ease;
+}
+
+.timelineContent:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.timelineContentCompact {
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.timelineContentHighlighted {
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(124, 58, 237, 0.02) 100%);
+}
+
+/* Timeline Header */
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.timelineTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.timelineTime {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timelineTime svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Timeline Description */
+.timelineDescription {
+  font-size: 0.9375rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* Timeline Meta */
+.timelineMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.timelineMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.timelineMetaItem svg {
+  width: 14px;
+  height: 14px;
+  color: #94a3b8;
+}
+
+/* Timeline Avatar */
+.timelineAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.timelineAvatarGroup {
+  display: flex;
+}
+
+.timelineAvatarGroup .timelineAvatar {
+  margin-left: -8px;
+  border: 2px solid #ffffff;
+}
+
+.timelineAvatarGroup .timelineAvatar:first-child {
+  margin-left: 0;
+}
+
+/* Timeline Tags */
+.timelineTags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.timelineTag {
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.timelineTagPrimary {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.timelineTagSuccess {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+/* Timeline Actions */
+.timelineActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.timelineActionBtn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+}
+
+.timelineActionBtnPrimary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.timelineActionBtnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.timelineActionBtnSecondary {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.timelineActionBtnSecondary:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.timelineActionBtn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Horizontal Timeline */
+.timelineHorizontal {
+  display: flex;
+  align-items: flex-start;
+  padding: 0;
+  overflow-x: auto;
+  gap: 0;
+}
+
+.timelineHorizontal .timelineLine {
+  left: 0;
+  right: 0;
+  top: 11px;
+  bottom: auto;
+  width: auto;
+  height: 2px;
+}
+
+.timelineHorizontal .timelineItem {
+  flex-shrink: 0;
+  padding: 32px 24px 0;
+  padding-left: 24px;
+  min-width: 200px;
+}
+
+.timelineHorizontal .timelineNode {
+  left: 50%;
+  transform: translateX(-50%);
+  top: -21px;
+}
+
+.timelineHorizontal .timelineContent {
+  text-align: center;
+}
+
+/* Activity Feed */
+.activityFeed {
+  padding: 0;
+}
+
+.activityFeed .timelineItem {
+  padding-bottom: 20px;
+}
+
+.activityFeed .timelineNode {
+  width: 36px;
+  height: 36px;
+  left: -6px;
+}
+
+.activityFeed .timelineNode svg {
+  width: 18px;
+  height: 18px;
+}
+
+.activityFeedItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.activityFeedItem:hover {
+  background: #f1f5f9;
+}
+
+.activityFeedAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.activityFeedContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityFeedText {
+  font-size: 0.9375rem;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.activityFeedUser {
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+.activityFeedAction {
+  color: #64748b;
+}
+
+.activityFeedTarget {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.activityFeedTime {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* Changelog Timeline */
+.changelogTimeline {
+  padding-left: 40px;
+}
+
+.changelogItem {
+  padding-bottom: 40px;
+}
+
+.changelogVersion {
+  position: absolute;
+  left: -60px;
+  top: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #8b5cf6;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.changelogDate {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.changelogTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 16px;
+}
+
+.changelogList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.changelogListItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.changelogBadge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.changelogBadgeNew {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.changelogBadgeFix {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.changelogBadgeImproved {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.changelogBadgeBreaking {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.changelogBadgeDeprecated {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.changelogText {
+  font-size: 0.9375rem;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+/* Project Milestone Timeline */
+.milestoneTimeline {
+  padding: 0;
+}
+
+.milestoneItem {
+  display: flex;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.milestoneItem:last-child {
+  border-bottom: none;
+}
+
+.milestoneDate {
+  width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.milestoneDateMonth {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #8b5cf6;
+  text-transform: uppercase;
+}
+
+.milestoneDateDay {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.milestoneNode {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+}
+
+.milestoneNode svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.milestoneNodeCompleted {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+}
+
+.milestoneNodePending {
+  background: #f1f5f9;
+  box-shadow: none;
+}
+
+.milestoneNodePending svg {
+  color: #94a3b8;
+}
+
+.milestoneContent {
+  flex: 1;
+}
+
+.milestoneTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.milestoneDescription {
+  font-size: 0.9375rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.milestoneProgress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.milestoneProgressBar {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.milestoneProgressFill {
+  height: 100%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.milestoneProgressText {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #8b5cf6;
+  flex-shrink: 0;
+}
+
+/* Status Timeline */
+.statusTimeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 24px 0;
+}
+
+.statusTimelineItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.statusTimelineItem:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: calc(50% + 20px);
+  right: calc(-50% + 20px);
+  height: 2px;
+  background: #e2e8f0;
+}
+
+.statusTimelineItemCompleted:not(:last-child)::after {
+  background: linear-gradient(90deg, #22c55e 0%, #22c55e 100%);
+}
+
+.statusTimelineItemActive:not(:last-child)::after {
+  background: linear-gradient(90deg, #8b5cf6 0%, #e2e8f0 100%);
+}
+
+.statusTimelineNode {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.statusTimelineItemCompleted .statusTimelineNode {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-color: #22c55e;
+}
+
+.statusTimelineItemActive .statusTimelineNode {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #8b5cf6;
+  animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(139, 92, 246, 0);
+  }
+}
+
+.statusTimelineNode svg {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+}
+
+.statusTimelineItemCompleted .statusTimelineNode svg,
+.statusTimelineItemActive .statusTimelineNode svg {
+  color: white;
+}
+
+.statusTimelineLabel {
+  margin-top: 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #64748b;
+  text-align: center;
+}
+
+.statusTimelineItemCompleted .statusTimelineLabel {
+  color: #22c55e;
+}
+
+.statusTimelineItemActive .statusTimelineLabel {
+  color: #8b5cf6;
+  font-weight: 600;
+}
+
+.statusTimelineTime {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* Compact Timeline */
+.timelineCompact .timelineItem {
+  padding-bottom: 16px;
+  padding-left: 28px;
+}
+
+.timelineCompact .timelineLine {
+  left: 7px;
+}
+
+.timelineCompact .timelineNode {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.timelineCompact .timelineContent {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.timelineCompact .timelineContent:hover {
+  box-shadow: none;
+}
+
+.timelineCompact .timelineTitle {
+  font-size: 0.9375rem;
+}
+
+.timelineCompact .timelineDescription {
+  font-size: 0.8125rem;
+  margin-bottom: 0;
+}
+
+/* Timeline Date Header */
+.timelineDateHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  margin-top: 24px;
+}
+
+.timelineDateHeader:first-child {
+  margin-top: 0;
+}
+
+.timelineDateHeaderLine {
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.timelineDateHeaderText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* Timeline Loading Skeleton */
+.timelineSkeleton {
+  padding-left: 32px;
+  position: relative;
+}
+
+.timelineSkeleton .timelineLine {
+  background: linear-gradient(180deg, #e2e8f0 0%, #f1f5f9 100%);
+}
+
+.timelineSkeletonItem {
+  position: relative;
+  padding-bottom: 32px;
+  padding-left: 40px;
+}
+
+.timelineSkeletonNode {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: timelineSkeletonShimmer 1.5s infinite;
+}
+
+.timelineSkeletonContent {
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.timelineSkeletonTitle {
+  height: 16px;
+  width: 60%;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: timelineSkeletonShimmer 1.5s infinite;
+  margin-bottom: 12px;
+}
+
+.timelineSkeletonText {
+  height: 12px;
+  width: 100%;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: timelineSkeletonShimmer 1.5s infinite;
+  margin-bottom: 8px;
+}
+
+.timelineSkeletonText:last-child {
+  width: 80%;
+  margin-bottom: 0;
+}
+
+@keyframes timelineSkeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Timeline Empty State */
+.timelineEmpty {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.timelineEmptyIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.timelineEmptyIcon svg {
+  width: 32px;
+  height: 32px;
+  color: #8b5cf6;
+}
+
+.timelineEmptyTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.timelineEmptyText {
+  font-size: 0.9375rem;
+  color: #64748b;
+}
+
+/* Timeline Dark Mode */
+:global([data-theme="dark"]) .timelineLine {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .timelineLineDashed {
+  background: repeating-linear-gradient(
+    180deg,
+    #334155 0px,
+    #334155 8px,
+    transparent 8px,
+    transparent 16px
+  );
+}
+
+:global([data-theme="dark"]) .timelineNode {
+  background: #1e293b;
+}
+
+:global([data-theme="dark"]) .timelineContent {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .timelineContent:hover {
+  border-color: #475569;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .timelineContentHighlighted {
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.08) 100%);
+}
+
+:global([data-theme="dark"]) .timelineTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .timelineTime {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .timelineDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .timelineMetaItem {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .timelineMetaItem svg {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .timelineTag {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .timelineTagPrimary {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+:global([data-theme="dark"]) .timelineTagSuccess {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+:global([data-theme="dark"]) .timelineActions {
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .timelineActionBtnSecondary {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .timelineActionBtnSecondary:hover {
+  background: #475569;
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .activityFeedItem {
+  background: #0f172a;
+}
+
+:global([data-theme="dark"]) .activityFeedItem:hover {
+  background: #1e293b;
+}
+
+:global([data-theme="dark"]) .activityFeedText {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .activityFeedTarget {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .activityFeedAction {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .activityFeedTime {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .changelogDate {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .changelogTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .changelogText {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .changelogBadgeNew {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+:global([data-theme="dark"]) .changelogBadgeFix {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+:global([data-theme="dark"]) .changelogBadgeImproved {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+:global([data-theme="dark"]) .changelogBadgeBreaking {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+:global([data-theme="dark"]) .changelogBadgeDeprecated {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+:global([data-theme="dark"]) .milestoneItem {
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .milestoneDateDay {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .milestoneNodePending {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .milestoneNodePending svg {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .milestoneTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .milestoneDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .milestoneProgressBar {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .statusTimelineItem:not(:last-child)::after {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .statusTimelineNode {
+  background: #334155;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .statusTimelineNode svg {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .statusTimelineLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statusTimelineTime {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .timelineDateHeaderLine {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .timelineDateHeaderText {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .timelineSkeletonNode,
+:global([data-theme="dark"]) .timelineSkeletonTitle,
+:global([data-theme="dark"]) .timelineSkeletonText {
+  background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+  background-size: 200% 100%;
+}
+
+:global([data-theme="dark"]) .timelineSkeletonContent {
+  background: #0f172a;
+}
+
+:global([data-theme="dark"]) .timelineEmptyTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .timelineEmptyText {
+  color: #94a3b8;
+}
