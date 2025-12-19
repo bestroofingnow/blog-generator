@@ -11169,3 +11169,785 @@
   background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
   color: #a78bfa;
 }
+
+/* ===== ROUND 11: TOOLTIPS, POPOVERS, CONTEXT MENUS, CHIPS ===== */
+
+/* ===== TOOLTIP SYSTEM ===== */
+.tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltipTrigger {
+  cursor: pointer;
+}
+
+.tooltipContent {
+  position: absolute;
+  z-index: 1000;
+  padding: 8px 12px;
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+}
+
+.tooltip:hover .tooltipContent,
+.tooltip:focus-within .tooltipContent {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Tooltip arrow */
+.tooltipContent::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #1e293b;
+  transform: rotate(45deg);
+}
+
+/* Tooltip positions */
+.tooltipTop .tooltipContent {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  margin-bottom: 8px;
+}
+
+.tooltipTop .tooltipContent::before {
+  bottom: -4px;
+  left: 50%;
+  margin-left: -4px;
+}
+
+.tooltip:hover .tooltipTop .tooltipContent,
+.tooltipTop:hover .tooltipContent {
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltipBottom .tooltipContent {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  margin-top: 8px;
+}
+
+.tooltipBottom .tooltipContent::before {
+  top: -4px;
+  left: 50%;
+  margin-left: -4px;
+}
+
+.tooltipLeft .tooltipContent {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-8px);
+  margin-right: 8px;
+}
+
+.tooltipLeft .tooltipContent::before {
+  right: -4px;
+  top: 50%;
+  margin-top: -4px;
+}
+
+.tooltipRight .tooltipContent {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(8px);
+  margin-left: 8px;
+}
+
+.tooltipRight .tooltipContent::before {
+  left: -4px;
+  top: 50%;
+  margin-top: -4px;
+}
+
+/* Tooltip variants */
+.tooltipLight .tooltipContent {
+  background: white;
+  color: #1e293b;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.tooltipLight .tooltipContent::before {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: none;
+  border-left: none;
+}
+
+.tooltipSuccess .tooltipContent {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.tooltipSuccess .tooltipContent::before {
+  background: #22c55e;
+}
+
+.tooltipWarning .tooltipContent {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.tooltipWarning .tooltipContent::before {
+  background: #f59e0b;
+}
+
+.tooltipDanger .tooltipContent {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.tooltipDanger .tooltipContent::before {
+  background: #ef4444;
+}
+
+/* Multi-line tooltip */
+.tooltipMultiline .tooltipContent {
+  white-space: normal;
+  max-width: 250px;
+  text-align: center;
+}
+
+/* ===== POPOVER COMPONENT ===== */
+.popover {
+  position: relative;
+  display: inline-flex;
+}
+
+.popoverTrigger {
+  cursor: pointer;
+}
+
+.popoverContent {
+  position: absolute;
+  z-index: 1000;
+  min-width: 200px;
+  max-width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95) translateY(8px);
+  transform-origin: top center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.popover.open .popoverContent {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1) translateY(0);
+}
+
+/* Popover arrow */
+.popoverContent::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  transform: rotate(45deg);
+  box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Popover positions */
+.popoverBottom .popoverContent {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.95) translateY(8px);
+  margin-top: 12px;
+}
+
+.popoverBottom .popoverContent::before {
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+
+.popover.open .popoverBottom .popoverContent,
+.popoverBottom.open .popoverContent {
+  transform: translateX(-50%) scale(1) translateY(0);
+}
+
+.popoverTop .popoverContent {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.95) translateY(-8px);
+  margin-bottom: 12px;
+  transform-origin: bottom center;
+}
+
+.popoverTop .popoverContent::before {
+  bottom: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+
+.popoverLeft .popoverContent {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%) scale(0.95) translateX(-8px);
+  margin-right: 12px;
+  transform-origin: right center;
+}
+
+.popoverLeft .popoverContent::before {
+  right: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+
+.popoverRight .popoverContent {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) scale(0.95) translateX(8px);
+  margin-left: 12px;
+  transform-origin: left center;
+}
+
+.popoverRight .popoverContent::before {
+  left: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+
+/* Popover header */
+.popoverHeader {
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.popoverTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.popoverClose {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.popoverClose:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1e293b;
+}
+
+/* Popover body */
+.popoverBody {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+/* Popover footer */
+.popoverFooter {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 0 0 12px 12px;
+}
+
+/* ===== CONTEXT MENU ===== */
+.contextMenu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 180px;
+  padding: 6px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95);
+  transform-origin: top left;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.contextMenu.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.contextMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #374151;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.contextMenuItem:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  color: #667eea;
+}
+
+.contextMenuItemIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.contextMenuItem:hover .contextMenuItemIcon {
+  opacity: 1;
+}
+
+.contextMenuItemLabel {
+  flex: 1;
+}
+
+.contextMenuItemShortcut {
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: 'SF Mono', monospace;
+}
+
+.contextMenuItem.danger {
+  color: #ef4444;
+}
+
+.contextMenuItem.danger:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.08) 100%);
+  color: #dc2626;
+}
+
+.contextMenuItem.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.contextMenuDivider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 6px 0;
+}
+
+.contextMenuLabel {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Context menu submenu */
+.contextMenuSubmenu {
+  position: relative;
+}
+
+.contextMenuSubmenuArrow {
+  margin-left: auto;
+  opacity: 0.5;
+}
+
+.contextMenuSubmenuContent {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  min-width: 160px;
+  padding: 6px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-8px);
+  transition: all 0.15s ease;
+}
+
+.contextMenuSubmenu:hover .contextMenuSubmenuContent {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(4px);
+}
+
+/* ===== CHIP/TAG INPUT ===== */
+.chipInput {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.chipInput:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.chipInputField {
+  flex: 1;
+  min-width: 100px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+}
+
+.chipInputField::placeholder {
+  color: #94a3b8;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 12px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #667eea;
+  animation: chipEnter 0.2s ease;
+}
+
+@keyframes chipEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.chipIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.chipLabel {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipRemove {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chipRemove:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  transform: scale(1.1);
+}
+
+/* Chip variants */
+.chipPrimary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.chipPrimary .chipRemove {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.chipPrimary .chipRemove:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.chipSuccess {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%);
+  color: #16a34a;
+}
+
+.chipWarning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+  color: #d97706;
+}
+
+.chipDanger {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+  color: #dc2626;
+}
+
+/* Chip sizes */
+.chipSmall {
+  padding: 2px 6px 2px 10px;
+  font-size: 11px;
+}
+
+.chipSmall .chipRemove {
+  width: 14px;
+  height: 14px;
+}
+
+.chipLarge {
+  padding: 6px 10px 6px 14px;
+  font-size: 15px;
+}
+
+.chipLarge .chipRemove {
+  width: 22px;
+  height: 22px;
+}
+
+/* Clickable chips */
+.chipClickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chipClickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.chipClickable:active {
+  transform: translateY(0);
+}
+
+/* Chip with avatar */
+.chipAvatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-left: -4px;
+}
+
+/* Chip group */
+.chipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Autocomplete suggestions */
+.chipSuggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.2s ease;
+}
+
+.chipInput:focus-within .chipSuggestions.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.chipSuggestionItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.chipSuggestionItem:first-child {
+  border-radius: 12px 12px 0 0;
+}
+
+.chipSuggestionItem:last-child {
+  border-radius: 0 0 12px 12px;
+}
+
+.chipSuggestionItem:hover,
+.chipSuggestionItem.highlighted {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  color: #667eea;
+}
+
+.chipSuggestionIcon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+/* ===== DARK MODE FOR ROUND 11 ===== */
+:global([data-theme="dark"]) .tooltipContent {
+  background: #374151;
+  color: #f8fafc;
+}
+
+:global([data-theme="dark"]) .tooltipContent::before {
+  background: #374151;
+}
+
+:global([data-theme="dark"]) .tooltipLight .tooltipContent {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .tooltipLight .tooltipContent::before {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .popoverContent {
+  background: var(--bg-secondary);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .popoverContent::before {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .popoverHeader {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .popoverTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .popoverClose {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .popoverClose:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .popoverBody {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .popoverFooter {
+  border-color: var(--border-light);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .contextMenu {
+  background: var(--bg-secondary);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .contextMenuItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .contextMenuItem:hover {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .contextMenuDivider {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .contextMenuLabel {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .contextMenuSubmenuContent {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .chipInput {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .chipInput:focus-within {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.1);
+}
+
+:global([data-theme="dark"]) .chipInputField {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .chip {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .chipRemove {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme="dark"]) .chipRemove:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+:global([data-theme="dark"]) .chipSuggestions {
+  background: var(--bg-secondary);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .chipSuggestionItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .chipSuggestionItem:hover,
+:global([data-theme="dark"]) .chipSuggestionItem.highlighted {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  color: #a78bfa;
+}
