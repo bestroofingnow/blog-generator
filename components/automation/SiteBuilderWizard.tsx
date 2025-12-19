@@ -19,20 +19,30 @@ interface LocationPage {
   priority?: number;
 }
 
+interface BlogTopic {
+  title: string;
+  keywords?: string[];
+  priority?: number;
+}
+
 interface ProposedStructure {
   homepage: {
     title: string;
-    heroText: string;
-    ctaButtons: string[];
+    description?: string;
+    sections?: string[];
+    heroText?: string;
+    ctaButtons?: string[];
   };
   servicePages: ProposedPage[];
   locationPages: LocationPage[];
-  blogTopics: string[];
+  blogTopics: BlogTopic[];
   sitemap: {
-    homepage: string;
-    services: string[];
-    locations: string[];
-    blog: string[];
+    structure?: string;
+    internalLinking?: string[];
+    homepage?: string;
+    services?: string[];
+    locations?: string[];
+    blog?: string[];
   };
 }
 
@@ -138,7 +148,7 @@ export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWiz
       if (data.proposedStructure) {
         data.proposedStructure.servicePages.forEach((p: ProposedPage) => allSlugs.add(p.slug));
         data.proposedStructure.locationPages.forEach((p: LocationPage) => allSlugs.add(p.slug));
-        data.proposedStructure.blogTopics.forEach((t: string, i: number) => allSlugs.add(`blog-${i}`));
+        data.proposedStructure.blogTopics.forEach((t: BlogTopic, i: number) => allSlugs.add(`blog-${i}`));
       }
       setSelectedPages(allSlugs);
 
@@ -497,7 +507,7 @@ export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWiz
                           checked={selectedPages.has(`blog-${index}`)}
                           onChange={() => togglePage(`blog-${index}`)}
                         />
-                        <span className={styles.pageTitle}>{topic}</span>
+                        <span className={styles.pageTitle}>{topic.title}</span>
                       </label>
                     ))}
                   </div>
