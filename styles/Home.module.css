@@ -3110,24 +3110,49 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  animation: fadeInOverlay 0.3s ease-out;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
 }
 
 .seoPlannerModal {
-  background: white;
-  border-radius: 16px;
+  background: linear-gradient(180deg, white 0%, rgba(248, 250, 252, 1) 100%);
+  border-radius: 20px;
   width: 100%;
   max-width: 1200px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modalHeader {
@@ -3699,15 +3724,16 @@
 
 /* Content Hub Styles */
 .contentHubModal {
-  background: white;
-  border-radius: 16px;
+  background: linear-gradient(180deg, white 0%, rgba(248, 250, 252, 1) 100%);
+  border-radius: 20px;
   width: 100%;
   max-width: 1000px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.35);
+  animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .contentHubContent {
@@ -4093,15 +4119,16 @@
 
 /* Research Modal */
 .researchModal {
-  background: white;
-  border-radius: 16px;
+  background: linear-gradient(180deg, white 0%, rgba(248, 250, 252, 1) 100%);
+  border-radius: 20px;
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.35);
+  animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .researchModalContent {
