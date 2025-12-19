@@ -30772,3 +30772,1205 @@
   background: #334155;
   color: #f1f5f9;
 }
+
+/* ===========================================
+   STEP WIZARD / STEPPER COMPONENTS (Round 34)
+   =========================================== */
+
+/* Horizontal Step Wizard */
+.stepWizard {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+
+.stepWizardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+}
+
+.stepWizardProgress {
+  position: absolute;
+  top: 20px;
+  left: 40px;
+  right: 40px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  z-index: 0;
+}
+
+.stepWizardProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.stepIndicator {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.stepItem.active .stepIndicator {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.stepItem.completed .stepIndicator {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
+  border-color: #22c55e;
+}
+
+.stepItem.completed .stepIndicator::after {
+  content: '\2713';
+  font-size: 16px;
+}
+
+.stepItem.disabled .stepIndicator {
+  background: #f8fafc;
+  color: #cbd5e1;
+  border-color: #e2e8f0;
+}
+
+.stepLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.stepTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.stepItem.active .stepTitle {
+  color: #8b5cf6;
+}
+
+.stepItem.disabled .stepTitle {
+  color: #94a3b8;
+}
+
+.stepDescription {
+  font-size: 12px;
+  color: #64748b;
+  max-width: 120px;
+}
+
+/* Vertical Step Wizard */
+.stepWizardVertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.stepItemVertical {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 32px;
+}
+
+.stepItemVertical:last-child {
+  padding-bottom: 0;
+}
+
+.stepItemVertical::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 44px;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.stepItemVertical:last-child::before {
+  display: none;
+}
+
+.stepItemVertical.completed::before {
+  background: linear-gradient(180deg, #22c55e 0%, #e2e8f0 100%);
+}
+
+.stepIndicatorVertical {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.stepItemVertical.active .stepIndicatorVertical {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.stepItemVertical.completed .stepIndicatorVertical {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
+  border-color: #22c55e;
+}
+
+.stepContentVertical {
+  flex: 1;
+  padding-top: 8px;
+}
+
+.stepTitleVertical {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.stepItemVertical.active .stepTitleVertical {
+  color: #8b5cf6;
+}
+
+.stepDescriptionVertical {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Step Content Area */
+.stepWizardContent {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 32px;
+  min-height: 200px;
+}
+
+.stepWizardContentTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.stepWizardContentDescription {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+/* Step Navigation */
+.stepWizardNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 24px;
+}
+
+.stepNavBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stepNavBtnPrev {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.stepNavBtnPrev:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.stepNavBtnPrev:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stepNavBtnNext {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: none;
+}
+
+.stepNavBtnNext:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.stepNavBtnNext:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.stepNavBtnComplete {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.stepNavBtnComplete:hover {
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* Dot Step Indicator */
+.stepDots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.stepDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stepDot:hover {
+  background: #cbd5e1;
+}
+
+.stepDot.active {
+  width: 32px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.stepDot.completed {
+  background: #22c55e;
+}
+
+/* Compact Step Indicator */
+.stepCompact {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepCompactItem {
+  height: 4px;
+  flex: 1;
+  background: #e2e8f0;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.stepCompactItem.active {
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.stepCompactItem.completed {
+  background: #22c55e;
+}
+
+.stepCompactLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #64748b;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.stepCompactLabel strong {
+  color: #1e293b;
+}
+
+/* Numbered Steps with Line */
+.stepsNumbered {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.stepNumbered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.stepNumbered:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: calc(50% + 20px);
+  right: calc(-50% + 20px);
+  height: 2px;
+  background: #e2e8f0;
+}
+
+.stepNumbered.completed:not(:last-child)::after {
+  background: #22c55e;
+}
+
+.stepNumberedIndicator {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  z-index: 1;
+  margin-bottom: 8px;
+}
+
+.stepNumbered.active .stepNumberedIndicator {
+  background: #8b5cf6;
+  color: #ffffff;
+  border-color: #8b5cf6;
+}
+
+.stepNumbered.completed .stepNumberedIndicator {
+  background: #22c55e;
+  color: #ffffff;
+  border-color: #22c55e;
+}
+
+.stepNumberedLabel {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  max-width: 80px;
+}
+
+.stepNumbered.active .stepNumberedLabel {
+  color: #8b5cf6;
+  font-weight: 600;
+}
+
+/* Icon Steps */
+.stepIcon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  cursor: pointer;
+}
+
+.stepIconCircle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.stepIconCircle svg {
+  width: 24px;
+  height: 24px;
+  color: #64748b;
+}
+
+.stepIcon.active .stepIconCircle {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #8b5cf6;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+}
+
+.stepIcon.active .stepIconCircle svg {
+  color: #ffffff;
+}
+
+.stepIcon.completed .stepIconCircle {
+  background: #dcfce7;
+  border-color: #22c55e;
+}
+
+.stepIcon.completed .stepIconCircle svg {
+  color: #22c55e;
+}
+
+.stepIconLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.stepIcon.active .stepIconLabel {
+  color: #8b5cf6;
+  font-weight: 600;
+}
+
+/* Card Steps */
+.stepsCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stepCard {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.stepCard:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stepCard.active {
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.15);
+}
+
+.stepCard.completed {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.stepCardNumber {
+  position: absolute;
+  top: -12px;
+  left: 16px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.stepCard.active .stepCardNumber {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+  color: #ffffff;
+}
+
+.stepCard.completed .stepCardNumber {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #ffffff;
+}
+
+.stepCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.stepCard.active .stepCardTitle {
+  color: #8b5cf6;
+}
+
+.stepCardDescription {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.stepCardCheck {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 12px;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.3s ease;
+}
+
+.stepCard.completed .stepCardCheck {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Timeline Steps */
+.stepsTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 24px;
+  border-left: 3px solid #e2e8f0;
+}
+
+.stepTimeline {
+  position: relative;
+  padding: 0 0 32px 24px;
+}
+
+.stepTimeline:last-child {
+  padding-bottom: 0;
+}
+
+.stepTimelineDot {
+  position: absolute;
+  left: -31px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #e2e8f0;
+}
+
+.stepTimeline.active .stepTimelineDot {
+  border-color: #8b5cf6;
+  background: #8b5cf6;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+}
+
+.stepTimeline.completed .stepTimelineDot {
+  border-color: #22c55e;
+  background: #22c55e;
+}
+
+.stepTimelineTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.stepTimeline.active .stepTimelineTitle {
+  color: #8b5cf6;
+}
+
+.stepTimelineDescription {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.stepTimelineTime {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 8px;
+}
+
+/* Animated Progress Steps */
+.stepsProgress {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 24px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.stepProgress {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.stepProgress:last-child {
+  flex: 0;
+}
+
+.stepProgressCircle {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  background: #ffffff;
+  color: #94a3b8;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.stepProgress.active .stepProgressCircle {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-color: transparent;
+  animation: stepPulse 2s ease-in-out infinite;
+}
+
+@keyframes stepPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(139, 92, 246, 0);
+  }
+}
+
+.stepProgress.completed .stepProgressCircle {
+  background: #22c55e;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.stepProgressLine {
+  flex: 1;
+  height: 3px;
+  background: #e2e8f0;
+  margin: 0 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stepProgressLine.active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 50%, transparent 100%);
+  animation: stepLineProgress 1.5s ease-in-out infinite;
+}
+
+@keyframes stepLineProgress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.stepProgressLine.completed {
+  background: #22c55e;
+}
+
+/* Step Wizard Skeleton */
+.stepWizardSkeleton {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+}
+
+.stepSkeletonItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepSkeletonCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.stepSkeletonLine {
+  width: 80px;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Multi-Column Steps */
+.stepsMultiColumn {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.stepMultiColumn {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.stepMultiColumn:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stepMultiColumn.active {
+  border-color: #8b5cf6;
+  background: #faf5ff;
+}
+
+.stepMultiColumn.completed {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.stepMultiColumnNumber {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.stepMultiColumn.active .stepMultiColumnNumber {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+}
+
+.stepMultiColumn.completed .stepMultiColumnNumber {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.stepMultiColumnContent {
+  flex: 1;
+}
+
+.stepMultiColumnTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.stepMultiColumn.active .stepMultiColumnTitle {
+  color: #8b5cf6;
+}
+
+.stepMultiColumnDescription {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Status Steps */
+.stepsStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stepStatus {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.stepStatusIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+}
+
+.stepStatusIcon svg {
+  width: 22px;
+  height: 22px;
+  color: #64748b;
+}
+
+.stepStatus.pending .stepStatusIcon {
+  background: #fef3c7;
+}
+
+.stepStatus.pending .stepStatusIcon svg {
+  color: #d97706;
+}
+
+.stepStatus.inProgress .stepStatusIcon {
+  background: #dbeafe;
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.stepStatus.inProgress .stepStatusIcon svg {
+  color: #2563eb;
+}
+
+.stepStatus.completed .stepStatusIcon {
+  background: #dcfce7;
+}
+
+.stepStatus.completed .stepStatusIcon svg {
+  color: #22c55e;
+}
+
+.stepStatus.error .stepStatusIcon {
+  background: #fee2e2;
+}
+
+.stepStatus.error .stepStatusIcon svg {
+  color: #ef4444;
+}
+
+.stepStatusContent {
+  flex: 1;
+}
+
+.stepStatusTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.stepStatusDescription {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.stepStatusTime {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+/* Dark mode for Step Wizard */
+:global([data-theme="dark"]) .stepWizardProgress {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepIndicator {
+  background: #334155;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepItem.disabled .stepIndicator {
+  background: #1e293b;
+  color: #475569;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .stepTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepItem.disabled .stepTitle {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepItemVertical::before {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepIndicatorVertical {
+  background: #334155;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepTitleVertical {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepDescriptionVertical {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepWizardContent {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .stepWizardContentTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepWizardContentDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepWizardNav {
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .stepNavBtnPrev {
+  background: #334155;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepNavBtnPrev:hover {
+  background: #475569;
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepNavBtnNext:disabled {
+  background: #334155;
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepDot {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepDot:hover {
+  background: #475569;
+}
+
+:global([data-theme="dark"]) .stepCompactItem {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepCompactLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepCompactLabel strong {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepNumbered:not(:last-child)::after {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepNumberedIndicator {
+  background: #334155;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepNumberedLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepIconCircle {
+  background: #334155;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepIconCircle svg {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepIconLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepCard {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .stepCard:hover {
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepCard.completed {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+}
+
+:global([data-theme="dark"]) .stepCardNumber {
+  background: #334155;
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepCardTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepCardDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepsTimeline {
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .stepTimelineDot {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepTimelineTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepTimelineDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepTimelineTime {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepsProgress {
+  background: #1e293b;
+}
+
+:global([data-theme="dark"]) .stepProgressCircle {
+  background: #334155;
+  color: #64748b;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepProgressLine {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepSkeletonCircle,
+:global([data-theme="dark"]) .stepSkeletonLine {
+  background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+  background-size: 200% 100%;
+}
+
+:global([data-theme="dark"]) .stepMultiColumn {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .stepMultiColumn.active {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: #8b5cf6;
+}
+
+:global([data-theme="dark"]) .stepMultiColumn.completed {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+}
+
+:global([data-theme="dark"]) .stepMultiColumnNumber {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepMultiColumnTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepMultiColumnDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepStatus {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .stepStatusIcon {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepStatus.pending .stepStatusIcon {
+  background: rgba(217, 119, 6, 0.15);
+}
+
+:global([data-theme="dark"]) .stepStatus.inProgress .stepStatusIcon {
+  background: rgba(37, 99, 235, 0.15);
+}
+
+:global([data-theme="dark"]) .stepStatus.completed .stepStatusIcon {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+:global([data-theme="dark"]) .stepStatus.error .stepStatusIcon {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+:global([data-theme="dark"]) .stepStatusTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepStatusDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepStatusTime {
+  color: #64748b;
+}
