@@ -19609,3 +19609,913 @@
 :global([data-theme="dark"]) .carouselSwipeHint {
   color: var(--text-secondary);
 }
+
+/* ==========================================================================
+   ROUND 22: AVATAR & USER COMPONENTS
+   ========================================================================== */
+
+/* Base Avatar */
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Avatar Sizes */
+.avatarXs {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.avatarSm {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.avatarMd {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+
+.avatarLg {
+  width: 64px;
+  height: 64px;
+  font-size: 20px;
+}
+
+.avatarXl {
+  width: 96px;
+  height: 96px;
+  font-size: 28px;
+}
+
+.avatar2xl {
+  width: 128px;
+  height: 128px;
+  font-size: 36px;
+}
+
+/* Avatar Shapes */
+.avatarSquare {
+  border-radius: 12px;
+}
+
+.avatarRounded {
+  border-radius: 16px;
+}
+
+/* Avatar Status Indicator */
+.avatarStatus {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.avatarStatusOnline {
+  background: #22c55e;
+}
+
+.avatarStatusOffline {
+  background: #94a3b8;
+}
+
+.avatarStatusBusy {
+  background: #ef4444;
+}
+
+.avatarStatusAway {
+  background: #f59e0b;
+}
+
+.avatarLg .avatarStatus,
+.avatarXl .avatarStatus,
+.avatar2xl .avatarStatus {
+  width: 16px;
+  height: 16px;
+  border-width: 3px;
+}
+
+/* Avatar Badge */
+.avatarBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: 2px solid white;
+}
+
+/* Avatar with Ring */
+.avatarRing {
+  padding: 3px;
+  background: white;
+  box-shadow: 0 0 0 3px #8b5cf6;
+}
+
+.avatarRingGradient {
+  box-shadow: none;
+  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 50%, #22c55e 100%);
+}
+
+.avatarRingGradient::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: white;
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.avatarRingGradient .avatarImage {
+  position: relative;
+  z-index: 1;
+  border-radius: 50%;
+}
+
+/* Initials Avatar Colors */
+.avatarInitialsBlue {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.avatarInitialsGreen {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.avatarInitialsOrange {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+.avatarInitialsPink {
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+}
+
+.avatarInitialsRed {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.avatarInitialsTeal {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+}
+
+/* Avatar Group */
+.avatarGroup {
+  display: flex;
+  align-items: center;
+}
+
+.avatarGroup .avatar {
+  margin-left: -12px;
+  border: 3px solid white;
+  transition: all 0.2s ease;
+}
+
+.avatarGroup .avatar:first-child {
+  margin-left: 0;
+}
+
+.avatarGroup .avatar:hover {
+  transform: translateY(-4px);
+  z-index: 10;
+}
+
+.avatarGroupMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-left: -12px;
+  background: #f1f5f9;
+  border: 3px solid white;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* Avatar Group Stack Reverse */
+.avatarGroupReverse {
+  flex-direction: row-reverse;
+}
+
+.avatarGroupReverse .avatar {
+  margin-left: 0;
+  margin-right: -12px;
+}
+
+.avatarGroupReverse .avatar:first-child {
+  margin-right: 0;
+}
+
+/* User Card */
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.userCard:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.userCardContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.userCardName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.userCardRole {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.userCardEmail {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.userCardActions {
+  display: flex;
+  gap: 8px;
+}
+
+.userCardAction {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.03);
+  border: none;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.userCardAction:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+/* User List Item */
+.userListItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.userListItem:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.userListItemActive {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+.userListItemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.userListItemName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.userListItemMeta {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.userListItemBadge {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border-radius: 12px;
+}
+
+/* Profile Header */
+.profileHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(6, 182, 212, 0.03) 100%);
+  border-radius: 20px;
+}
+
+.profileHeaderAvatar {
+  position: relative;
+}
+
+.profileHeaderEditBtn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: 3px solid white;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profileHeaderEditBtn:hover {
+  transform: scale(1.1);
+}
+
+.profileHeaderContent {
+  flex: 1;
+}
+
+.profileHeaderName {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.profileHeaderTitle {
+  font-size: 16px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.profileHeaderStats {
+  display: flex;
+  gap: 32px;
+}
+
+.profileHeaderStat {
+  text-align: center;
+}
+
+.profileHeaderStatValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.profileHeaderStatLabel {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.profileHeaderActions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Team Member Card */
+.teamCard {
+  text-align: center;
+  padding: 32px 24px;
+  background: white;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.teamCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+.teamCardAvatar {
+  margin: 0 auto 20px;
+}
+
+.teamCardName {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.teamCardRole {
+  font-size: 14px;
+  color: #8b5cf6;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.teamCardBio {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.teamCardSocial {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.teamCardSocialLink {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 50%;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.teamCardSocialLink:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+/* User Menu */
+.userMenu {
+  position: relative;
+  display: inline-block;
+}
+
+.userMenuTrigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.userMenuTrigger:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.userMenuName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.userMenuChevron {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.userMenuTriggerOpen .userMenuChevron {
+  transform: rotate(180deg);
+}
+
+.userMenuDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  padding: 8px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.2s ease;
+}
+
+.userMenuDropdownOpen {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.userMenuHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 8px;
+}
+
+.userMenuHeaderInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.userMenuHeaderName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.userMenuHeaderEmail {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.userMenuItem:hover {
+  background: rgba(139, 92, 246, 0.05);
+  color: #8b5cf6;
+}
+
+.userMenuItemIcon {
+  width: 18px;
+  height: 18px;
+  color: #94a3b8;
+}
+
+.userMenuItem:hover .userMenuItemIcon {
+  color: #8b5cf6;
+}
+
+.userMenuItemDanger {
+  color: #ef4444;
+}
+
+.userMenuItemDanger:hover {
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+}
+
+.userMenuItemDanger .userMenuItemIcon {
+  color: #ef4444;
+}
+
+.userMenuDivider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 8px 0;
+}
+
+/* Activity Avatar (with icon) */
+.activityAvatar {
+  position: relative;
+}
+
+.activityAvatarIcon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.activityAvatarIconComment {
+  color: #3b82f6;
+}
+
+.activityAvatarIconLike {
+  color: #ef4444;
+}
+
+.activityAvatarIconShare {
+  color: #22c55e;
+}
+
+.activityAvatarIconMention {
+  color: #8b5cf6;
+}
+
+/* Presence Indicator */
+.presenceIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.presenceIndicatorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.presenceIndicatorOnline .presenceIndicatorDot {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.presenceIndicatorOffline .presenceIndicatorDot {
+  background: #94a3b8;
+}
+
+.presenceIndicatorAway .presenceIndicatorDot {
+  background: #f59e0b;
+}
+
+/* Clickable Avatar */
+.avatarClickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.avatarClickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Avatar Placeholder */
+.avatarPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.avatarPlaceholderIcon {
+  width: 50%;
+  height: 50%;
+}
+
+/* Round 22: Dark Mode */
+:global([data-theme="dark"]) .avatar {
+  border-color: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .avatarStatus {
+  border-color: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .avatarBadge {
+  border-color: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .avatarRing {
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 3px #a78bfa;
+}
+
+:global([data-theme="dark"]) .avatarGroup .avatar {
+  border-color: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .avatarGroupMore {
+  background: var(--bg-tertiary);
+  border-color: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .userCard:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+:global([data-theme="dark"]) .userCardName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .userCardRole {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userCardEmail {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userCardAction {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userCardAction:hover {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .userListItem:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+:global([data-theme="dark"]) .userListItemActive {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
+}
+
+:global([data-theme="dark"]) .userListItemName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .userListItemMeta {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userListItemBadge {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .profileHeader {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+:global([data-theme="dark"]) .profileHeaderEditBtn {
+  border-color: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .profileHeaderName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .profileHeaderTitle {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .profileHeaderStatValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .profileHeaderStatLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .teamCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .teamCard:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .teamCardName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .teamCardRole {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .teamCardBio {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .teamCardSocialLink {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .teamCardSocialLink:hover {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .userMenuTrigger {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .userMenuTrigger:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+:global([data-theme="dark"]) .userMenuName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .userMenuChevron {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userMenuDropdown {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .userMenuHeader {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .userMenuHeaderName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .userMenuHeaderEmail {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userMenuItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userMenuItem:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .userMenuItemIcon {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .userMenuItem:hover .userMenuItemIcon {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .userMenuDivider {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .activityAvatarIcon {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .presenceIndicator {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .avatarPlaceholder {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
