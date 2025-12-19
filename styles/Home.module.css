@@ -22037,3 +22037,1016 @@
 :global([data-theme="dark"]) .deltaStatChangeDown {
   background: rgba(239, 68, 68, 0.15);
 }
+
+/* ==========================================================================
+   ROUND 25: FEATURE COMPARISON TABLES
+   - Feature comparison grids
+   - Check/cross feature lists
+   - Plan comparison cards
+   - Side-by-side comparisons
+   - Before/after displays
+   - Spec comparison tables
+   ========================================================================== */
+
+/* Feature Comparison Table */
+.featureCompareTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.featureCompareHeader {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.featureCompareHeader th {
+  padding: 20px 16px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.featureCompareHeader th:first-child {
+  text-align: left;
+  width: 40%;
+}
+
+.featureComparePlanHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.featureComparePlanName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.featureComparePlanPrice {
+  font-size: 24px;
+  font-weight: 800;
+  color: #8b5cf6;
+}
+
+.featureComparePlanPeriod {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.featureCompareRow {
+  transition: background-color 0.2s ease;
+}
+
+.featureCompareRow:hover {
+  background-color: rgba(139, 92, 246, 0.03);
+}
+
+.featureCompareRow td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: center;
+}
+
+.featureCompareRow td:first-child {
+  text-align: left;
+  color: #475569;
+  font-size: 14px;
+}
+
+.featureCompareRow:last-child td {
+  border-bottom: none;
+}
+
+.featureCompareCategory {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.featureCompareCategory td {
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8b5cf6;
+}
+
+/* Check/Cross Icons */
+.featureCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%);
+  color: #22c55e;
+}
+
+.featureCheck::before {
+  content: "\2713";
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.featureCross {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.1) 100%);
+  color: #ef4444;
+}
+
+.featureCross::before {
+  content: "\2717";
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.featurePartial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%);
+  color: #f59e0b;
+}
+
+.featurePartial::before {
+  content: "\2012";
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.featureText {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.featureHighlight {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.featureHighlight td {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+/* Side-by-Side Comparison Cards */
+.sideBySideCompare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  position: relative;
+}
+
+.sideBySideCard {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.sideBySideCardPrimary {
+  border: 2px solid #8b5cf6;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+}
+
+.sideBySideHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sideBySideTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.sideBySideBadge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.sideBySideFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sideBySideFeature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.sideBySideFeatureIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.sideBySideFeatureIncluded {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.sideBySideFeatureIncluded::before {
+  content: "\2713";
+}
+
+.sideBySideFeatureExcluded {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.sideBySideFeatureExcluded::before {
+  content: "\2717";
+}
+
+.sideBySideVs {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+  z-index: 10;
+}
+
+/* Before/After Comparison */
+.beforeAfterCompare {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: start;
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.beforeAfterSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.beforeAfterLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.beforeAfterLabelBefore {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.beforeAfterLabelAfter {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.beforeAfterContent {
+  padding: 20px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.beforeAfterList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.beforeAfterItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.beforeAfterItemIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.beforeAfterItemNegative {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.beforeAfterItemNegative::before {
+  content: "\2717";
+}
+
+.beforeAfterItemPositive {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.beforeAfterItemPositive::before {
+  content: "\2713";
+}
+
+.beforeAfterArrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b5cf6;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 0 16px;
+}
+
+.beforeAfterArrow::before {
+  content: "\2192";
+}
+
+/* Spec Comparison Table */
+.specCompareTable {
+  width: 100%;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.specCompareRow {
+  display: grid;
+  grid-template-columns: 200px 1fr 1fr;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.specCompareRow:last-child {
+  border-bottom: none;
+}
+
+.specCompareLabel {
+  padding: 16px 20px;
+  background: #f8fafc;
+  font-weight: 600;
+  font-size: 14px;
+  color: #475569;
+  display: flex;
+  align-items: center;
+}
+
+.specCompareValue {
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid #f1f5f9;
+}
+
+.specCompareValueHighlight {
+  background: rgba(139, 92, 246, 0.05);
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+.specCompareHeader {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  font-weight: 700;
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* Feature List Cards */
+.featureListCard {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.featureListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.featureListTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.featureListCount {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.featureListItems {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.featureListItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.featureListItemCheck {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%);
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.featureListItemCheck::before {
+  content: "\2713";
+}
+
+/* Tiered Features Grid */
+.tieredFeaturesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.tieredFeatureCard {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.tieredFeatureCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+}
+
+.tieredFeatureCardRecommended {
+  border: 2px solid #8b5cf6;
+  position: relative;
+}
+
+.tieredFeatureCardRecommended::before {
+  content: "Recommended";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.tieredFeatureTier {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.tieredFeatureTierBasic {
+  background: rgba(100, 116, 139, 0.1);
+  color: #64748b;
+}
+
+.tieredFeatureTierPro {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.tieredFeatureTierEnterprise {
+  background: rgba(6, 182, 212, 0.1);
+  color: #0891b2;
+}
+
+.tieredFeatureName {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.tieredFeatureDescription {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.tieredFeatureList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.tieredFeatureListItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.tieredFeatureListIcon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.tieredFeatureListIncluded {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.tieredFeatureListIncluded::before {
+  content: "\2713";
+}
+
+.tieredFeatureListExcluded {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
+.tieredFeatureListExcluded::before {
+  content: "\2717";
+}
+
+.tieredFeatureCta {
+  width: 100%;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tieredFeatureCtaPrimary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.tieredFeatureCtaPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+}
+
+.tieredFeatureCtaSecondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.tieredFeatureCtaSecondary:hover {
+  background: #e2e8f0;
+}
+
+/* Tool/Product Comparison */
+.toolCompareGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.toolCompareCard {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.toolCompareHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.toolCompareLogo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.toolCompareInfo {
+  flex: 1;
+}
+
+.toolCompareName {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.toolCompareCategory {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.toolCompareRating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #f59e0b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.toolCompareSpecs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.toolCompareSpec {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.toolCompareSpecLabel {
+  color: #64748b;
+}
+
+.toolCompareSpecValue {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.toolComparePros,
+.toolCompareCons {
+  margin-bottom: 16px;
+}
+
+.toolCompareListTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.toolCompareListTitlePros {
+  color: #22c55e;
+}
+
+.toolCompareListTitleCons {
+  color: #ef4444;
+}
+
+.toolCompareListItems {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toolCompareListItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.toolCompareListItemIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  flex-shrink: 0;
+}
+
+.toolCompareListItemPro {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.toolCompareListItemPro::before {
+  content: "+";
+  font-weight: bold;
+}
+
+.toolCompareListItemCon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.toolCompareListItemCon::before {
+  content: "-";
+  font-weight: bold;
+}
+
+/* Comparison Winner Banner */
+.comparisonWinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+  border-radius: 12px;
+  margin-top: 24px;
+}
+
+.comparisonWinnerIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.comparisonWinnerIcon::before {
+  content: "\2605";
+}
+
+.comparisonWinnerText {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.comparisonWinnerName {
+  color: #8b5cf6;
+}
+
+/* Dark Mode - Feature Comparison */
+:global([data-theme="dark"]) .featureCompareTable {
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .featureCompareHeader {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+:global([data-theme="dark"]) .featureCompareHeader th {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .featureComparePlanName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .featureCompareRow td {
+  border-bottom-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .featureCompareRow td:first-child {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .featureCompareRow:hover {
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+:global([data-theme="dark"]) .featureCompareCategory {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+:global([data-theme="dark"]) .featureText {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .sideBySideCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .sideBySideTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .sideBySideFeature {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .beforeAfterCompare {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .beforeAfterContent {
+  background: var(--bg-primary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .beforeAfterItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .specCompareTable {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .specCompareRow {
+  border-bottom-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .specCompareLabel {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .specCompareValue {
+  color: var(--text-primary);
+  border-left-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .specCompareHeader {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  color: var(--text-primary);
+  border-bottom-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .featureListCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .featureListHeader {
+  border-bottom-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .featureListTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .featureListItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .tieredFeatureCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .tieredFeatureName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .tieredFeatureDescription {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .tieredFeatureListItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .tieredFeatureCtaSecondary {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .tieredFeatureCtaSecondary:hover {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .toolCompareCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .toolCompareHeader {
+  border-bottom-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .toolCompareLogo {
+  background: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .toolCompareName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .toolCompareCategory {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .toolCompareSpecLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .toolCompareSpecValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .toolCompareListItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .comparisonWinner {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+}
+
+:global([data-theme="dark"]) .comparisonWinnerText {
+  color: var(--text-primary);
+}
