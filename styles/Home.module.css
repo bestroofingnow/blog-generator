@@ -48643,3 +48643,1242 @@
   background: #475569;
   color: #f1f5f9;
 }
+
+/* ==========================================================================
+   ROUND 46: WIZARD & STEPPER COMPONENTS
+   - Horizontal and vertical steppers
+   - Multi-step form wizards
+   - Progress indicators
+   - Step transitions
+   ========================================================================== */
+
+/* Horizontal Stepper */
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 24px;
+}
+
+.stepperCompact {
+  padding: 0;
+}
+
+/* Step Item */
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* Connector Line */
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 24px);
+  right: calc(-50% + 24px);
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
+.step.completed:not(:last-child)::after {
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+}
+
+.step.active:not(:last-child)::after {
+  background: linear-gradient(90deg, #8b5cf6 50%, #e2e8f0 50%);
+}
+
+/* Step Number/Icon */
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.step.active .stepIndicator {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border-color: #8b5cf6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  transform: scale(1.1);
+}
+
+.step.completed .stepIndicator {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-color: #22c55e;
+  color: white;
+}
+
+.step.error .stepIndicator {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #ef4444;
+  color: white;
+}
+
+.stepIndicator svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Step Label */
+.stepLabel {
+  text-align: center;
+  max-width: 120px;
+}
+
+.stepTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 2px;
+  transition: color 0.3s ease;
+}
+
+.step.active .stepTitle,
+.step.completed .stepTitle {
+  color: #1e293b;
+}
+
+.stepDescription {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Step Click Handler */
+.step.clickable {
+  cursor: pointer;
+}
+
+.step.clickable:hover .stepIndicator {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.step.clickable.active:hover .stepIndicator {
+  transform: scale(1.15);
+}
+
+/* Mini Stepper (Dots) */
+.stepperMini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.stepDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.stepDot:hover {
+  background: #cbd5e1;
+  transform: scale(1.2);
+}
+
+.stepDot.active {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  width: 28px;
+  border-radius: 5px;
+}
+
+.stepDot.completed {
+  background: #22c55e;
+}
+
+/* Progress Stepper (Connected Bar) */
+.stepperProgress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  background: #f8fafc;
+  border-radius: 12px;
+  position: relative;
+}
+
+.stepperProgressTrack {
+  position: absolute;
+  top: 50%;
+  left: 48px;
+  right: 48px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+.stepperProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.stepperProgressItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 1;
+}
+
+.stepperProgressNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #e2e8f0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.stepperProgressItem.active .stepperProgressNumber {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+}
+
+.stepperProgressItem.completed .stepperProgressNumber {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+  color: white;
+}
+
+.stepperProgressLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.stepperProgressItem.active .stepperProgressLabel,
+.stepperProgressItem.completed .stepperProgressLabel {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Vertical Stepper */
+.stepperVertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.stepVertical {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.stepVertical:last-child {
+  padding-bottom: 0;
+}
+
+/* Vertical Connector */
+.stepVertical:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 40px;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.stepVertical.completed:not(:last-child)::before {
+  background: linear-gradient(180deg, #8b5cf6, #a855f7);
+}
+
+.stepVerticalIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.stepVertical.active .stepVerticalIndicator {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border-color: #8b5cf6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.stepVertical.completed .stepVerticalIndicator {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-color: #22c55e;
+  color: white;
+}
+
+.stepVerticalIndicator svg {
+  width: 18px;
+  height: 18px;
+}
+
+.stepVerticalContent {
+  flex: 1;
+  padding-top: 4px;
+}
+
+.stepVerticalTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 4px;
+}
+
+.stepVertical.active .stepVerticalTitle,
+.stepVertical.completed .stepVerticalTitle {
+  color: #1e293b;
+}
+
+.stepVerticalDescription {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Step Content Panel */
+.stepVerticalPanel {
+  margin-top: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  animation: stepPanelSlide 0.3s ease;
+}
+
+@keyframes stepPanelSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Wizard Container */
+.wizard {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* Wizard Header */
+.wizardHeader {
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.wizardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+
+.wizardSubtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.wizardProgress {
+  margin-top: 20px;
+}
+
+/* Wizard Body */
+.wizardBody {
+  padding: 32px;
+}
+
+/* Wizard Step Content */
+.wizardStep {
+  display: none;
+  animation: wizardStepFade 0.4s ease;
+}
+
+.wizardStep.active {
+  display: block;
+}
+
+@keyframes wizardStepFade {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.wizardStep.exiting {
+  animation: wizardStepExit 0.3s ease forwards;
+}
+
+@keyframes wizardStepExit {
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+/* Wizard Step Header */
+.wizardStepHeader {
+  margin-bottom: 24px;
+}
+
+.wizardStepTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+
+.wizardStepDescription {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Wizard Footer (Navigation) */
+.wizardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.wizardFooterLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wizardFooterRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wizardBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wizardBtn.btnBack {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.wizardBtn.btnBack:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.wizardBtn.btnNext {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border: none;
+  color: white;
+}
+
+.wizardBtn.btnNext:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.wizardBtn.btnFinish {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border: none;
+  color: white;
+}
+
+.wizardBtn.btnFinish:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.wizardBtn.btnSkip {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 10px;
+}
+
+.wizardBtn.btnSkip:hover {
+  color: #64748b;
+}
+
+.wizardBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.wizardBtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Wizard Progress Bar */
+.wizardProgressBar {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.wizardProgressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* Wizard Sidebar Layout */
+.wizardSidebar {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 500px;
+}
+
+.wizardSidebarNav {
+  background: #f8fafc;
+  padding: 32px 24px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.wizardSidebarContent {
+  padding: 32px;
+}
+
+/* Sidebar Step Items */
+.wizardSidebarItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wizardSidebarItem:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.wizardSidebarItem.active {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.wizardSidebarItem.completed {
+  opacity: 0.7;
+}
+
+.wizardSidebarIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.wizardSidebarItem.active .wizardSidebarIcon {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border-color: #8b5cf6;
+  color: white;
+}
+
+.wizardSidebarItem.completed .wizardSidebarIcon {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: white;
+}
+
+.wizardSidebarIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.wizardSidebarText {
+  flex: 1;
+  padding-top: 2px;
+}
+
+.wizardSidebarTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 2px;
+}
+
+.wizardSidebarItem.active .wizardSidebarTitle {
+  color: #1e293b;
+}
+
+.wizardSidebarDescription {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Completion Screen */
+.wizardComplete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.wizardCompleteIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  animation: completeIconBounce 0.6s ease;
+}
+
+@keyframes completeIconBounce {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.wizardCompleteIcon svg {
+  width: 40px;
+  height: 40px;
+  color: #22c55e;
+}
+
+.wizardCompleteTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px;
+}
+
+.wizardCompleteText {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0 0 24px;
+  max-width: 400px;
+}
+
+.wizardCompleteActions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Icon Stepper */
+.stepperIcons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 24px;
+}
+
+.stepIcon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.stepIcon:not(:last-child) {
+  margin-right: 48px;
+}
+
+.stepIcon:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 22px;
+  width: 32px;
+  height: 2px;
+  background: #e2e8f0;
+}
+
+.stepIcon.completed:not(:last-child)::after {
+  background: #8b5cf6;
+}
+
+.stepIconCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.stepIconCircle svg {
+  width: 22px;
+  height: 22px;
+  color: #94a3b8;
+  transition: color 0.3s ease;
+}
+
+.stepIcon.active .stepIconCircle {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.stepIcon.active .stepIconCircle svg {
+  color: white;
+}
+
+.stepIcon.completed .stepIconCircle {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-color: #22c55e;
+}
+
+.stepIcon.completed .stepIconCircle svg {
+  color: white;
+}
+
+.stepIconLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-align: center;
+  max-width: 80px;
+}
+
+.stepIcon.active .stepIconLabel,
+.stepIcon.completed .stepIconLabel {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Animated Connector Stepper */
+.stepperAnimated {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  gap: 0;
+}
+
+.stepAnimated {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.stepAnimatedNode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 1;
+}
+
+.stepAnimatedCircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #94a3b8;
+  transition: all 0.4s ease;
+}
+
+.stepAnimated.active .stepAnimatedCircle {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+  box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.1);
+}
+
+.stepAnimated.completed .stepAnimatedCircle {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+  color: white;
+}
+
+.stepAnimatedCircle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.stepAnimatedLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.stepAnimated.active .stepAnimatedLabel,
+.stepAnimated.completed .stepAnimatedLabel {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Animated Connector */
+.stepAnimatedConnector {
+  width: 80px;
+  height: 3px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  margin: 0 8px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stepAnimatedConnectorFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.stepAnimated.completed + .stepAnimatedConnector .stepAnimatedConnectorFill {
+  width: 100%;
+}
+
+/* Pill Stepper */
+.stepperPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  background: #f1f5f9;
+  border-radius: 50px;
+  padding: 4px;
+}
+
+.stepPill {
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.stepPill:hover {
+  color: #1e293b;
+}
+
+.stepPill.active {
+  background: white;
+  color: #8b5cf6;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.stepPill.completed {
+  color: #22c55e;
+}
+
+/* Stepper Loading State */
+.stepLoading {
+  position: relative;
+}
+
+.stepLoading .stepIndicator::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px solid transparent;
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: stepSpinner 0.8s linear infinite;
+}
+
+@keyframes stepSpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Wizard Form Elements */
+.wizardFormGroup {
+  margin-bottom: 20px;
+}
+
+.wizardFormLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.wizardFormInput {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  color: #1e293b;
+  transition: all 0.2s ease;
+}
+
+.wizardFormInput:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.wizardFormInput.hasError {
+  border-color: #ef4444;
+}
+
+.wizardFormError {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #ef4444;
+}
+
+/* Stepper Dark Mode */
+:global([data-theme="dark"]) .step:not(:last-child)::after {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .step.completed:not(:last-child)::after {
+  background: linear-gradient(90deg, #a78bfa, #8b5cf6);
+}
+
+:global([data-theme="dark"]) .stepIndicator {
+  background: #334155;
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepTitle {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .step.active .stepTitle,
+:global([data-theme="dark"]) .step.completed .stepTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepDescription {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepDot {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepDot:hover {
+  background: #475569;
+}
+
+:global([data-theme="dark"]) .stepperProgress {
+  background: #1e293b;
+}
+
+:global([data-theme="dark"]) .stepperProgressTrack {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepperProgressNumber {
+  background: #0f172a;
+  border-color: #475569;
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepperProgressLabel {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepperProgressItem.active .stepperProgressLabel,
+:global([data-theme="dark"]) .stepperProgressItem.completed .stepperProgressLabel {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepVertical:not(:last-child)::before {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepVerticalIndicator {
+  background: #334155;
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepVerticalTitle {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepVertical.active .stepVerticalTitle,
+:global([data-theme="dark"]) .stepVertical.completed .stepVerticalTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepVerticalDescription {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepVerticalPanel {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .wizard {
+  background: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .wizardHeader {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .wizardTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .wizardSubtitle {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .wizardFooter {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .wizardBtn.btnBack {
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .wizardBtn.btnBack:hover {
+  background: #334155;
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .wizardBtn.btnSkip {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .wizardBtn.btnSkip:hover {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .wizardProgressBar {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .wizardStepTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .wizardStepDescription {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .wizardSidebarNav {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .wizardSidebarItem:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+:global([data-theme="dark"]) .wizardSidebarItem.active {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .wizardSidebarIcon {
+  background: #1e293b;
+  border-color: #475569;
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .wizardSidebarTitle {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .wizardSidebarItem.active .wizardSidebarTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .wizardSidebarDescription {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .wizardCompleteIcon {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.15));
+}
+
+:global([data-theme="dark"]) .wizardCompleteTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .wizardCompleteText {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepIcon:not(:last-child)::after {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepIcon.completed:not(:last-child)::after {
+  background: #a78bfa;
+}
+
+:global([data-theme="dark"]) .stepIconCircle {
+  background: #334155;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .stepIconCircle svg {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepIconLabel {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepIcon.active .stepIconLabel,
+:global([data-theme="dark"]) .stepIcon.completed .stepIconLabel {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepAnimatedCircle {
+  background: #1e293b;
+  border-color: #475569;
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepAnimatedConnector {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepAnimatedLabel {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .stepAnimated.active .stepAnimatedLabel,
+:global([data-theme="dark"]) .stepAnimated.completed .stepAnimatedLabel {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepperPill {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .stepPill {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .stepPill:hover {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .stepPill.active {
+  background: #1e293b;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .wizardFormLabel {
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .wizardFormInput {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .wizardFormInput:focus {
+  border-color: #8b5cf6;
+}
