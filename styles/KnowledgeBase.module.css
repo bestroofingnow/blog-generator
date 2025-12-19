@@ -447,3 +447,59 @@
 .deleteButton:hover {
   background: #fef2f2;
 }
+
+/* ===== DARK MODE OVERRIDES ===== */
+:global([data-theme="dark"]) .card,
+:global([data-theme="dark"]) .entryCard,
+:global([data-theme="dark"]) .addEntryCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .title,
+:global([data-theme="dark"]) .entryTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .description,
+:global([data-theme="dark"]) .entryContent {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .input,
+:global([data-theme="dark"]) .textarea {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .input::placeholder,
+:global([data-theme="dark"]) .textarea::placeholder {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .tag {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .editButton {
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .editButton:hover {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .deleteButton {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+:global([data-theme="dark"]) .deleteButton:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+:global([data-theme="dark"]) .emptyState {
+  color: var(--text-secondary);
+}

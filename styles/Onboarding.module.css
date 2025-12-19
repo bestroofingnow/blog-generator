@@ -981,6 +981,192 @@
   line-height: 1.6;
 }
 
+/* ===== DARK MODE OVERRIDES ===== */
+:global([data-theme="dark"]) .modal {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .content {
+  background: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .input,
+:global([data-theme="dark"]) .select,
+:global([data-theme="dark"]) .textarea,
+:global([data-theme="dark"]) .tagInput {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .input::placeholder,
+:global([data-theme="dark"]) .tagInput::placeholder {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .input.aiSuggested {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+:global([data-theme="dark"]) .label,
+:global([data-theme="dark"]) .sectionTitle,
+:global([data-theme="dark"]) .linkCategoryTitle,
+:global([data-theme="dark"]) .linkName,
+:global([data-theme="dark"]) .insightsPanelTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .confidenceText,
+:global([data-theme="dark"]) .verifyWrapper,
+:global([data-theme="dark"]) .linkUrl,
+:global([data-theme="dark"]) .statLabel,
+:global([data-theme="dark"]) .memberRole,
+:global([data-theme="dark"]) .sectionSubtitle,
+:global([data-theme="dark"]) .insightCardTitle {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .researchTitle,
+:global([data-theme="dark"]) .welcomeTitle,
+:global([data-theme="dark"]) .completionTitle,
+:global([data-theme="dark"]) .memberName,
+:global([data-theme="dark"]) .insightCardValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .researchSubtitle,
+:global([data-theme="dark"]) .welcomeDescription,
+:global([data-theme="dark"]) .completionDescription,
+:global([data-theme="dark"]) .featureText {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .tag {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .tag.aiTag {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .tagsContainer {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .footer {
+  border-color: var(--border-light);
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .backButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .backButton:hover {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .skipButton {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .skipButton:hover {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .linkItem {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .linkItem.aiSuggested {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+:global([data-theme="dark"]) .statItem {
+  background: var(--bg-secondary);
+}
+
+:global([data-theme="dark"]) .insightsPanel {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .insightCard {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .insightTag {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .insightTag.keyword {
+  background: rgba(29, 78, 216, 0.2);
+  color: #60a5fa;
+}
+
+:global([data-theme="dark"]) .insightTag.competitor {
+  background: rgba(180, 83, 9, 0.2);
+  color: #fcd34d;
+}
+
+:global([data-theme="dark"]) .aiNotes {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+:global([data-theme="dark"]) .aiNotesHeader {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .aiNotesContent {
+  color: #c4b5fd;
+}
+
+:global([data-theme="dark"]) .sectionHeader {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .confidenceBar,
+:global([data-theme="dark"]) .progressBar {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .spinner {
+  border-color: var(--border-light);
+  border-top-color: var(--primary-color);
+}
+
+:global([data-theme="dark"]) .featureIcon,
+:global([data-theme="dark"]) .memberIcon {
+  background: rgba(129, 140, 248, 0.15);
+}
+
+:global([data-theme="dark"]) .aiTeamInfo {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .addLinkButton {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .addLinkButton:hover {
+  background: rgba(129, 140, 248, 0.1);
+}
+
+:global([data-theme="dark"]) .errorMessage {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .modal {

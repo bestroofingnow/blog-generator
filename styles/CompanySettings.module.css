@@ -548,3 +548,104 @@
     width: 100%;
   }
 }
+
+/* ===== DARK MODE OVERRIDES ===== */
+:global([data-theme="dark"]) .title {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .subtitle {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .buttonSecondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .buttonSecondary:hover {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .buttonOutline {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .section {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .sectionTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .sectionDescription {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .input,
+:global([data-theme="dark"]) .select,
+:global([data-theme="dark"]) .textarea {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .input::placeholder,
+:global([data-theme="dark"]) .textarea::placeholder {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .label {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .hint {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .completenessBanner {
+  background: rgba(129, 140, 248, 0.1);
+  border-color: rgba(129, 140, 248, 0.3);
+}
+
+:global([data-theme="dark"]) .completenessText h3 {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .completenessText p {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .linkItem {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .linkName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .linkUrl {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .addLinkForm {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .errorBanner {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+:global([data-theme="dark"]) .successBanner {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}

@@ -340,3 +340,43 @@
     overflow: visible;
   }
 }
+
+/* ===== DARK MODE OVERRIDES ===== */
+:global([data-theme="dark"]) .editorWrapper {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .menuBar {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .menuButton {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .menuButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .menuButton.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+:global([data-theme="dark"]) .editorContent {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .editorFooter {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .menuDivider {
+  background: var(--border-light);
+}
