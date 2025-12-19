@@ -18,7 +18,9 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nFix image generation with new @google/genai SDK\n\n- Replace deprecated @google/generative-ai with @google/genai\n- Use gemini-2.5-flash-preview-05-20 with responseModalities for images\n- Add Imagen 3.0 fallback for image generation\n- Increase timeout to 120s for multiple images\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd AI keyword research and context-aware image generation\n\n- Add Research Keywords button with Gemini-powered SEO analysis\n- Add primary/secondary keyword input fields with character counts\n- Add meta title and description inputs with validation\n- Create /api/research-keywords endpoint for competitor analysis\n- Generate context-aware image prompts based on section content\n- Images now match section topics (pathway lighting, security, etc.)\n- Show AI research insights (competitor analysis, content angles)\n- Pass image themes from research to outline and image generation\n- Update orchestrator to use user-provided SEO data\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit:*)",
-      "Bash(vercel ls:*)"
+      "Bash(vercel ls:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
