@@ -16164,3 +16164,830 @@
 :global([data-theme="dark"]) .notificationTabActive {
   color: #a78bfa;
 }
+
+/* ========================================
+   ROUND 18: TREE VIEWS & FILE EXPLORERS
+   ======================================== */
+
+/* Base Tree View */
+.treeView {
+  font-size: 14px;
+  user-select: none;
+}
+
+.treeNode {
+  display: flex;
+  flex-direction: column;
+}
+
+.treeNodeContent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.treeNodeContent:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.treeNodeSelected .treeNodeContent {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.treeNodeExpander {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.treeNodeExpander:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.treeNodeExpanderIcon {
+  width: 14px;
+  height: 14px;
+  color: #9ca3af;
+  transition: transform 0.2s ease;
+}
+
+.treeNodeExpanded .treeNodeExpanderIcon {
+  transform: rotate(90deg);
+  color: #8b5cf6;
+}
+
+.treeNodeIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
+.treeNodeIconFolder {
+  color: #f59e0b;
+}
+
+.treeNodeIconFile {
+  color: #6b7280;
+}
+
+.treeNodeLabel {
+  flex: 1;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.treeNodeSelected .treeNodeLabel {
+  color: #8b5cf6;
+  font-weight: 500;
+}
+
+.treeNodeChildren {
+  margin-left: 16px;
+  padding-left: 12px;
+  border-left: 1px solid #e5e7eb;
+}
+
+/* Tree View - Compact Variant */
+.treeViewCompact .treeNodeContent {
+  padding: 4px 6px;
+  gap: 4px;
+}
+
+.treeViewCompact .treeNodeExpander {
+  width: 16px;
+  height: 16px;
+}
+
+.treeViewCompact .treeNodeExpanderIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.treeViewCompact .treeNodeIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.treeViewCompact .treeNodeLabel {
+  font-size: 13px;
+}
+
+.treeViewCompact .treeNodeChildren {
+  margin-left: 12px;
+  padding-left: 10px;
+}
+
+/* File Explorer */
+.fileExplorer {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.fileExplorerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.fileExplorerTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fileExplorerActions {
+  display: flex;
+  gap: 4px;
+}
+
+.fileExplorerAction {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.fileExplorerAction:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.fileExplorerBody {
+  padding: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* File Item (Grid View) */
+.fileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  padding: 8px;
+}
+
+.fileGridItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fileGridItem:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.fileGridItemSelected {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.fileGridIcon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 8px;
+}
+
+.fileGridIconFolder {
+  color: #f59e0b;
+}
+
+.fileGridIconDocument {
+  color: #3b82f6;
+}
+
+.fileGridIconImage {
+  color: #22c55e;
+}
+
+.fileGridIconVideo {
+  color: #ef4444;
+}
+
+.fileGridIconAudio {
+  color: #8b5cf6;
+}
+
+.fileGridName {
+  font-size: 12px;
+  color: #374151;
+  text-align: center;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* File Item (List View) */
+.fileList {
+  display: flex;
+  flex-direction: column;
+}
+
+.fileListItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fileListItem:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.fileListItemSelected {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.fileListIcon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.fileListInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileListName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileListMeta {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.fileListSize {
+  font-size: 13px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.fileListDate {
+  font-size: 13px;
+  color: #9ca3af;
+  flex-shrink: 0;
+  width: 100px;
+}
+
+/* Breadcrumb Path */
+.fileBreadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.fileBreadcrumb::-webkit-scrollbar {
+  display: none;
+}
+
+.fileBreadcrumbItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #6b7280;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fileBreadcrumbItem:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.fileBreadcrumbCurrent {
+  color: #8b5cf6;
+  font-weight: 500;
+}
+
+.fileBreadcrumbSeparator {
+  color: #d1d5db;
+}
+
+/* Directory Tree */
+.directoryTree {
+  padding: 8px 0;
+}
+
+.directoryNode {
+  position: relative;
+}
+
+.directoryNodeHandle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.directoryNodeHandle:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.directoryNodeActive .directoryNodeHandle {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+.directoryNodeActive .directoryNodeHandle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #8b5cf6 0%, #06b6d4 100%);
+  border-radius: 0 2px 2px 0;
+}
+
+.directoryNodeChevron {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.directoryNodeOpen .directoryNodeChevron {
+  transform: rotate(90deg);
+}
+
+.directoryNodeFolderIcon {
+  width: 18px;
+  height: 18px;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.directoryNodeName {
+  font-size: 14px;
+  color: #374151;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.directoryNodeActive .directoryNodeName {
+  color: #8b5cf6;
+  font-weight: 500;
+}
+
+.directoryNodeCount {
+  font-size: 11px;
+  color: #9ca3af;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.directoryNodeChildren {
+  margin-left: 24px;
+}
+
+/* Nested Folder Indentation Lines */
+.directoryTreeLines .directoryNodeChildren {
+  position: relative;
+}
+
+.directoryTreeLines .directoryNodeChildren::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 8px;
+  width: 1px;
+  background: #e5e7eb;
+}
+
+.directoryTreeLines .directoryNode::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 20px;
+  width: 12px;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+/* File Preview Card */
+.filePreviewCard {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.filePreviewImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #f3f4f6;
+}
+
+.filePreviewContent {
+  padding: 16px;
+}
+
+.filePreviewName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.filePreviewDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.filePreviewDetail {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filePreviewDetailIcon {
+  width: 14px;
+  height: 14px;
+  color: #9ca3af;
+}
+
+/* Tag Tree */
+.tagTree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tagTreeItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tagTreeItem:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.tagTreeItemActive {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.tagTreeDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tagTreeDotRed { background: #ef4444; }
+.tagTreeDotOrange { background: #f59e0b; }
+.tagTreeDotYellow { background: #eab308; }
+.tagTreeDotGreen { background: #22c55e; }
+.tagTreeDotBlue { background: #3b82f6; }
+.tagTreeDotPurple { background: #8b5cf6; }
+.tagTreeDotPink { background: #ec4899; }
+
+.tagTreeLabel {
+  flex: 1;
+  font-size: 14px;
+  color: #374151;
+}
+
+.tagTreeItemActive .tagTreeLabel {
+  color: #8b5cf6;
+  font-weight: 500;
+}
+
+.tagTreeCount {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Nested Menu */
+.nestedMenu {
+  min-width: 220px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 8px;
+  overflow: hidden;
+}
+
+.nestedMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.nestedMenuItem:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.nestedMenuItemIcon {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.nestedMenuItemLabel {
+  flex: 1;
+  font-size: 14px;
+  color: #374151;
+}
+
+.nestedMenuItemArrow {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+}
+
+.nestedMenuSubmenu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 4px;
+}
+
+.nestedMenuDivider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 8px 0;
+}
+
+/* Dark Mode - Tree Views */
+:global([data-theme="dark"]) .treeNodeContent:hover {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+:global([data-theme="dark"]) .treeNodeSelected .treeNodeContent {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(167, 139, 250, 0.08) 100%);
+}
+
+:global([data-theme="dark"]) .treeNodeExpander:hover {
+  background: rgba(167, 139, 250, 0.15);
+}
+
+:global([data-theme="dark"]) .treeNodeExpanderIcon {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .treeNodeExpanded .treeNodeExpanderIcon {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .treeNodeIcon {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .treeNodeLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .treeNodeSelected .treeNodeLabel {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .treeNodeChildren {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .fileExplorer {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .fileExplorerHeader {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .fileExplorerTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .fileExplorerAction {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .fileExplorerAction:hover {
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .fileGridItem:hover {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+:global([data-theme="dark"]) .fileGridItemSelected {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(167, 139, 250, 0.08) 100%);
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.3);
+}
+
+:global([data-theme="dark"]) .fileGridName {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .fileListItem:hover {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+:global([data-theme="dark"]) .fileListItemSelected {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(167, 139, 250, 0.08) 100%);
+}
+
+:global([data-theme="dark"]) .fileListName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .fileListMeta {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .fileListSize {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .fileListDate {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .fileBreadcrumb {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .fileBreadcrumbItem {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .fileBreadcrumbItem:hover {
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .fileBreadcrumbCurrent {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .fileBreadcrumbSeparator {
+  color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .directoryNodeHandle:hover {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+:global([data-theme="dark"]) .directoryNodeActive .directoryNodeHandle {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(34, 211, 238, 0.08) 100%);
+}
+
+:global([data-theme="dark"]) .directoryNodeChevron {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .directoryNodeName {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .directoryNodeActive .directoryNodeName {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .directoryNodeCount {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .directoryTreeLines .directoryNodeChildren::before,
+:global([data-theme="dark"]) .directoryTreeLines .directoryNode::before {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .filePreviewCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .filePreviewImage {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .filePreviewName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .filePreviewDetails {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .filePreviewDetailIcon {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .tagTreeItem:hover {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+:global([data-theme="dark"]) .tagTreeItemActive {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(167, 139, 250, 0.08) 100%);
+}
+
+:global([data-theme="dark"]) .tagTreeLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .tagTreeItemActive .tagTreeLabel {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .tagTreeCount {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .nestedMenu {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .nestedMenuItem:hover {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+:global([data-theme="dark"]) .nestedMenuItemIcon {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .nestedMenuItemLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .nestedMenuItemArrow {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .nestedMenuDivider {
+  background: var(--border-light);
+}
