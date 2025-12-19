@@ -35564,3 +35564,1763 @@
 :global([data-theme="dark"]) .sliderRatingThumb {
   background: #1e293b;
 }
+
+/* ==========================================================================
+   ROUND 38 - AVATAR & USER COMPONENTS
+   Avatar images, user cards, profile displays, presence indicators
+   ========================================================================== */
+
+/* Base Avatar
+   ========================================================================== */
+
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #4f46e5;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatarFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 600;
+  user-select: none;
+}
+
+/* Avatar Sizes */
+.avatarXs {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.avatarSm {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.avatarMd {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.avatarLg {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+
+.avatarXl {
+  width: 64px;
+  height: 64px;
+  font-size: 20px;
+}
+
+.avatar2xl {
+  width: 80px;
+  height: 80px;
+  font-size: 24px;
+}
+
+.avatar3xl {
+  width: 96px;
+  height: 96px;
+  font-size: 28px;
+}
+
+.avatarFull {
+  width: 128px;
+  height: 128px;
+  font-size: 36px;
+}
+
+/* Avatar Shapes */
+.avatarSquare {
+  border-radius: 8px;
+}
+
+.avatarRounded {
+  border-radius: 12px;
+}
+
+/* Avatar with Border */
+.avatarBordered {
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.avatarBorderedPrimary {
+  border: 3px solid #8b5cf6;
+}
+
+.avatarBorderedGradient {
+  border: 3px solid transparent;
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  background-image:
+    linear-gradient(#fff, #fff),
+    linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f59e0b 100%);
+}
+
+/* Avatar with Ring (like focus ring) */
+.avatarRing {
+  outline: 3px solid #8b5cf6;
+  outline-offset: 2px;
+}
+
+.avatarRingOffset {
+  outline: 3px solid #e0e7ff;
+  outline-offset: 3px;
+}
+
+/* Status Indicator
+   ========================================================================== */
+
+.avatarStatus {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.avatarStatusSm {
+  width: 8px;
+  height: 8px;
+}
+
+.avatarStatusLg {
+  width: 16px;
+  height: 16px;
+}
+
+.avatarStatusOnline {
+  background: #22c55e;
+}
+
+.avatarStatusOffline {
+  background: #94a3b8;
+}
+
+.avatarStatusBusy {
+  background: #ef4444;
+}
+
+.avatarStatusAway {
+  background: #f59e0b;
+}
+
+.avatarStatusDnd {
+  background: #ef4444;
+  position: relative;
+}
+
+.avatarStatusDnd::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+
+/* Animated online pulse */
+.avatarStatusPulse {
+  animation: avatarStatusPulse 2s ease-in-out infinite;
+}
+
+@keyframes avatarStatusPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+}
+
+/* Avatar Badge
+   ========================================================================== */
+
+.avatarBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 2px solid #fff;
+}
+
+.avatarBadgeIcon {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  min-width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatarBadgeIcon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.avatarVerified {
+  background: #3b82f6;
+}
+
+.avatarVerified svg {
+  width: 12px;
+  height: 12px;
+  fill: #fff;
+}
+
+/* Avatar Group
+   ========================================================================== */
+
+.avatarGroup {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.avatarGroup .avatar {
+  margin-left: -12px;
+  border: 2px solid #fff;
+  transition: transform 0.15s ease, z-index 0s;
+}
+
+.avatarGroup .avatar:last-child {
+  margin-left: 0;
+}
+
+.avatarGroup .avatar:hover {
+  transform: translateY(-4px);
+  z-index: 10;
+}
+
+.avatarGroupStacked {
+  flex-direction: row;
+}
+
+.avatarGroupStacked .avatar {
+  margin-left: 0;
+  margin-right: -12px;
+}
+
+.avatarGroupStacked .avatar:last-child {
+  margin-right: 0;
+}
+
+/* Avatar group overflow count */
+.avatarGroupMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  border: 2px solid #fff;
+}
+
+/* Avatar with Dropdown
+   ========================================================================== */
+
+.avatarDropdown {
+  position: relative;
+  cursor: pointer;
+}
+
+.avatarDropdownTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px 4px 4px;
+  border-radius: 24px;
+  transition: background 0.15s ease;
+}
+
+.avatarDropdownTrigger:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.avatarDropdownChevron {
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+  transition: transform 0.15s ease;
+}
+
+.avatarDropdownOpen .avatarDropdownChevron {
+  transform: rotate(180deg);
+}
+
+.avatarDropdownMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.15s ease;
+}
+
+.avatarDropdownOpen .avatarDropdownMenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.avatarDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.avatarDropdownItem:hover {
+  background: #f8fafc;
+}
+
+.avatarDropdownItem svg {
+  width: 18px;
+  height: 18px;
+  color: #64748b;
+}
+
+.avatarDropdownDivider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 8px 0;
+}
+
+.avatarDropdownItemDanger {
+  color: #ef4444;
+}
+
+.avatarDropdownItemDanger svg {
+  color: #ef4444;
+}
+
+/* Avatar Edit/Upload
+   ========================================================================== */
+
+.avatarEditable {
+  position: relative;
+  cursor: pointer;
+}
+
+.avatarEditOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: inherit;
+}
+
+.avatarEditable:hover .avatarEditOverlay {
+  opacity: 1;
+}
+
+.avatarEditIcon {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+}
+
+.avatarEditButton {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.avatarEditButton:hover {
+  background: #7c3aed;
+  transform: scale(1.1);
+}
+
+.avatarEditButton svg {
+  width: 14px;
+  height: 14px;
+  color: #fff;
+}
+
+/* User Card
+   ========================================================================== */
+
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.userCard:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+}
+
+.userCardClickable {
+  cursor: pointer;
+}
+
+.userCardContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.userCardName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.userCardVerified {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+}
+
+.userCardRole {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.userCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.userCardMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.userCardMetaItem svg {
+  width: 14px;
+  height: 14px;
+}
+
+.userCardActions {
+  display: flex;
+  gap: 8px;
+}
+
+.userCardActionBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.userCardActionBtn:hover {
+  background: #f8fafc;
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.userCardActionBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* User Card Variants */
+.userCardCompact {
+  padding: 12px;
+  gap: 12px;
+}
+
+.userCardCompact .userCardName {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.userCardCompact .userCardRole {
+  font-size: 12px;
+}
+
+.userCardHorizontal {
+  flex-direction: row;
+}
+
+.userCardVertical {
+  flex-direction: column;
+  text-align: center;
+  padding: 24px;
+}
+
+.userCardVertical .userCardContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* User List Item
+   ========================================================================== */
+
+.userListItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s ease;
+}
+
+.userListItem:last-child {
+  border-bottom: none;
+}
+
+.userListItem:hover {
+  background: #f8fafc;
+}
+
+.userListItemClickable {
+  cursor: pointer;
+}
+
+.userListItemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.userListItemName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userListItemSubtext {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userListItemRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userListItemTime {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.userListItemBadge {
+  padding: 2px 8px;
+  background: #e0e7ff;
+  color: #4f46e5;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 12px;
+}
+
+/* User Profile Header
+   ========================================================================== */
+
+.userProfileHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.userProfileAvatar {
+  position: relative;
+}
+
+.userProfileInfo {
+  flex: 1;
+}
+
+.userProfileName {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userProfileVerifiedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 16px;
+}
+
+.userProfileVerifiedBadge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.userProfileTitle {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+}
+
+.userProfileBio {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+  max-width: 600px;
+}
+
+.userProfileStats {
+  display: flex;
+  gap: 24px;
+}
+
+.userProfileStat {
+  text-align: center;
+}
+
+.userProfileStatValue {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.userProfileStatLabel {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.userProfileActions {
+  display: flex;
+  gap: 12px;
+}
+
+.userProfileFollowBtn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.userProfileFollowBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.userProfileFollowing {
+  background: #fff;
+  color: #8b5cf6;
+  border: 2px solid #8b5cf6;
+}
+
+.userProfileMessageBtn {
+  padding: 10px 24px;
+  background: #fff;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.userProfileMessageBtn:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+/* User Presence
+   ========================================================================== */
+
+.userPresence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userPresenceDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.userPresenceDotOnline {
+  background: #22c55e;
+}
+
+.userPresenceDotOffline {
+  background: #94a3b8;
+}
+
+.userPresenceDotBusy {
+  background: #ef4444;
+}
+
+.userPresenceDotAway {
+  background: #f59e0b;
+}
+
+.userPresenceText {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.userPresenceTextOnline {
+  color: #22c55e;
+}
+
+/* User Mention
+   ========================================================================== */
+
+.userMention {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #e0e7ff;
+  color: #4f46e5;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.userMention:hover {
+  background: #c7d2fe;
+}
+
+.userMentionAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+/* User Tooltip/Popover
+   ========================================================================== */
+
+.userTooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.userTooltipContent {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 280px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+
+.userTooltip:hover .userTooltipContent {
+  opacity: 1;
+  visibility: visible;
+}
+
+.userTooltipContent::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #fff;
+}
+
+.userTooltipHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.userTooltipName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.userTooltipRole {
+  font-size: 13px;
+  color: #64748b;
+  margin: 2px 0 0 0;
+}
+
+.userTooltipBio {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+}
+
+.userTooltipActions {
+  display: flex;
+  gap: 8px;
+}
+
+.userTooltipBtn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.userTooltipBtnPrimary {
+  background: #8b5cf6;
+  color: #fff;
+  border: none;
+}
+
+.userTooltipBtnPrimary:hover {
+  background: #7c3aed;
+}
+
+.userTooltipBtnSecondary {
+  background: #fff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.userTooltipBtnSecondary:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+/* User Selector/Picker
+   ========================================================================== */
+
+.userSelector {
+  position: relative;
+  width: 100%;
+}
+
+.userSelectorInput {
+  width: 100%;
+  padding: 12px 16px;
+  padding-left: 44px;
+  font-size: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  transition: all 0.15s ease;
+}
+
+.userSelectorInput:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.userSelectorIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #94a3b8;
+}
+
+.userSelectorDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+}
+
+.userSelectorOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.userSelectorOption:hover {
+  background: #f8fafc;
+}
+
+.userSelectorOption.selected {
+  background: #f0e7ff;
+}
+
+.userSelectorOptionInfo {
+  flex: 1;
+}
+
+.userSelectorOptionName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.userSelectorOptionEmail {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.userSelectorCheck {
+  width: 20px;
+  height: 20px;
+  color: #8b5cf6;
+}
+
+/* Multi User Select (Tags) */
+.userSelectorTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  min-height: 48px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  cursor: text;
+  transition: border-color 0.15s ease;
+}
+
+.userSelectorTags:focus-within {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.userSelectorTag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  background: #f1f5f9;
+  border-radius: 20px;
+}
+
+.userSelectorTagAvatar {
+  width: 24px;
+  height: 24px;
+}
+
+.userSelectorTagName {
+  font-size: 13px;
+  color: #334155;
+}
+
+.userSelectorTagRemove {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s ease;
+}
+
+.userSelectorTagRemove:hover {
+  background: #e2e8f0;
+  color: #ef4444;
+}
+
+.userSelectorTagRemove svg {
+  width: 12px;
+  height: 12px;
+}
+
+.userSelectorTagInput {
+  flex: 1;
+  min-width: 100px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+}
+
+/* Team/Group Avatar
+   ========================================================================== */
+
+.teamAvatar {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.teamAvatarMember {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.teamAvatarMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Avatar Skeleton/Loading
+   ========================================================================== */
+
+.avatarSkeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: avatarSkeletonShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes avatarSkeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Activity/Timeline User
+   ========================================================================== */
+
+.activityUser {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.activityUserLine {
+  position: relative;
+}
+
+.activityUserLine::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 48px;
+  bottom: -24px;
+  width: 2px;
+  background: #e2e8f0;
+  transform: translateX(-50%);
+}
+
+.activityUserContent {
+  flex: 1;
+  padding-bottom: 24px;
+}
+
+.activityUserHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.activityUserName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.activityUserAction {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.activityUserTime {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-left: auto;
+}
+
+.activityUserBody {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+/* Collaborator Avatars (like Google Docs)
+   ========================================================================== */
+
+.collaboratorAvatars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.collaboratorAvatar {
+  position: relative;
+  border: 2px solid;
+  transition: transform 0.15s ease;
+}
+
+.collaboratorAvatar:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+/* Each collaborator gets a unique color */
+.collaboratorAvatar:nth-child(1) { border-color: #8b5cf6; }
+.collaboratorAvatar:nth-child(2) { border-color: #ec4899; }
+.collaboratorAvatar:nth-child(3) { border-color: #f59e0b; }
+.collaboratorAvatar:nth-child(4) { border-color: #22c55e; }
+.collaboratorAvatar:nth-child(5) { border-color: #3b82f6; }
+
+.collaboratorCursor {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  background: inherit;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+}
+
+.collaboratorAvatar:hover .collaboratorCursor {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* User Typing Indicator
+   ========================================================================== */
+
+.userTyping {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 20px;
+}
+
+.userTypingDots {
+  display: flex;
+  gap: 4px;
+}
+
+.userTypingDot {
+  width: 6px;
+  height: 6px;
+  background: #94a3b8;
+  border-radius: 50%;
+  animation: userTypingBounce 1.4s ease-in-out infinite;
+}
+
+.userTypingDot:nth-child(1) { animation-delay: 0s; }
+.userTypingDot:nth-child(2) { animation-delay: 0.2s; }
+.userTypingDot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes userTypingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+.userTypingText {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* User Role Badge
+   ========================================================================== */
+
+.userRoleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+}
+
+.userRoleAdmin {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+}
+
+.userRoleModerator {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+}
+
+.userRoleMember {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.userRolePremium {
+  background: linear-gradient(135deg, #f0e7ff 0%, #e0e7ff 100%);
+  color: #6d28d9;
+}
+
+.userRolePremium svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Avatar Color Variants
+   ========================================================================== */
+
+.avatarPurple {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #4f46e5;
+}
+
+.avatarBlue {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
+}
+
+.avatarGreen {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #15803d;
+}
+
+.avatarOrange {
+  background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+  color: #c2410c;
+}
+
+.avatarPink {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  color: #be185d;
+}
+
+.avatarYellow {
+  background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+  color: #a16207;
+}
+
+.avatarRed {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #b91c1c;
+}
+
+.avatarGray {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #475569;
+}
+
+/* ==========================================================================
+   ROUND 38 - DARK MODE
+   ========================================================================== */
+
+:global([data-theme="dark"]) .avatar {
+  background: linear-gradient(135deg, #312e81 0%, #3730a3 100%);
+  color: #a5b4fc;
+}
+
+:global([data-theme="dark"]) .avatarBordered {
+  border-color: #1e293b;
+}
+
+:global([data-theme="dark"]) .avatarBorderedGradient {
+  background-image:
+    linear-gradient(#1e293b, #1e293b),
+    linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f59e0b 100%);
+}
+
+:global([data-theme="dark"]) .avatarStatus {
+  border-color: #1e293b;
+}
+
+:global([data-theme="dark"]) .avatarBadge {
+  border-color: #1e293b;
+}
+
+:global([data-theme="dark"]) .avatarGroup .avatar {
+  border-color: #1e293b;
+}
+
+:global([data-theme="dark"]) .avatarGroupMore {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .avatarDropdownTrigger:hover {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .avatarDropdownMenu {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .avatarDropdownItem {
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .avatarDropdownItem:hover {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .avatarDropdownItem svg {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .avatarDropdownDivider {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .avatarEditButton {
+  border-color: #1e293b;
+}
+
+:global([data-theme="dark"]) .userCard {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .userCard:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+:global([data-theme="dark"]) .userCardName {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .userCardRole {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userCardMeta {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .userCardActionBtn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userCardActionBtn:hover {
+  background: #334155;
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+:global([data-theme="dark"]) .userListItem {
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .userListItem:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+:global([data-theme="dark"]) .userListItemName {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .userListItemSubtext {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userListItemBadge {
+  background: #312e81;
+  color: #a5b4fc;
+}
+
+:global([data-theme="dark"]) .userProfileHeader {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .userProfileName {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .userProfileVerifiedBadge {
+  background: #1e3a5f;
+  color: #60a5fa;
+}
+
+:global([data-theme="dark"]) .userProfileTitle {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userProfileBio {
+  color: #cbd5e1;
+}
+
+:global([data-theme="dark"]) .userProfileStatValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .userProfileStatLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userProfileFollowing {
+  background: #1e293b;
+  border-color: #8b5cf6;
+}
+
+:global([data-theme="dark"]) .userProfileMessageBtn {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .userProfileMessageBtn:hover {
+  border-color: #8b5cf6;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .userPresenceText {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userMention {
+  background: #312e81;
+  color: #a5b4fc;
+}
+
+:global([data-theme="dark"]) .userMention:hover {
+  background: #3730a3;
+}
+
+:global([data-theme="dark"]) .userTooltipContent {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .userTooltipContent::after {
+  border-top-color: #1e293b;
+}
+
+:global([data-theme="dark"]) .userTooltipName {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .userTooltipRole {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userTooltipBio {
+  color: #cbd5e1;
+}
+
+:global([data-theme="dark"]) .userTooltipBtnSecondary {
+  background: #0f172a;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .userTooltipBtnSecondary:hover {
+  border-color: #8b5cf6;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .userSelectorInput {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .userSelectorInput:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+:global([data-theme="dark"]) .userSelectorDropdown {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="dark"]) .userSelectorOption:hover {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .userSelectorOption.selected {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+:global([data-theme="dark"]) .userSelectorOptionName {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .userSelectorOptionEmail {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userSelectorTags {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .userSelectorTags:focus-within {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+:global([data-theme="dark"]) .userSelectorTag {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .userSelectorTagName {
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .userSelectorTagRemove:hover {
+  background: #475569;
+}
+
+:global([data-theme="dark"]) .userSelectorTagInput {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .teamAvatar {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .teamAvatarMore {
+  background: #475569;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .avatarSkeleton {
+  background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+  background-size: 200% 100%;
+}
+
+:global([data-theme="dark"]) .activityUserLine::after {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .activityUserName {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .activityUserAction {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .activityUserTime {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .activityUserBody {
+  color: #cbd5e1;
+}
+
+:global([data-theme="dark"]) .collaboratorAvatar:nth-child(1) { border-color: #a78bfa; }
+:global([data-theme="dark"]) .collaboratorAvatar:nth-child(2) { border-color: #f472b6; }
+:global([data-theme="dark"]) .collaboratorAvatar:nth-child(3) { border-color: #fbbf24; }
+:global([data-theme="dark"]) .collaboratorAvatar:nth-child(4) { border-color: #4ade80; }
+:global([data-theme="dark"]) .collaboratorAvatar:nth-child(5) { border-color: #60a5fa; }
+
+:global([data-theme="dark"]) .userTyping {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .userTypingDot {
+  background: #64748b;
+}
+
+:global([data-theme="dark"]) .userTypingText {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userRoleAdmin {
+  background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+  color: #fde68a;
+}
+
+:global([data-theme="dark"]) .userRoleModerator {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+  color: #93c5fd;
+}
+
+:global([data-theme="dark"]) .userRoleMember {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .userRolePremium {
+  background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+  color: #c4b5fd;
+}
+
+:global([data-theme="dark"]) .avatarPurple {
+  background: linear-gradient(135deg, #312e81 0%, #3730a3 100%);
+  color: #a5b4fc;
+}
+
+:global([data-theme="dark"]) .avatarBlue {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+  color: #93c5fd;
+}
+
+:global([data-theme="dark"]) .avatarGreen {
+  background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+  color: #86efac;
+}
+
+:global([data-theme="dark"]) .avatarOrange {
+  background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%);
+  color: #fdba74;
+}
+
+:global([data-theme="dark"]) .avatarPink {
+  background: linear-gradient(135deg, #831843 0%, #9d174d 100%);
+  color: #f9a8d4;
+}
+
+:global([data-theme="dark"]) .avatarYellow {
+  background: linear-gradient(135deg, #713f12 0%, #854d0e 100%);
+  color: #fde047;
+}
+
+:global([data-theme="dark"]) .avatarRed {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+  color: #fca5a5;
+}
+
+:global([data-theme="dark"]) .avatarGray {
+  background: linear-gradient(135deg, #334155 0%, #475569 100%);
+  color: #cbd5e1;
+}
