@@ -16991,3 +16991,730 @@
 :global([data-theme="dark"]) .nestedMenuDivider {
   background: var(--border-light);
 }
+
+/* ========================================
+   ROUND 19: RATING & REVIEW COMPONENTS
+   ======================================== */
+
+/* Star Rating */
+.starRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.starRatingStar {
+  width: 24px;
+  height: 24px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.starRatingStarFilled {
+  color: #f59e0b;
+}
+
+.starRatingStarHalf {
+  position: relative;
+}
+
+.starRatingStarHalf::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: #f59e0b;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.starRatingStar:hover {
+  transform: scale(1.15);
+}
+
+.starRatingSmall .starRatingStar {
+  width: 16px;
+  height: 16px;
+}
+
+.starRatingLarge .starRatingStar {
+  width: 32px;
+  height: 32px;
+}
+
+.starRatingReadonly .starRatingStar {
+  cursor: default;
+}
+
+.starRatingReadonly .starRatingStar:hover {
+  transform: none;
+}
+
+/* Rating with Value */
+.ratingWithValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ratingValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.ratingCount {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Heart Rating */
+.heartRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.heartRatingHeart {
+  width: 24px;
+  height: 24px;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.heartRatingHeartFilled {
+  color: #ef4444;
+}
+
+.heartRatingHeart:hover {
+  transform: scale(1.2);
+}
+
+.heartRatingHeart:active {
+  transform: scale(0.9);
+}
+
+/* Emoji Rating */
+.emojiRating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emojiRatingItem {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emojiRatingItem:hover {
+  background: rgba(139, 92, 246, 0.1);
+  transform: translateY(-4px);
+}
+
+.emojiRatingItemSelected {
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.2);
+}
+
+/* Slider Rating */
+.sliderRating {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sliderRatingTrack {
+  position: relative;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sliderRatingFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+  border-radius: 4px;
+  transition: width 0.15s ease;
+}
+
+.sliderRatingThumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 3px solid #8b5cf6;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: grab;
+  transition: all 0.15s ease;
+}
+
+.sliderRatingThumb:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.sliderRatingThumb:active {
+  cursor: grabbing;
+}
+
+.sliderRatingLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Thumbs Rating */
+.thumbsRating {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.thumbsRatingButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.thumbsRatingButton:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.thumbsRatingButtonUp.thumbsRatingButtonActive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.thumbsRatingButtonDown.thumbsRatingButtonActive {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.thumbsRatingIcon {
+  width: 18px;
+  height: 18px;
+}
+
+/* NPS Score */
+.npsRating {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.npsRatingScale {
+  display: flex;
+  gap: 4px;
+}
+
+.npsRatingNumber {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.npsRatingNumber:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.npsRatingNumberSelected {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  border-color: #8b5cf6;
+  color: white;
+}
+
+.npsRatingLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Rating Breakdown */
+.ratingBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ratingBreakdownRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ratingBreakdownLabel {
+  width: 60px;
+  font-size: 13px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ratingBreakdownBar {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ratingBreakdownFill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.ratingBreakdownCount {
+  width: 40px;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: right;
+}
+
+/* Review Card */
+.reviewCard {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.reviewCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.reviewCardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.reviewCardAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.reviewCardAvatarImage {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.reviewCardInfo {
+  flex: 1;
+}
+
+.reviewCardName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.reviewCardMeta {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.reviewCardRating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reviewCardContent {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.reviewCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.reviewCardDate {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.reviewCardActions {
+  display: flex;
+  gap: 8px;
+}
+
+.reviewCardAction {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.reviewCardAction:hover {
+  background: #f3f4f6;
+  color: #8b5cf6;
+}
+
+/* Rating Summary */
+.ratingSummary {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 16px;
+}
+
+.ratingSummaryScore {
+  text-align: center;
+}
+
+.ratingSummaryNumber {
+  font-size: 48px;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+}
+
+.ratingSummaryStars {
+  margin-top: 8px;
+}
+
+.ratingSummaryTotal {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.ratingSummaryBreakdown {
+  flex: 1;
+}
+
+/* Sentiment Indicator */
+.sentimentIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sentimentDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.sentimentDotPositive {
+  background: #22c55e;
+}
+
+.sentimentDotNeutral {
+  background: #f59e0b;
+}
+
+.sentimentDotNegative {
+  background: #ef4444;
+}
+
+.sentimentLabel {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sentimentLabelPositive {
+  color: #22c55e;
+}
+
+.sentimentLabelNeutral {
+  color: #f59e0b;
+}
+
+.sentimentLabelNegative {
+  color: #ef4444;
+}
+
+/* Score Badge */
+.scoreBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.scoreBadgeExcellent {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+  color: #22c55e;
+}
+
+.scoreBadgeGood {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+  color: #3b82f6;
+}
+
+.scoreBadgeAverage {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+  color: #f59e0b;
+}
+
+.scoreBadgePoor {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+  color: #ef4444;
+}
+
+/* Satisfaction Meter */
+.satisfactionMeter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.satisfactionMeterBar {
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+}
+
+.satisfactionMeterSegment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.satisfactionMeterSegmentPositive {
+  background: #22c55e;
+}
+
+.satisfactionMeterSegmentNeutral {
+  background: #f59e0b;
+}
+
+.satisfactionMeterSegmentNegative {
+  background: #ef4444;
+}
+
+.satisfactionMeterLegend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.satisfactionMeterLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.satisfactionMeterLegendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Dark Mode - Rating Components */
+:global([data-theme="dark"]) .starRatingStar {
+  color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .ratingValue {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .ratingCount {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .heartRatingHeart {
+  color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .emojiRatingItem {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .emojiRatingItem:hover {
+  background: rgba(167, 139, 250, 0.15);
+}
+
+:global([data-theme="dark"]) .emojiRatingItemSelected {
+  border-color: #a78bfa;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(167, 139, 250, 0.08) 100%);
+  box-shadow: 0 8px 16px rgba(167, 139, 250, 0.2);
+}
+
+:global([data-theme="dark"]) .sliderRatingTrack {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .sliderRatingThumb {
+  background: var(--bg-secondary);
+  border-color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .sliderRatingLabels {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .thumbsRatingButton {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .thumbsRatingButton:hover {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .npsRatingNumber {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .npsRatingNumber:hover {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .npsRatingLabels {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .ratingBreakdownLabel {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .ratingBreakdownBar {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .ratingBreakdownCount {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .reviewCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .reviewCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .reviewCardName {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .reviewCardMeta {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .reviewCardContent {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .reviewCardFooter {
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .reviewCardDate {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .reviewCardAction {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .reviewCardAction:hover {
+  background: var(--bg-tertiary);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .ratingSummary {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+:global([data-theme="dark"]) .ratingSummaryNumber {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .ratingSummaryTotal {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .satisfactionMeterBar {
+  background: var(--border-light);
+}
