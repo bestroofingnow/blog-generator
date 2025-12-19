@@ -487,6 +487,41 @@ IMPORTANT:
   }
 }
 
+/**
+ * Improve content for SEO based on specific feedback
+ * Uses Claude to rewrite content addressing SEO score issues
+ */
+export async function improveContentForSEO(rewritePrompt: string): Promise<string> {
+  try {
+    console.log("[Craftsman] Improving content for SEO...");
+
+    const result = await generateText({
+      model: MODELS.contentWriter,
+      system: `You are an expert SEO content optimizer. Your job is to improve existing blog content to achieve a 90+ SEO score.
+
+CRITICAL REQUIREMENTS:
+- Maintain the same overall topic and structure
+- Ensure proper keyword density (0.8-2.0%)
+- Use exactly ONE H1 heading with the primary keyword
+- Include 3-6 H2 subheadings
+- Write at 6th-8th grade reading level
+- Keep content engaging and human-like
+- Ensure all images have descriptive alt text
+- Output ONLY the improved HTML content - no explanations
+- Write ONLY in American English`,
+      prompt: rewritePrompt,
+      maxOutputTokens: 10000,
+      temperature: 0.6,
+    });
+
+    console.log("[Craftsman] SEO improvement complete, length:", result.text.length);
+    return result.text;
+  } catch (error) {
+    console.error("[Craftsman] SEO improvement failed:", error);
+    throw new Error(`SEO improvement failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
+}
+
 // Helper to parse JSON from AI response
 function parseJsonResponse(text: string): Record<string, unknown> | null {
   let cleanedText = text.trim();

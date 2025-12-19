@@ -8,7 +8,9 @@ import {
   generateBlogImage,
   BlogOutline,
   GeneratedImage,
+  improveContentForSEO,
 } from "../../lib/ai-gateway";
+import { scoreContent, generateRewritePrompt, SEOScoreResult } from "../../lib/seo-scorer";
 
 interface WordPressCredentials {
   siteUrl: string;
@@ -377,7 +379,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // STEP 3: Generate content
     sendProgress(res, "content", "AI is writing engaging content...");
 
-    const rawContent = await generateContent({
+    let rawContent = await generateContent({
       outline,
       topic,
       location,
@@ -386,7 +388,75 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       companyName,
     });
 
-    // STEP 4: Format content
+    // STEP 4: SEO Validation & Improvement Loop (90+ score required)
+    sendProgress(res, "seo", "Analyzing SEO quality...");
+
+    const targetWordCount = parseInt(wordCountRange.split("-")[0]) || 1800;
+    let seoScore: SEOScoreResult;
+    let seoAttempts = 0;
+    const maxSEOAttempts = 3;
+
+    seoScore = scoreContent({
+      content: rawContent,
+      primaryKeyword: seoData.primaryKeyword,
+      secondaryKeywords: seoData.secondaryKeywords,
+      targetWordCount,
+      metaTitle: seoData.metaTitle,
+      metaDescription: seoData.metaDescription,
+    });
+
+    console.log(`[SEO] Initial score: ${seoScore.overall}/100 (${seoScore.letterGrade})`);
+
+    // Keep improving until we hit 90+ or max attempts
+    while (!seoScore.passed && seoAttempts < maxSEOAttempts) {
+      seoAttempts++;
+      sendProgress(
+        res,
+        "seo",
+        `SEO score ${seoScore.overall}/100 - Improving content (attempt ${seoAttempts}/${maxSEOAttempts})...`
+      );
+
+      console.log(`[SEO] Attempt ${seoAttempts}: Score ${seoScore.overall}, improvements needed:`, seoScore.improvements);
+
+      // Generate rewrite prompt with specific improvements
+      const rewritePrompt = generateRewritePrompt(
+        rawContent,
+        seoScore,
+        seoData.primaryKeyword,
+        targetWordCount
+      );
+
+      try {
+        // Ask AI to improve the content
+        rawContent = await improveContentForSEO(rewritePrompt);
+
+        // Re-score the improved content
+        seoScore = scoreContent({
+          content: rawContent,
+          primaryKeyword: seoData.primaryKeyword,
+          secondaryKeywords: seoData.secondaryKeywords,
+          targetWordCount,
+          metaTitle: seoData.metaTitle,
+          metaDescription: seoData.metaDescription,
+        });
+
+        console.log(`[SEO] After attempt ${seoAttempts}: ${seoScore.overall}/100 (${seoScore.letterGrade})`);
+      } catch (error) {
+        console.error(`[SEO] Improvement attempt ${seoAttempts} failed:`, error);
+        break;
+      }
+    }
+
+    // Log final SEO status
+    if (seoScore.passed) {
+      console.log(`[SEO] PASSED with score ${seoScore.overall}/100 after ${seoAttempts} improvement(s)`);
+      sendProgress(res, "seo", `SEO score: ${seoScore.overall}/100 - Passed!`);
+    } else {
+      console.warn(`[SEO] Could not reach 90+ after ${maxSEOAttempts} attempts. Final score: ${seoScore.overall}/100`);
+      sendProgress(res, "seo", `SEO score: ${seoScore.overall}/100 (best achieved)`);
+    }
+
+    // STEP 5: Format content
     sendProgress(res, "format", "AI is formatting the HTML...");
 
     // STEP 5: Upload to WordPress (if configured) or use external URLs
@@ -529,6 +599,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       htmlContent,
       seoData,
       featuredImageId: uploadedImageIds[0] || null,
+      seoScore: {
+        overall: seoScore.overall,
+        grade: seoScore.letterGrade,
+        passed: seoScore.passed,
+        metrics: seoScore.metrics,
+        improvements: seoScore.improvements,
+      },
     });
 
     res.end();
@@ -546,5 +623,5 @@ export const config = {
     },
     responseLimit: false,
   },
-  maxDuration: 180,
+  maxDuration: 300, // Extended for SEO improvement loop
 };
