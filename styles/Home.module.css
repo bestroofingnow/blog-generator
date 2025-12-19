@@ -8854,3 +8854,820 @@
   border-color: rgba(167, 139, 250, 0.25);
   color: #a78bfa;
 }
+
+/* =====================================================
+   ROUND 8: Dropdowns, Ratings, Pricing, Form Validation
+   ===================================================== */
+
+/* ===== DROPDOWN MENUS ===== */
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdownTrigger:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.dropdownTrigger:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+}
+
+.dropdownArrow {
+  transition: transform 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.dropdown.open .dropdownArrow {
+  transform: rotate(180deg);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 200px;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.95);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdown.open .dropdownMenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+}
+
+.dropdownItem.active {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+  color: var(--primary-color);
+}
+
+.dropdownItem.danger {
+  color: #ef4444;
+}
+
+.dropdownItem.danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.dropdownItemIcon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.dropdownItem.active .dropdownItemIcon {
+  color: var(--primary-color);
+}
+
+.dropdownItemLabel {
+  flex: 1;
+}
+
+.dropdownItemShortcut {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 2px 6px;
+  background: var(--border-light);
+  border-radius: 4px;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 6px 0;
+}
+
+.dropdownHeader {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+/* Nested Dropdown */
+.dropdownNested {
+  position: relative;
+}
+
+.dropdownNested .dropdownMenu {
+  left: 100%;
+  top: 0;
+  margin-left: 4px;
+}
+
+.dropdownNestedArrow {
+  margin-left: auto;
+  color: var(--text-secondary);
+}
+
+/* ===== RATING / STARS ===== */
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ratingStar {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--border-light);
+}
+
+.ratingStar:hover {
+  transform: scale(1.15);
+}
+
+.ratingStar.filled {
+  color: #fbbf24;
+}
+
+.ratingStar.half {
+  position: relative;
+}
+
+.ratingStar.half::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 50%;
+  overflow: hidden;
+  color: #fbbf24;
+}
+
+.ratingInteractive .ratingStar:hover,
+.ratingInteractive .ratingStar:hover ~ .ratingStar {
+  color: var(--border-light);
+}
+
+.ratingInteractive:hover .ratingStar {
+  color: #fbbf24;
+}
+
+.ratingValue {
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ratingCount {
+  margin-left: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Rating Sizes */
+.ratingSmall .ratingStar {
+  width: 16px;
+  height: 16px;
+}
+
+.ratingLarge .ratingStar {
+  width: 32px;
+  height: 32px;
+}
+
+/* Star Animation */
+@keyframes starPop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.ratingStar.animating {
+  animation: starPop 0.3s ease;
+}
+
+/* Review Stars Display */
+.reviewStars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reviewStarsRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reviewStarsLabel {
+  width: 80px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.reviewStarsBar {
+  flex: 1;
+  height: 8px;
+  background: var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.reviewStarsBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reviewStarsCount {
+  width: 40px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+/* ===== PRICING TABLES ===== */
+
+.pricingTable {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 20px 0;
+}
+
+.pricingCard {
+  position: relative;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 32px 28px;
+  transition: all 0.3s ease;
+}
+
+.pricingCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.pricingCard.popular {
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+}
+
+.pricingCard.popular::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #764ba2 100%);
+  border-radius: 20px 20px 0 0;
+}
+
+.pricingBadge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pricingName {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.pricingDescription {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.pricingPrice {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
+.pricingCurrency {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pricingAmount {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.pricingPeriod {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.pricingFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pricingFeature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.pricingFeatureIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.pricingFeature.disabled {
+  opacity: 0.5;
+}
+
+.pricingFeature.disabled .pricingFeatureIcon {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.pricingButton {
+  width: 100%;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pricingButton.primary {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+  color: white;
+}
+
+.pricingButton.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.pricingButton.secondary {
+  background: white;
+  border: 2px solid var(--border-light);
+  color: var(--text-primary);
+}
+
+.pricingButton.secondary:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Pricing Toggle */
+.pricingToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.pricingToggleLabel {
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.pricingToggleLabel.active {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.pricingToggleSwitch {
+  position: relative;
+  width: 56px;
+  height: 28px;
+  background: var(--border-light);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.pricingToggleSwitch.active {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+}
+
+.pricingToggleKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pricingToggleSwitch.active .pricingToggleKnob {
+  transform: translateX(28px);
+}
+
+.pricingSavings {
+  padding: 4px 10px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+/* ===== FORM VALIDATION ===== */
+
+.formField {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.formFieldLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.formFieldLabel.required::after {
+  content: "*";
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+.formFieldInput {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  background: white;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.formFieldInput:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.formFieldInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.12);
+}
+
+/* Validation States */
+.formFieldInput.valid {
+  border-color: #22c55e;
+  padding-right: 44px;
+}
+
+.formFieldInput.valid:focus {
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+}
+
+.formFieldInput.invalid {
+  border-color: #ef4444;
+  padding-right: 44px;
+}
+
+.formFieldInput.invalid:focus {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+
+.formFieldInput.warning {
+  border-color: #f59e0b;
+  padding-right: 44px;
+}
+
+.formFieldInput.warning:focus {
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+/* Validation Icons */
+.formFieldIcon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.formFieldIcon.valid {
+  color: #22c55e;
+}
+
+.formFieldIcon.invalid {
+  color: #ef4444;
+}
+
+.formFieldIcon.warning {
+  color: #f59e0b;
+}
+
+/* Validation Messages */
+.formFieldMessage {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  animation: messageSlideIn 0.2s ease;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.formFieldMessage.error {
+  color: #ef4444;
+}
+
+.formFieldMessage.success {
+  color: #22c55e;
+}
+
+.formFieldMessage.warning {
+  color: #f59e0b;
+}
+
+.formFieldMessage.info {
+  color: var(--text-secondary);
+}
+
+.formFieldMessageIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Character Counter */
+.formFieldCounter {
+  position: absolute;
+  right: 14px;
+  bottom: -20px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.formFieldCounter.warning {
+  color: #f59e0b;
+}
+
+.formFieldCounter.error {
+  color: #ef4444;
+}
+
+/* Password Strength */
+.passwordStrength {
+  margin-top: 8px;
+}
+
+.passwordStrengthBar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.passwordStrengthSegment {
+  flex: 1;
+  height: 4px;
+  background: var(--border-light);
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+
+.passwordStrengthSegment.filled {
+  background: var(--border-light);
+}
+
+.passwordStrength.weak .passwordStrengthSegment.filled:nth-child(1) {
+  background: #ef4444;
+}
+
+.passwordStrength.fair .passwordStrengthSegment.filled:nth-child(-n + 2) {
+  background: #f59e0b;
+}
+
+.passwordStrength.good .passwordStrengthSegment.filled:nth-child(-n + 3) {
+  background: #84cc16;
+}
+
+.passwordStrength.strong .passwordStrengthSegment.filled {
+  background: #22c55e;
+}
+
+.passwordStrengthLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.passwordStrength.weak .passwordStrengthLabel {
+  color: #ef4444;
+}
+
+.passwordStrength.fair .passwordStrengthLabel {
+  color: #f59e0b;
+}
+
+.passwordStrength.good .passwordStrengthLabel {
+  color: #84cc16;
+}
+
+.passwordStrength.strong .passwordStrengthLabel {
+  color: #22c55e;
+}
+
+/* Form Field Groups */
+.formFieldGroup {
+  display: flex;
+  gap: 12px;
+}
+
+.formFieldGroup .formField {
+  flex: 1;
+}
+
+/* Inline Validation */
+.formFieldHint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.formFieldHintItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.formFieldHintItem.valid {
+  color: #22c55e;
+}
+
+.formFieldHintItem.invalid {
+  color: #ef4444;
+}
+
+/* ===== DARK MODE FOR ROUND 8 ===== */
+:global([data-theme="dark"]) .dropdownTrigger {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(30, 41, 59, 1) 100%);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .dropdownMenu {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .dropdownItem:hover {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+}
+
+:global([data-theme="dark"]) .dropdownItem.active {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .dropdownItemShortcut {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .ratingStar {
+  color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingCard {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(30, 41, 59, 1) 100%);
+}
+
+:global([data-theme="dark"]) .pricingCard:hover {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .pricingCard.popular {
+  border-color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .pricingButton.secondary {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .pricingButton.secondary:hover {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .formFieldInput {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .formFieldInput:focus {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15);
+}
+
+:global([data-theme="dark"]) .reviewStarsBar {
+  background: var(--bg-tertiary);
+}
