@@ -12486,3 +12486,514 @@
   background: #374151;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
+
+/* ===== ROUND 13: SPLIT PANES, RESIZABLE PANELS, MASONRY ===== */
+
+/* ===== SPLIT PANE ===== */
+.splitPane {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.splitPane.vertical {
+  flex-direction: column;
+}
+
+.splitPanePanel {
+  position: relative;
+  overflow: auto;
+  background: white;
+}
+
+.splitPanePanel:first-child {
+  flex-shrink: 0;
+}
+
+.splitPanePanel:last-child {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Split pane divider */
+.splitPaneDivider {
+  position: relative;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.06);
+  transition: background 0.2s ease;
+}
+
+.splitPane:not(.vertical) .splitPaneDivider {
+  width: 6px;
+  cursor: col-resize;
+}
+
+.splitPane.vertical .splitPaneDivider {
+  height: 6px;
+  cursor: row-resize;
+}
+
+.splitPaneDivider:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+}
+
+.splitPaneDivider:active,
+.splitPaneDivider.dragging {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Divider handle */
+.splitPaneDividerHandle {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splitPane:not(.vertical) .splitPaneDividerHandle {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 32px;
+}
+
+.splitPane.vertical .splitPaneDividerHandle {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 4px;
+}
+
+.splitPaneDividerHandle::before,
+.splitPaneDividerHandle::after {
+  content: '';
+  position: absolute;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1px;
+  transition: background 0.2s ease;
+}
+
+.splitPane:not(.vertical) .splitPaneDividerHandle::before,
+.splitPane:not(.vertical) .splitPaneDividerHandle::after {
+  width: 2px;
+  height: 12px;
+}
+
+.splitPane:not(.vertical) .splitPaneDividerHandle::before {
+  top: 0;
+}
+
+.splitPane:not(.vertical) .splitPaneDividerHandle::after {
+  bottom: 0;
+}
+
+.splitPane.vertical .splitPaneDividerHandle::before,
+.splitPane.vertical .splitPaneDividerHandle::after {
+  width: 12px;
+  height: 2px;
+}
+
+.splitPane.vertical .splitPaneDividerHandle::before {
+  left: 0;
+}
+
+.splitPane.vertical .splitPaneDividerHandle::after {
+  right: 0;
+}
+
+.splitPaneDivider:hover .splitPaneDividerHandle::before,
+.splitPaneDivider:hover .splitPaneDividerHandle::after {
+  background: white;
+}
+
+/* Collapse button */
+.splitPaneCollapse {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.splitPane:not(.vertical) .splitPaneCollapse {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.splitPane.vertical .splitPaneCollapse {
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+}
+
+.splitPaneDivider:hover .splitPaneCollapse {
+  opacity: 1;
+}
+
+.splitPaneCollapse:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
+/* ===== RESIZABLE PANEL ===== */
+.resizablePanel {
+  position: relative;
+  overflow: hidden;
+}
+
+.resizablePanel.resizing {
+  user-select: none;
+}
+
+.resizableHandle {
+  position: absolute;
+  z-index: 10;
+}
+
+.resizableHandleRight {
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.resizableHandleBottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.resizableHandleCorner {
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.resizableHandle::after {
+  content: '';
+  position: absolute;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.resizableHandleRight::after {
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.resizableHandleBottom::after {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+}
+
+.resizableHandle:hover::after {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.5) 100%);
+}
+
+/* Corner grip dots */
+.resizableHandleCorner::before {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.2) 1.5px, transparent 1.5px);
+  background-size: 4px 4px;
+}
+
+.resizableHandleCorner:hover::before {
+  background-image: radial-gradient(circle, #667eea 1.5px, transparent 1.5px);
+}
+
+/* Resize preview */
+.resizablePreview {
+  position: fixed;
+  border: 2px dashed #667eea;
+  background: rgba(102, 126, 234, 0.05);
+  pointer-events: none;
+  z-index: 10000;
+}
+
+/* Size indicator */
+.resizableSizeIndicator {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  padding: 4px 8px;
+  background: #1e293b;
+  color: white;
+  font-size: 11px;
+  font-family: 'SF Mono', monospace;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.15s ease;
+  pointer-events: none;
+}
+
+.resizablePanel.resizing .resizableSizeIndicator {
+  opacity: 1;
+  transform: translateY(-4px);
+}
+
+/* ===== MASONRY GRID ===== */
+.masonryGrid {
+  display: flex;
+  margin-left: -16px;
+  width: auto;
+}
+
+.masonryColumn {
+  padding-left: 16px;
+  background-clip: padding-box;
+}
+
+.masonryItem {
+  margin-bottom: 16px;
+  break-inside: avoid;
+  animation: masonryItemIn 0.4s ease backwards;
+}
+
+@keyframes masonryItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Staggered animation delays */
+.masonryItem:nth-child(1) { animation-delay: 0ms; }
+.masonryItem:nth-child(2) { animation-delay: 50ms; }
+.masonryItem:nth-child(3) { animation-delay: 100ms; }
+.masonryItem:nth-child(4) { animation-delay: 150ms; }
+.masonryItem:nth-child(5) { animation-delay: 200ms; }
+.masonryItem:nth-child(6) { animation-delay: 250ms; }
+.masonryItem:nth-child(7) { animation-delay: 300ms; }
+.masonryItem:nth-child(8) { animation-delay: 350ms; }
+
+/* Masonry card */
+.masonryCard {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.masonryCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.masonryCardImage {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.masonryCardContent {
+  padding: 16px;
+}
+
+.masonryCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.masonryCardDescription {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Masonry with CSS columns (fallback) */
+.masonryColumnsGrid {
+  column-count: 3;
+  column-gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .masonryColumnsGrid {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .masonryColumnsGrid {
+    column-count: 1;
+  }
+}
+
+.masonryColumnsItem {
+  break-inside: avoid;
+  margin-bottom: 16px;
+}
+
+/* Pinterest-style masonry */
+.masonryPinterest {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-auto-rows: 10px;
+  gap: 16px;
+}
+
+.masonryPinterestItem {
+  grid-row: span var(--span, 20);
+}
+
+/* Masonry filter tabs */
+.masonryFilters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.masonryFilter {
+  padding: 8px 16px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.masonryFilter:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+  color: #667eea;
+}
+
+.masonryFilter.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: transparent;
+  color: white;
+}
+
+/* Masonry loading state */
+.masonryLoading {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 40px;
+  align-items: center;
+  color: #94a3b8;
+}
+
+.masonryLoadingSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ===== DARK MODE FOR ROUND 13 ===== */
+:global([data-theme="dark"]) .splitPanePanel {
+  background: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .splitPaneDivider {
+  background: var(--border-light);
+}
+
+:global([data-theme="dark"]) .splitPaneDivider:hover {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+}
+
+:global([data-theme="dark"]) .splitPaneDivider:active,
+:global([data-theme="dark"]) .splitPaneDivider.dragging {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+}
+
+:global([data-theme="dark"]) .splitPaneCollapse {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .splitPaneCollapse:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+}
+
+:global([data-theme="dark"]) .resizableHandle:hover::after {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.5) 0%, rgba(139, 92, 246, 0.5) 100%);
+}
+
+:global([data-theme="dark"]) .resizableHandleCorner:hover::before {
+  background-image: radial-gradient(circle, #a78bfa 1.5px, transparent 1.5px);
+}
+
+:global([data-theme="dark"]) .resizablePreview {
+  border-color: #a78bfa;
+  background: rgba(167, 139, 250, 0.05);
+}
+
+:global([data-theme="dark"]) .masonryCard {
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .masonryCard:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-theme="dark"]) .masonryCardTitle {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .masonryCardDescription {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .masonryFilter {
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .masonryFilter:hover {
+  border-color: rgba(167, 139, 250, 0.3);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .masonryFilter.active {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+}
+
+:global([data-theme="dark"]) .masonryLoadingSpinner {
+  border-color: rgba(167, 139, 250, 0.2);
+  border-top-color: #a78bfa;
+}
