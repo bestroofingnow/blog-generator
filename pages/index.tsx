@@ -3981,7 +3981,7 @@ export default function Home() {
                         }
                       }}
                     />
-                    <span style={{ margin: "0 0.5rem", color: "#666" }}>or</span>
+                    <span style={{ margin: "0 0.5rem", color: "var(--text-muted, #666)" }}>or</span>
                     <label className={styles.fileUploadLabel}>
                       Upload File
                       <input
@@ -4360,7 +4360,7 @@ export default function Home() {
 
               <div className={styles.formCard}>
                 <h4 className={styles.formCardTitle}>AI Deep Research</h4>
-                <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted, #666)", marginBottom: "1rem" }}>
                   Enter a topic in the Create section first, then use these tools to research.
                 </p>
                 <div className={styles.researchButtons}>
@@ -4430,7 +4430,7 @@ export default function Home() {
                   SERP Analysis
                   <span style={{ fontSize: "0.7rem", color: "#667eea", marginLeft: "0.5rem" }}>Bright Data</span>
                 </h4>
-                <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted, #666)", marginBottom: "1rem" }}>
                   Analyze real Google search results with AI-powered competitive insights.
                 </p>
 
@@ -4519,7 +4519,7 @@ export default function Home() {
                 <div className={styles.formCard}>
                   <h4 className={styles.formCardTitle}>
                     SERP Analysis: {serpAnalysis.keyword}
-                    <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: "0.5rem" }}>
+                    <span style={{ fontSize: "0.7rem", color: "var(--text-muted, #888)", marginLeft: "0.5rem" }}>
                       {serpAnalysis.searchType} | {serpAnalysis.country.toUpperCase()} | {serpAnalysis.device}
                     </span>
                   </h4>
@@ -4540,7 +4540,7 @@ export default function Home() {
                           {serpAnalysis.analysis.difficulty.level} ({serpAnalysis.analysis.difficulty.score}/100)
                         </span>
                       </div>
-                      <div style={{ height: "8px", background: "#e5e7eb", borderRadius: "4px", overflow: "hidden" }}>
+                      <div style={{ height: "8px", background: "var(--border-light, #e5e7eb)", borderRadius: "4px", overflow: "hidden" }}>
                         <div style={{
                           width: `${serpAnalysis.analysis.difficulty.score}%`,
                           height: "100%",
@@ -4549,7 +4549,7 @@ export default function Home() {
                         }} />
                       </div>
                       {serpAnalysis.analysis.difficulty.factors?.length > 0 && (
-                        <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#666" }}>
+                        <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>
                           <strong>Factors:</strong> {serpAnalysis.analysis.difficulty.factors.slice(0, 3).join(" • ")}
                         </div>
                       )}
@@ -4603,7 +4603,7 @@ export default function Home() {
                     <div style={{ marginBottom: "1rem", padding: "1rem", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
                       <strong style={{ color: "#16a34a" }}>Featured Snippet ({serpAnalysis.serpData.featuredSnippet.type}):</strong>
                       <p style={{ margin: "0.5rem 0", fontSize: "0.9rem" }}>{serpAnalysis.serpData.featuredSnippet.content.substring(0, 200)}...</p>
-                      <div style={{ fontSize: "0.8rem", color: "#666" }}>Source: {serpAnalysis.serpData.featuredSnippet.source}</div>
+                      <div style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>Source: {serpAnalysis.serpData.featuredSnippet.source}</div>
                     </div>
                   )}
 
@@ -4646,7 +4646,7 @@ export default function Home() {
                                 </a>
                               </div>
                               <div style={{ fontSize: "0.75rem", color: "#16a34a", marginTop: "0.25rem" }}>{result.domain}</div>
-                              <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.25rem" }}>{result.snippet?.substring(0, 150)}...</div>
+                              <div style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)", marginTop: "0.25rem" }}>{result.snippet?.substring(0, 150)}...</div>
                             </div>
                           ))}
                         </div>
@@ -4679,7 +4679,7 @@ export default function Home() {
                           {serpAnalysis.serpData.localPack.map((local, i) => (
                             <div key={i} style={{ padding: "0.5rem", background: "#f9fafb", borderRadius: "4px", marginBottom: "0.25rem" }}>
                               <div style={{ fontWeight: "500" }}>{local.title}</div>
-                              <div style={{ fontSize: "0.8rem", color: "#666" }}>{local.address}</div>
+                              <div style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>{local.address}</div>
                               {local.rating && <div style={{ fontSize: "0.8rem" }}>⭐ {local.rating} ({local.reviews} reviews)</div>}
                             </div>
                           ))}
@@ -4834,7 +4834,7 @@ export default function Home() {
                       {serpAnalysis.analysis.riskFactors && serpAnalysis.analysis.riskFactors.length > 0 && (
                         <div>
                           <strong>Risk Factors:</strong>
-                          <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem", fontSize: "0.85rem", color: "#666" }}>
+                          <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem", fontSize: "0.85rem", color: "var(--text-muted, #666)" }}>
                             {serpAnalysis.analysis.riskFactors.slice(0, 3).map((risk, i) => (
                               <li key={i}>{risk}</li>
                             ))}
@@ -4846,7 +4846,7 @@ export default function Home() {
 
                   {/* Technical SEO */}
                   {serpAnalysis.analysis?.technicalSEO && (
-                    <div style={{ marginTop: "1rem", fontSize: "0.85rem", color: "#666" }}>
+                    <div style={{ marginTop: "1rem", fontSize: "0.85rem", color: "var(--text-muted, #666)" }}>
                       <strong>Technical Notes:</strong>
                       <div style={{ marginTop: "0.25rem" }}>
                         Mobile: {serpAnalysis.analysis.technicalSEO.mobileOptimization} |

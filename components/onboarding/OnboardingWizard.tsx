@@ -684,7 +684,7 @@ function AdditionalLinksStep({
 
   return (
     <div className={styles.form}>
-      <p style={{ color: "#64748b", marginBottom: "1rem" }}>
+      <p style={{ color: "var(--text-secondary, #64748b)", marginBottom: "1rem" }}>
         Add links to your business directory listings, manufacturer certifications,
         networking groups, and other business profiles.
       </p>

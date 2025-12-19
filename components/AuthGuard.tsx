@@ -28,7 +28,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#f8fafc",
+          background: "var(--bg-primary, #f8fafc)",
         }}
       >
         <div style={{ textAlign: "center" }}>
@@ -36,14 +36,14 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             style={{
               width: "48px",
               height: "48px",
-              border: "3px solid #e5e7eb",
-              borderTopColor: "#667eea",
+              border: "3px solid var(--border-light, #e5e7eb)",
+              borderTopColor: "var(--primary-color, #667eea)",
               borderRadius: "50%",
               animation: "spin 1s linear infinite",
               margin: "0 auto 1rem",
             }}
           />
-          <p style={{ color: "#64748b", margin: 0 }}>Loading...</p>
+          <p style={{ color: "var(--text-secondary, #64748b)", margin: 0 }}>Loading...</p>
           <style jsx>{`
             @keyframes spin {
               to {
