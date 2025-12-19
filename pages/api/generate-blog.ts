@@ -164,8 +164,15 @@ The HTML should be complete and ready to copy-paste. Include actual <img> tags w
 
   // Extract text content
   let responseText = "";
-  if (message.content[0].type === "text") {
-    responseText = message.content[0].text;
+  if (message.content && Array.isArray(message.content) && message.content.length > 0) {
+    const firstBlock = message.content[0];
+    if (firstBlock.type === "text" && firstBlock.text) {
+      responseText = firstBlock.text;
+    }
+  }
+
+  if (!responseText) {
+    throw new Error("No text content in API response");
   }
 
   // Parse the JSON response

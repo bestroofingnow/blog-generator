@@ -195,6 +195,9 @@ export async function saveDraft(
         })
         .returning({ id: drafts.id });
 
+      if (result.length === 0) {
+        return { id: "", error: new Error("Failed to insert draft - no result returned") };
+      }
       return { id: result[0].id, error: null };
     }
   } catch (error) {
@@ -309,6 +312,9 @@ export async function saveImage(
         })
         .returning({ id: draftImages.id });
 
+      if (result.length === 0) {
+        return { id: "", error: new Error("Failed to insert image - no result returned") };
+      }
       return { id: result[0].id, error: null };
     }
   } catch (error) {
@@ -322,10 +328,11 @@ export async function loadImagesForDraft(
   draftId: string
 ): Promise<ImageData[]> {
   try {
+    // Always verify userId to ensure user can only view their own images
     const result = await db
       .select()
       .from(draftImages)
-      .where(eq(draftImages.draftId, draftId));
+      .where(and(eq(draftImages.draftId, draftId), eq(draftImages.userId, userId)));
 
     return result.map((img) => ({
       id: img.id,
@@ -1026,7 +1033,11 @@ export async function addToQueue(
         })
         .returning({ id: generationQueue.id });
 
-      insertedIds.push(result[0].id);
+      if (result.length > 0) {
+        insertedIds.push(result[0].id);
+      } else {
+        console.error("Failed to insert queue item - no result returned");
+      }
     }
 
     return { success: true, insertedIds, error: null };
@@ -1183,6 +1194,9 @@ export async function createSiteProposal(
       })
       .returning({ id: siteStructureProposals.id });
 
+    if (result.length === 0) {
+      return { success: false, proposalId: null, error: new Error("Failed to insert proposal - no result returned") };
+    }
     return { success: true, proposalId: result[0].id, error: null };
   } catch (error) {
     console.error("Error creating site proposal:", error);
