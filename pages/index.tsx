@@ -17,6 +17,7 @@ const SiteBuilderWizard = lazy(() => import("../components/automation/SiteBuilde
 
 // UI Components
 import ThemeToggle from "../components/ui/ThemeToggle";
+import { TextBubble, ArchDecoration, GradientButton, ProgressRing, Shimmer, ShimmerCard } from "../components/ui";
 import { useContentScore } from "../lib/hooks/useContentScore";
 import { SEOAnalysisSidebar, SEOSidebarToggle } from "../components/seo/SEOAnalysisSidebar";
 import { analyzeContent, type SEOScore } from "../lib/seo-analyzer";
@@ -2404,6 +2405,7 @@ export default function Home() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
+        <ArchDecoration position="top" variant="gradient" size="lg" className={styles.headerArch} />
         <div className={styles.headerContent}>
           <h1>AI Blog Generator</h1>
           <p>Multi-AI orchestrated blog creation with real images</p>
@@ -4084,6 +4086,24 @@ export default function Home() {
 
               {/* Loading Entertainment Section */}
               <div className={styles.loadingEntertainment}>
+                <div className={styles.loadingProgress}>
+                  <ProgressRing
+                    progress={
+                      state.progress.step === "research" ? 10 :
+                      state.progress.step === "outline" ? 25 :
+                      state.progress.step === "images" ? 45 :
+                      state.progress.step === "content" ? 65 :
+                      state.progress.step === "format" ? 80 :
+                      state.progress.step === "upload" ? 90 :
+                      state.progress.step === "publishing" ? 95 :
+                      state.progress.step === "complete" ? 100 : 5
+                    }
+                    size={80}
+                    strokeWidth={6}
+                    showValue
+                  />
+                </div>
+
                 <button
                   type="button"
                   className={styles.newContentBtn}
@@ -4093,27 +4113,34 @@ export default function Home() {
                   Next
                 </button>
 
-                <div className={styles.entertainmentContent} key={entertainment.key}>
-                  <div className={styles.entertainmentTypeIcon}>
-                    {entertainment.type === "joke" && "😄"}
-                    {entertainment.type === "quote" && "💡"}
-                    {entertainment.type === "fact" && "🧠"}
+                <TextBubble
+                  variant={entertainment.type === "joke" ? "info" : entertainment.type === "quote" ? "primary" : "success"}
+                  position="center"
+                  delay={0.2}
+                  className={styles.entertainmentBubble}
+                >
+                  <div className={styles.entertainmentContent} key={entertainment.key}>
+                    <div className={styles.entertainmentTypeIcon}>
+                      {entertainment.type === "joke" && "😄"}
+                      {entertainment.type === "quote" && "💡"}
+                      {entertainment.type === "fact" && "🧠"}
+                    </div>
+
+                    <div className={styles.entertainmentTypeLabel}>
+                      {entertainment.type === "joke" && "While you wait..."}
+                      {entertainment.type === "quote" && "Inspiration"}
+                      {entertainment.type === "fact" && "Did you know?"}
+                    </div>
+
+                    <p className={`${styles.entertainmentText} ${styles[entertainment.type]}`}>
+                      {entertainment.content}
+                    </p>
+
+                    {entertainment.author && (
+                      <p className={styles.entertainmentAuthor}>{entertainment.author}</p>
+                    )}
                   </div>
-
-                  <div className={styles.entertainmentTypeLabel}>
-                    {entertainment.type === "joke" && "While you wait..."}
-                    {entertainment.type === "quote" && "Inspiration"}
-                    {entertainment.type === "fact" && "Did you know?"}
-                  </div>
-
-                  <p className={`${styles.entertainmentText} ${styles[entertainment.type]}`}>
-                    {entertainment.content}
-                  </p>
-
-                  {entertainment.author && (
-                    <p className={styles.entertainmentAuthor}>{entertainment.author}</p>
-                  )}
-                </div>
+                </TextBubble>
 
                 <div className={styles.loadingDots}>
                   <span className={styles.loadingDot}></span>

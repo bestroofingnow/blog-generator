@@ -51,6 +51,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.headerArch {
+  position: absolute;
+  top: -20px;
+  right: 10%;
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .headerContent {
@@ -4623,6 +4633,15 @@
 
 .loadingDot:nth-child(3) {
   animation-delay: 0.4s;
+}
+
+.loadingProgress {
+  margin-bottom: 1.5rem;
+}
+
+.entertainmentBubble {
+  width: 100%;
+  max-width: 520px;
 }
 
 @keyframes pulse {
