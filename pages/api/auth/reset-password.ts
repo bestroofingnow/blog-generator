@@ -219,7 +219,7 @@ export default async function handler(
       }
 
       // Answers correct - reset password
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
 
       await db
         .update(users)
