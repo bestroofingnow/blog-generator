@@ -8118,3 +8118,739 @@
 :global([data-theme="dark"]) .searchFilter.active {
   background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
 }
+
+/* =====================================================
+   ROUND 7: File Trees, Breadcrumbs, Step Wizards, Code
+   ===================================================== */
+
+/* ===== FILE TREE / BROWSER ===== */
+
+.fileTree {
+  font-family: "SF Mono", "Consolas", "Monaco", monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.fileTreeItem {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.fileTreeItem:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.06) 0%, rgba(118, 75, 162, 0.06) 100%);
+}
+
+.fileTreeItem.selected {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+}
+
+.fileTreeItem.selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: linear-gradient(180deg, var(--primary-color) 0%, #764ba2 100%);
+  border-radius: 2px;
+}
+
+.fileTreeItem:active {
+  transform: scale(0.98);
+}
+
+.fileTreeIndent {
+  display: inline-flex;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.fileTreeToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.fileTreeToggle.expanded {
+  transform: rotate(90deg);
+}
+
+.fileTreeIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.fileTreeIcon.folder {
+  color: #f59e0b;
+}
+
+.fileTreeIcon.file {
+  color: var(--text-secondary);
+}
+
+.fileTreeIcon.js {
+  color: #f7df1e;
+}
+
+.fileTreeIcon.ts {
+  color: #3178c6;
+}
+
+.fileTreeIcon.tsx {
+  color: #61dafb;
+}
+
+.fileTreeIcon.css {
+  color: #264de4;
+}
+
+.fileTreeIcon.json {
+  color: #5b5b5b;
+}
+
+.fileTreeIcon.md {
+  color: #083fa1;
+}
+
+.fileTreeIcon.image {
+  color: #22c55e;
+}
+
+.fileTreeName {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileTreeMeta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-left: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.fileTreeItem:hover .fileTreeMeta {
+  opacity: 1;
+}
+
+.fileTreeChildren {
+  overflow: hidden;
+  animation: fileTreeExpand 0.2s ease;
+}
+
+@keyframes fileTreeExpand {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fileTreeDragOver {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border: 2px dashed #22c55e;
+  border-radius: 6px;
+}
+
+/* ===== BREADCRUMB NAVIGATION ===== */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.breadcrumbItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.breadcrumbItem:hover {
+  background: rgba(102, 126, 234, 0.08);
+  color: var(--primary-color);
+}
+
+.breadcrumbItem.current {
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: default;
+}
+
+.breadcrumbItem.current:hover {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.breadcrumbSeparator {
+  color: var(--border-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+}
+
+.breadcrumbIcon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.breadcrumbDropdown {
+  position: relative;
+}
+
+.breadcrumbDropdownTrigger {
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbDropdownTrigger:hover {
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.breadcrumbDropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  min-width: 180px;
+  padding: 4px;
+  z-index: 100;
+  animation: breadcrumbDropdownIn 0.15s ease;
+}
+
+@keyframes breadcrumbDropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.breadcrumbDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 13px;
+}
+
+.breadcrumbDropdownItem:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+}
+
+/* ===== STEP WIZARD ===== */
+
+.stepWizard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+}
+
+.stepWizardItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  text-align: center;
+}
+
+.stepWizardItem::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: calc(-50% + 20px);
+  right: calc(50% + 20px);
+  height: 3px;
+  background: var(--border-light);
+  transition: background 0.3s ease;
+}
+
+.stepWizardItem:first-child::before {
+  display: none;
+}
+
+.stepWizardItem.completed::before {
+  background: linear-gradient(90deg, var(--primary-color) 0%, #764ba2 100%);
+}
+
+.stepWizardItem.active::before {
+  background: linear-gradient(90deg, var(--primary-color) 0%, #764ba2 100%);
+}
+
+.stepWizardNumber {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.stepWizardItem.active .stepWizardNumber {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+  animation: stepPulse 2s ease-in-out infinite;
+}
+
+@keyframes stepPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(102, 126, 234, 0);
+  }
+}
+
+.stepWizardItem.completed .stepWizardNumber {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+  border-color: transparent;
+  color: white;
+}
+
+.stepWizardItem.error .stepWizardNumber {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.stepWizardLabel {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.stepWizardItem.active .stepWizardLabel {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.stepWizardItem.completed .stepWizardLabel {
+  color: var(--text-primary);
+}
+
+.stepWizardDescription {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  max-width: 120px;
+}
+
+/* Vertical Step Wizard */
+.stepWizardVertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.stepWizardVertical .stepWizardItem {
+  flex-direction: row;
+  align-items: flex-start;
+  text-align: left;
+  padding-left: 56px;
+  min-height: 80px;
+}
+
+.stepWizardVertical .stepWizardItem::before {
+  top: 40px;
+  left: 19px;
+  right: auto;
+  width: 3px;
+  height: calc(100% - 40px);
+}
+
+.stepWizardVertical .stepWizardItem:last-child::before {
+  display: none;
+}
+
+.stepWizardVertical .stepWizardNumber {
+  position: absolute;
+  left: 0;
+}
+
+.stepWizardVertical .stepWizardLabel {
+  margin-top: 0;
+}
+
+.stepWizardVertical .stepWizardContent {
+  padding-top: 4px;
+}
+
+/* ===== CODE BLOCKS ===== */
+
+.codeBlock {
+  position: relative;
+  background: #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: "SF Mono", "Consolas", "Monaco", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.codeBlockHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.codeBlockDots {
+  display: flex;
+  gap: 6px;
+}
+
+.codeBlockDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.codeBlockDot.red {
+  background: #ff5f57;
+}
+
+.codeBlockDot.yellow {
+  background: #febc2e;
+}
+
+.codeBlockDot.green {
+  background: #28c840;
+}
+
+.codeBlockTitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.codeBlockLanguage {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.codeBlockActions {
+  display: flex;
+  gap: 8px;
+}
+
+.codeBlockAction {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.codeBlockAction:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.codeBlockAction.copied {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.codeBlockContent {
+  padding: 16px;
+  overflow-x: auto;
+  color: #e2e8f0;
+}
+
+.codeBlockContent pre {
+  margin: 0;
+  white-space: pre;
+}
+
+.codeBlockContent code {
+  font-family: inherit;
+}
+
+/* Code Line Numbers */
+.codeBlockWithLines {
+  display: flex;
+}
+
+.codeBlockLineNumbers {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  min-width: 48px;
+  text-align: right;
+  background: rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  user-select: none;
+}
+
+.codeBlockLineNumber {
+  padding: 0 12px;
+  line-height: 1.6;
+}
+
+.codeBlockLine {
+  padding: 0 16px;
+  line-height: 1.6;
+  transition: background 0.15s ease;
+}
+
+.codeBlockLine:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.codeBlockLine.highlighted {
+  background: rgba(102, 126, 234, 0.2);
+  border-left: 3px solid var(--primary-color);
+  margin-left: -3px;
+}
+
+/* Syntax Highlighting Classes */
+.codeKeyword {
+  color: #c792ea;
+}
+
+.codeString {
+  color: #c3e88d;
+}
+
+.codeNumber {
+  color: #f78c6c;
+}
+
+.codeComment {
+  color: #546e7a;
+  font-style: italic;
+}
+
+.codeFunction {
+  color: #82aaff;
+}
+
+.codeVariable {
+  color: #eeffff;
+}
+
+.codeOperator {
+  color: #89ddff;
+}
+
+.codeProperty {
+  color: #f07178;
+}
+
+.codeTag {
+  color: #f07178;
+}
+
+.codeAttribute {
+  color: #ffcb6b;
+}
+
+/* Inline Code */
+.inlineCode {
+  display: inline;
+  padding: 2px 6px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 4px;
+  font-family: "SF Mono", "Consolas", "Monaco", monospace;
+  font-size: 0.9em;
+  color: var(--primary-color);
+}
+
+/* Code Diff */
+.codeDiffLine {
+  padding: 0 16px;
+  line-height: 1.6;
+}
+
+.codeDiffLine.added {
+  background: rgba(34, 197, 94, 0.15);
+  border-left: 3px solid #22c55e;
+}
+
+.codeDiffLine.removed {
+  background: rgba(239, 68, 68, 0.15);
+  border-left: 3px solid #ef4444;
+}
+
+.codeDiffLine.changed {
+  background: rgba(245, 158, 11, 0.15);
+  border-left: 3px solid #f59e0b;
+}
+
+/* Terminal/Console */
+.terminal {
+  background: #0f172a;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: "SF Mono", "Consolas", "Monaco", monospace;
+  font-size: 13px;
+}
+
+.terminalHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terminalTitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
+.terminalContent {
+  padding: 16px;
+  color: #a5f3fc;
+}
+
+.terminalPrompt {
+  color: #22c55e;
+}
+
+.terminalCommand {
+  color: white;
+}
+
+.terminalOutput {
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 8px;
+}
+
+.terminalError {
+  color: #ef4444;
+}
+
+.terminalSuccess {
+  color: #22c55e;
+}
+
+.terminalWarning {
+  color: #f59e0b;
+}
+
+/* ===== DARK MODE FOR ROUND 7 ===== */
+:global([data-theme="dark"]) .fileTreeItem:hover {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+}
+
+:global([data-theme="dark"]) .fileTreeItem.selected {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+}
+
+:global([data-theme="dark"]) .fileTreeItem.selected::before {
+  background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 100%);
+}
+
+:global([data-theme="dark"]) .breadcrumbItem:hover {
+  background: rgba(167, 139, 250, 0.1);
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .breadcrumbDropdownMenu {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .breadcrumbDropdownItem:hover {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+}
+
+:global([data-theme="dark"]) .stepWizardNumber {
+  background: var(--bg-primary);
+}
+
+:global([data-theme="dark"]) .stepWizardItem.active .stepWizardNumber {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .stepWizardItem.completed .stepWizardNumber {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+}
+
+:global([data-theme="dark"]) .stepWizardItem.active .stepWizardLabel {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .inlineCode {
+  background: rgba(167, 139, 250, 0.15);
+  border-color: rgba(167, 139, 250, 0.25);
+  color: #a78bfa;
+}
