@@ -361,10 +361,30 @@ export async function generateContent(params: {
   tone?: string;
   readingLevel?: string;
   companyName?: string;
+  wordCountRange?: string;
+  numberOfImages?: number;
 }): Promise<string> {
-  const { outline, topic, location, tone = "professional yet friendly", readingLevel = "8th Grade", companyName } = params;
+  const {
+    outline,
+    topic,
+    location,
+    tone = "professional yet friendly",
+    readingLevel = "8th Grade",
+    companyName,
+    wordCountRange = "1800-2400",
+    numberOfImages = 3,
+  } = params;
 
   const readingGuidelines = READING_LEVEL_GUIDELINES[readingLevel] || READING_LEVEL_GUIDELINES["8th Grade"];
+
+  // Parse word count range
+  const [minWords, maxWords] = wordCountRange.split("-").map(s => parseInt(s.trim()) || 1800);
+  const targetWordCount = Math.round((minWords + maxWords) / 2);
+
+  // Generate image placeholder instructions based on numberOfImages
+  const imageInstructions = numberOfImages > 1
+    ? `Use [IMAGE:0] for the hero/featured image, then [IMAGE:1] through [IMAGE:${numberOfImages - 1}] for section images. Distribute images evenly throughout the content.`
+    : `Use [IMAGE:0] for the hero/featured image only.`;
 
   const prompt = `You are an expert content writer who creates engaging, human-like content for local service businesses. Write a comprehensive, SEO-optimized blog post based on this outline.
 
@@ -383,7 +403,7 @@ REQUIREMENTS:
 - Include the primary keyword "${outline.seo.primaryKeyword}" naturally throughout
 - Include secondary keywords where appropriate
 - Write engaging, informative content for each section
-- Write approximately 1500-2000 words total
+- WORD COUNT: Write approximately ${minWords}-${maxWords} words (target: ${targetWordCount} words). This is IMPORTANT - match this word count!
 - Make content locally relevant to ${location}
 - Include a strong call-to-action in the conclusion
 - DO NOT include <header> or <footer> elements
@@ -436,7 +456,7 @@ USE THIS EXACT HTML STRUCTURE (no header, no footer, no navigation):
   <p><img class="content-image" src="[IMAGE:1]" alt="${outline.seo.primaryKeyword} description" width="800" height="600" /></p>
 </article>
 
-<!-- Repeat for each section with [IMAGE:2], [IMAGE:3] etc -->
+<!-- Repeat for each section with appropriate image placeholders -->
 
 <div class="key-takeaways">
   <h2>Key Takeaways</h2>
@@ -463,11 +483,14 @@ USE THIS EXACT HTML STRUCTURE (no header, no footer, no navigation):
   <!-- Add 5-8 FAQs -->
 </section>
 
+IMAGE PLACEMENT (${numberOfImages} images total):
+${imageInstructions}
+
 IMPORTANT:
-- Use [IMAGE:0] for hero, [IMAGE:1] and [IMAGE:2] for section images
-- Only use 3 image placeholders total (hero + 2 sections)
+- Use exactly ${numberOfImages} image placeholders: [IMAGE:0] through [IMAGE:${numberOfImages - 1}]
 - Include 5-8 relevant FAQ items
-- Do NOT wrap in any header or footer tags`;
+- Do NOT wrap in any header or footer tags
+- WORD COUNT REMINDER: Write ${minWords}-${maxWords} words!`;
 
   try {
     console.log("[Craftsman] Generating content with anthropic/claude-sonnet-4.5...");

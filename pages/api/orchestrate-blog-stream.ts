@@ -11,12 +11,11 @@ import {
   improveContentForSEO,
 } from "../../lib/ai-gateway";
 import { scoreContent, generateRewritePrompt, SEOScoreResult } from "../../lib/seo-scorer";
-
-interface WordPressCredentials {
-  siteUrl: string;
-  username: string;
-  appPassword: string;
-}
+import {
+  uploadImages as uploadImagesToWordPress,
+  WordPressCredentials,
+} from "../../lib/wordpress";
+import { put } from "@vercel/blob";
 
 interface SEOData {
   primaryKeyword: string;
@@ -43,26 +42,6 @@ function sendError(res: NextApiResponse, error: string) {
 
 function sendComplete(res: NextApiResponse, data: Record<string, unknown>) {
   res.write(`data: ${JSON.stringify({ type: "complete", ...data })}\n\n`);
-}
-
-// Helper to call internal APIs
-async function callInternalApi(endpoint: string, body: unknown): Promise<unknown> {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-  const response = await fetch(`${baseUrl}${endpoint}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  const responseText = await response.text();
-  try {
-    return JSON.parse(responseText);
-  } catch {
-    throw new Error(`Internal API ${endpoint} returned invalid response`);
-  }
 }
 
 function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
@@ -419,25 +398,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } else {
       // Auto mode: Generate images with AI (default behavior)
-      sendProgress(res, "images", "AI is creating stunning images...");
+      sendProgress(res, "images", `AI is creating ${numberOfImages} stunning images...`);
 
       const imagePrompts: { prompt: string; index: number }[] = [];
 
-      // Hero image
+      // Hero image (always first)
       imagePrompts.push({
         prompt: outline.introduction?.imagePrompt || `Professional photography of ${topic} in ${location}`,
         index: 0,
       });
 
-      // Section images (only 2 to save time)
-      const sectionIndices = [0, Math.min(2, outline.sections.length - 1)];
-      sectionIndices.forEach((sectionIdx, i) => {
-        const section = outline.sections[sectionIdx];
-        imagePrompts.push({
-          prompt: section?.imagePrompt || `Professional photography for ${section?.title || topic}`,
-          index: i + 1,
-        });
-      });
+      // Section images - generate based on numberOfImages setting (minus 1 for hero)
+      const sectionImagesCount = Math.max(0, numberOfImages - 1);
+      if (sectionImagesCount > 0 && outline.sections.length > 0) {
+        // Distribute images evenly across sections
+        const step = Math.max(1, Math.floor(outline.sections.length / sectionImagesCount));
+        for (let i = 0; i < sectionImagesCount && i < outline.sections.length; i++) {
+          const sectionIdx = Math.min(i * step, outline.sections.length - 1);
+          const section = outline.sections[sectionIdx];
+          imagePrompts.push({
+            prompt: section?.imagePrompt || `Professional photography for ${section?.title || topic}`,
+            index: i + 1,
+          });
+        }
+      }
+
+      console.log(`[Image Gen] Generating ${imagePrompts.length} images (requested: ${numberOfImages})`);
 
       // Generate images in parallel
       const imageResults = await Promise.allSettled(
@@ -459,7 +445,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 3: Generate content
-    sendProgress(res, "content", "AI is writing engaging content...");
+    sendProgress(res, "content", `AI is writing ${wordCountRange} word content...`);
+
+    console.log(`[Content Gen] Generating content with wordCount: ${wordCountRange}, images: ${numberOfImages}`);
 
     let rawContent = await generateContent({
       outline,
@@ -468,6 +456,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tone,
       readingLevel,
       companyName,
+      wordCountRange,
+      numberOfImages,
     });
 
     // STEP 4: SEO Validation & Targeted Adjustment Loop (90+ score required)
@@ -621,18 +611,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
 
         if (imagesToUpload.length > 0) {
-          const uploadResponse = await callInternalApi("/api/wordpress-upload", {
-            action: "uploadMultiple",
-            credentials: wordpress,
-            images: imagesToUpload,
-          }) as { success: boolean; images?: Array<{ id: number; url: string }> };
+          console.log(`[WordPress] Uploading ${imagesToUpload.length} images directly...`);
 
-          if (uploadResponse.success && uploadResponse.images) {
-            uploadResponse.images.forEach((uploaded, i) => {
+          // Call WordPress upload function directly instead of via internal API
+          const uploadedImages = await uploadImagesToWordPress(wordpress, imagesToUpload);
+
+          if (uploadedImages && uploadedImages.length > 0) {
+            uploadedImages.forEach((uploaded, i) => {
               const originalIndex = imagesToUpload[i]?.originalIndex ?? i;
               if (uploaded.url) imageUrls[originalIndex] = uploaded.url;
               if (uploaded.id) uploadedImageIds[originalIndex] = uploaded.id;
             });
+            console.log(`[WordPress] Successfully uploaded ${uploadedImages.length} images`);
           }
         }
       } catch (error) {
@@ -668,15 +658,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
               const filename = `${primaryKeywordSlug}-${sectionTitle}-${Date.now()}.png`;
 
-              const storeResponse = await callInternalApi("/api/store-image", {
-                base64: img.base64,
-                filename,
-                contentType: img.mimeType || "image/png",
-              }) as { success: boolean; url?: string };
+              // Call Vercel Blob directly instead of via internal API
+              let cleanBase64 = img.base64;
+              if (cleanBase64.includes(",")) {
+                cleanBase64 = cleanBase64.split(",")[1];
+              }
+              const buffer = Buffer.from(cleanBase64, "base64");
 
-              if (storeResponse.success && storeResponse.url) {
-                imageUrls[i] = storeResponse.url;
-                console.log(`Image ${i} stored in Vercel Blob:`, storeResponse.url);
+              const blob = await put(filename, buffer, {
+                access: "public",
+                contentType: img.mimeType || "image/png",
+              });
+
+              if (blob.url) {
+                imageUrls[i] = blob.url;
+                console.log(`[Vercel Blob] Image ${i} stored:`, blob.url);
               }
             } catch (error) {
               console.error(`Failed to store image ${i} in Vercel Blob:`, error);
