@@ -526,6 +526,11 @@ export default function Home() {
     topic: string;
     primaryKeyword: string;
     secondaryKeywords: string[];
+    metaTitle: string;
+    metaDescription: string;
+    wordCountRange: WordCountRange;
+    location: string;
+    blogType: string;
     reason: string;
   }[] | null>(null);
 
@@ -1530,17 +1535,20 @@ export default function Home() {
     setIsResearchingTopics(true);
     setSuggestedTopics(null);
 
+    const location = companyProfile.headquarters || formData.location || "United States";
+    const industry = companyProfile.industryType || "business";
+
     try {
       const response = await fetch("/api/research-keywords", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topic: `${companyProfile.industryType || "business"} services blog topics`,
-          location: companyProfile.headquarters || formData.location || "United States",
+          topic: `${industry} services blog topics`,
+          location,
           companyName: companyProfile.name,
           companyWebsite: companyProfile.website,
           blogType: "Topic Research",
-          findTopics: true, // Signal to find topics, not just keywords
+          findTopics: true,
         }),
       });
 
@@ -1553,24 +1561,55 @@ export default function Home() {
       }
 
       if (data.success && data.suggestions) {
-        // Create topic suggestions from the research
+        // Blog types that match different content angles
+        const blogTypes = [
+          "How-To Guide",
+          "Expert Tips",
+          "Neighborhood Guide",
+          "Before and After",
+          "Product Comparison",
+        ];
+
+        // Word count ranges based on topic complexity
+        const wordCounts: WordCountRange[] = [
+          "1800-2400", // Comprehensive guide
+          "1400-1800", // Tips article
+          "1000-1400", // Local guide
+          "1400-1800", // Case study
+          "1800-2400", // Comparison
+        ];
+
+        // Create fully populated topic suggestions
         const topics = [
           {
-            topic: `Complete Guide to ${data.suggestions.primaryKeyword} in ${companyProfile.headquarters || formData.location || "Your Area"}`,
+            topic: `Complete Guide to ${data.suggestions.primaryKeyword} in ${location}`,
             primaryKeyword: data.suggestions.primaryKeyword,
-            secondaryKeywords: data.suggestions.secondaryKeywords.slice(0, 3),
+            secondaryKeywords: data.suggestions.secondaryKeywords.slice(0, 4),
+            metaTitle: data.suggestions.metaTitle || `${data.suggestions.primaryKeyword} Guide | ${companyProfile.name}`,
+            metaDescription: data.suggestions.metaDescription || `Learn everything about ${data.suggestions.primaryKeyword} in ${location}. Expert tips from ${companyProfile.name}.`,
+            wordCountRange: "1800-2400" as WordCountRange,
+            location,
+            blogType: "How-To Guide",
             reason: "High-value primary keyword with strong search intent",
           },
-          ...(data.suggestions.contentAngles || []).slice(0, 4).map((angle: string, i: number) => ({
-            topic: angle,
-            primaryKeyword: data.suggestions.secondaryKeywords[i] || data.suggestions.primaryKeyword,
-            secondaryKeywords: data.suggestions.secondaryKeywords.slice(i, i + 3),
-            reason: data.suggestions.competitorInsights?.[i] || "SEO opportunity based on competitor analysis",
-          })),
+          ...(data.suggestions.contentAngles || []).slice(0, 4).map((angle: string, i: number) => {
+            const keyword = data.suggestions.secondaryKeywords[i] || data.suggestions.primaryKeyword;
+            return {
+              topic: angle,
+              primaryKeyword: keyword,
+              secondaryKeywords: data.suggestions.secondaryKeywords.filter((_: string, idx: number) => idx !== i).slice(0, 4),
+              metaTitle: `${keyword} | ${companyProfile.name} ${location}`,
+              metaDescription: `Discover ${keyword.toLowerCase()} tips and insights for ${location} residents. Trusted advice from ${companyProfile.name}.`,
+              wordCountRange: wordCounts[i + 1] || "1400-1800" as WordCountRange,
+              location,
+              blogType: blogTypes[i + 1] || "Expert Tips",
+              reason: data.suggestions.competitorInsights?.[i] || "SEO opportunity based on competitor analysis",
+            };
+          }),
         ];
 
         setSuggestedTopics(topics);
-        showToast("success", "Topics Found!", `${topics.length} blog topic ideas generated based on SEO research.`);
+        showToast("success", "Topics Found!", `${topics.length} complete blog configurations generated.`);
       } else {
         showToast("error", "Research Failed", data.error || "Could not generate topic suggestions");
       }
@@ -1581,17 +1620,38 @@ export default function Home() {
     setIsResearchingTopics(false);
   };
 
-  // Select a suggested topic
+  // Select a suggested topic - fills out entire form
   const handleSelectTopic = (topic: typeof suggestedTopics extends (infer T)[] | null ? T : never) => {
     if (!topic) return;
+
+    // Fill out all form fields with the suggested data
     setFormData(prev => ({
       ...prev,
       topic: topic.topic,
       primaryKeyword: topic.primaryKeyword,
       secondaryKeywords: topic.secondaryKeywords.join(", "),
+      metaTitle: topic.metaTitle,
+      metaDescription: topic.metaDescription,
+      wordCountRange: topic.wordCountRange,
+      location: topic.location,
+      blogType: topic.blogType,
     }));
+
+    // Also populate the research data for the SEO panel
+    setResearchData({
+      primaryKeyword: topic.primaryKeyword,
+      secondaryKeywords: topic.secondaryKeywords,
+      metaTitle: topic.metaTitle,
+      metaDescription: topic.metaDescription,
+      competitorInsights: [topic.reason],
+      contentAngles: [topic.topic],
+      imageThemes: [],
+    });
+
+    // Show SEO settings panel so user can see all the data
+    setShowSEOSettings(true);
     setSuggestedTopics(null);
-    showToast("success", "Topic Selected", "Form has been populated with your chosen topic and keywords.");
+    showToast("success", "Form Populated!", "All fields have been filled with AI-researched SEO data. Ready to generate!");
   };
 
   // Deep research company website to auto-fill profile
@@ -2827,6 +2887,11 @@ export default function Home() {
                         <div className={styles.topicTitle}>{topic.topic}</div>
                         <div className={styles.topicMeta}>
                           <span className={styles.topicKeyword}>{topic.primaryKeyword}</span>
+                          <span className={styles.topicBlogType}>{topic.blogType}</span>
+                          <span className={styles.topicWordCount}>{topic.wordCountRange.replace("-", "–")} words</span>
+                        </div>
+                        <div className={styles.topicDetails}>
+                          <span className={styles.topicLocation}>{topic.location}</span>
                           <span className={styles.topicReason}>{topic.reason}</span>
                         </div>
                       </button>
