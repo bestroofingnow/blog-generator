@@ -1128,6 +1128,92 @@
   gap: 20px;
 }
 
+/* Research Insights Toggle */
+.researchInsights {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea10, #764ba210);
+  border: 1px solid var(--border-light, #e5e7eb);
+}
+
+.insightsToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #1f2937);
+  transition: background 0.2s ease;
+}
+
+.insightsToggle:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.insightsToggle svg {
+  color: #667eea;
+}
+
+.chevron {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.insightsContent {
+  padding: 16px;
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.insightSection {
+  background: var(--bg-primary, #ffffff);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-light, #e5e7eb);
+}
+
+.insightSection h5 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #667eea;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.insightSection ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.insightSection li {
+  font-size: 13px;
+  color: var(--text-secondary, #6b7280);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.insightSection li strong {
+  color: var(--text-primary, #1f2937);
+}
+
+.insightSection p {
+  font-size: 13px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+  line-height: 1.5;
+}
+
 .proposalSection {
   background: var(--bg-secondary, #f9fafb);
   border-radius: 12px;

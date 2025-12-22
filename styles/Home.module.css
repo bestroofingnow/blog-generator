@@ -53619,3 +53619,1276 @@
   background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
   background-size: 200% 100%;
 }
+
+/* ==========================================================================
+   ROUND 49: STAT CARD COMPONENTS
+   - Basic stat cards with numbers
+   - Stat cards with icons
+   - Stat cards with trends (up/down)
+   - Stat cards with sparklines/mini charts
+   - Stat cards with progress bars
+   - Mini/compact stat cards
+   - Horizontal stat layouts
+   - Stat grids and dashboards
+   - Comparison and goal stats
+   - Full dark mode support
+   ========================================================================== */
+
+/* Basic Stat Card */
+.statCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.2s ease;
+}
+
+.statCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.statCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.statCardLabel {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+.statCardIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1));
+  color: #8b5cf6;
+}
+
+.statCardIcon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.statCardIcon.success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.1));
+  color: #22c55e;
+}
+
+.statCardIcon.warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+  color: #f59e0b;
+}
+
+.statCardIcon.danger {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+  color: #ef4444;
+}
+
+.statCardIcon.info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1));
+  color: #3b82f6;
+}
+
+.statCardValue {
+  font-size: 36px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.statCardValueSm {
+  font-size: 28px;
+}
+
+.statCardValueLg {
+  font-size: 48px;
+}
+
+.statCardTrend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.statCardTrend.up {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.statCardTrend.down {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.statCardTrend.neutral {
+  background: rgba(148, 163, 184, 0.1);
+  color: #64748b;
+}
+
+.statCardTrend svg {
+  width: 14px;
+  height: 14px;
+}
+
+.statCardDescription {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.statCardFooter {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.statCardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8b5cf6;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.statCardLink:hover {
+  color: #7c3aed;
+}
+
+.statCardLink svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Stat Card with Chart */
+.statCardChart {
+  position: relative;
+}
+
+.statCardSparkline {
+  height: 60px;
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.statCardSparklineBar {
+  flex: 1;
+  background: linear-gradient(180deg, #8b5cf6, #a855f7);
+  border-radius: 3px 3px 0 0;
+  transition: all 0.2s ease;
+  min-height: 4px;
+}
+
+.statCardSparklineBar:hover {
+  background: linear-gradient(180deg, #7c3aed, #9333ea);
+  transform: scaleY(1.1);
+}
+
+.statCardSparklineLine {
+  height: 40px;
+  margin-top: 16px;
+  position: relative;
+}
+
+.statCardSparklineSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.statCardSparklinePath {
+  fill: none;
+  stroke: #8b5cf6;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.statCardSparklineArea {
+  fill: url(#sparklineGradient);
+}
+
+/* Stat Card with Progress */
+.statCardProgress {
+  margin-top: 16px;
+}
+
+.statCardProgressHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.statCardProgressLabel {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.statCardProgressValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.statCardProgressBar {
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.statCardProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.statCardProgressFill.success {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.statCardProgressFill.warning {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.statCardProgressFill.danger {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+/* Mini Stat Card */
+.statCardMini {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.statCardMiniIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  color: white;
+  flex-shrink: 0;
+}
+
+.statCardMiniIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.statCardMiniContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.statCardMiniValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.statCardMiniLabel {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.statCardMiniTrend {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statCardMiniTrend.up {
+  color: #22c55e;
+}
+
+.statCardMiniTrend.down {
+  color: #ef4444;
+}
+
+/* Horizontal Stat Card */
+.statCardHorizontal {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statCardHorizontalMain {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.statCardHorizontalIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  color: white;
+}
+
+.statCardHorizontalIcon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.statCardHorizontalInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statCardHorizontalValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.statCardHorizontalLabel {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.statCardHorizontalChart {
+  width: 120px;
+  height: 48px;
+}
+
+/* Stat Grid */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.statGridCompact {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.statGridWide {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.statRow {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.statRow > * {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Comparison Stat */
+.statComparison {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.statComparisonHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.statComparisonTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.statComparisonPeriod {
+  font-size: 13px;
+  color: #64748b;
+  padding: 6px 12px;
+  background: #f8fafc;
+  border-radius: 20px;
+}
+
+.statComparisonBody {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.statComparisonItem {
+  text-align: center;
+}
+
+.statComparisonValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.statComparisonLabel {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.statComparisonDivider {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.statComparisonChange {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.statComparisonChange.up {
+  color: #22c55e;
+}
+
+.statComparisonChange.down {
+  color: #ef4444;
+}
+
+.statComparisonChange svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Goal/Target Stat */
+.statGoal {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.statGoalHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statGoalIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b5cf6;
+}
+
+.statGoalIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.statGoalTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.statGoalBody {
+  margin-bottom: 16px;
+}
+
+.statGoalNumbers {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.statGoalCurrent {
+  font-size: 36px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.statGoalTarget {
+  font-size: 16px;
+  color: #64748b;
+}
+
+.statGoalProgress {
+  height: 12px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.statGoalProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.statGoalProgressFill.complete {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.statGoalMilestone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: white;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+.statGoalFooter {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.statGoalRemaining {
+  color: #64748b;
+}
+
+.statGoalPercent {
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+/* Circular Stat */
+.statCircular {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.statCircularRing {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 16px;
+  position: relative;
+}
+
+.statCircularSvg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.statCircularBg {
+  fill: none;
+  stroke: #f1f5f9;
+  stroke-width: 10;
+}
+
+.statCircularProgress {
+  fill: none;
+  stroke: url(#circularGradient);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.statCircularValue {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.statCircularLabel {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Stat List */
+.statList {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.statListHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.statListTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.statListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.2s ease;
+}
+
+.statListItem:last-child {
+  border-bottom: none;
+}
+
+.statListItem:hover {
+  background: #f8fafc;
+}
+
+.statListItemMain {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statListItemIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.statListItemIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.statListItemLabel {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.statListItemValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.statListItemTrend {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.statListItemTrend.up {
+  color: #22c55e;
+}
+
+.statListItemTrend.down {
+  color: #ef4444;
+}
+
+/* Stat Badge Card */
+.statBadge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.statBadgeValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.statBadgeLabel {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Gradient Stat Card */
+.statCardGradient {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  border: none;
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+}
+
+.statCardGradient .statCardLabel {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.statCardGradient .statCardValue {
+  color: white;
+}
+
+.statCardGradient .statCardIcon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.statCardGradient .statCardTrend {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.statCardGradient .statCardDescription {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.statCardGradient .statCardProgressBar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.statCardGradient .statCardProgressFill {
+  background: white;
+}
+
+.statCardGradient.success {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.statCardGradient.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.statCardGradient.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.statCardGradient.info {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+/* Animated Counter */
+.statCounter {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes statCountUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.statCounterAnimated {
+  animation: statCountUp 0.5s ease forwards;
+}
+
+/* Stat Tooltip */
+.statTooltip {
+  position: relative;
+}
+
+.statTooltipContent {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: #0f172a;
+  color: white;
+  font-size: 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.statTooltipContent::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #0f172a;
+}
+
+.statTooltip:hover .statTooltipContent {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Stat Skeleton */
+.statSkeleton {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.statSkeletonHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.statSkeletonLabel {
+  width: 100px;
+  height: 16px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: statSkeletonShimmer 1.5s infinite;
+}
+
+.statSkeletonIcon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 12px;
+  animation: statSkeletonShimmer 1.5s infinite;
+}
+
+.statSkeletonValue {
+  width: 120px;
+  height: 36px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  animation: statSkeletonShimmer 1.5s infinite;
+}
+
+.statSkeletonTrend {
+  width: 80px;
+  height: 24px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 20px;
+  animation: statSkeletonShimmer 1.5s infinite;
+}
+
+@keyframes statSkeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Stat Difference Indicator */
+.statDiff {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.statDiff.positive {
+  color: #22c55e;
+}
+
+.statDiff.negative {
+  color: #ef4444;
+}
+
+.statDiff.neutral {
+  color: #64748b;
+}
+
+.statDiffIcon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Live Stat Indicator */
+.statLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statLiveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: statLivePulse 2s ease infinite;
+}
+
+@keyframes statLivePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+.statLiveLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Stat Period Selector */
+.statPeriod {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.statPeriodBtn {
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.statPeriodBtn:hover {
+  color: #0f172a;
+}
+
+.statPeriodBtn.active {
+  background: white;
+  color: #8b5cf6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   STAT CARD DARK MODE
+   ============================================ */
+
+:global([data-theme="dark"]) .statCard {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statCardLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statCardValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statCardIcon {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .statCardIcon.success {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+:global([data-theme="dark"]) .statCardIcon.warning {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+:global([data-theme="dark"]) .statCardIcon.danger {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+:global([data-theme="dark"]) .statCardIcon.info {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .statCardTrend.up {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+:global([data-theme="dark"]) .statCardTrend.down {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+:global([data-theme="dark"]) .statCardTrend.neutral {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+:global([data-theme="dark"]) .statCardDescription {
+  color: #64748b;
+}
+
+:global([data-theme="dark"]) .statCardFooter {
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statCardLink {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .statCardLink:hover {
+  color: #c4b5fd;
+}
+
+:global([data-theme="dark"]) .statCardProgressBar {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .statCardMini {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statCardMiniValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statCardMiniLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statCardHorizontal {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statCardHorizontalValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statCardHorizontalLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statComparison {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statComparisonTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statComparisonPeriod {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .statComparisonValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statComparisonLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statComparisonDivider {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statGoal {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statGoalIcon {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .statGoalTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statGoalCurrent {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statGoalTarget {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statGoalProgress {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .statGoalRemaining {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statGoalPercent {
+  color: #a78bfa;
+}
+
+:global([data-theme="dark"]) .statCircular {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statCircularBg {
+  stroke: #334155;
+}
+
+:global([data-theme="dark"]) .statCircularValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statCircularLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statList {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statListHeader {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statListTitle {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statListItem {
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statListItem:hover {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .statListItemIcon {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statListItemLabel {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statListItemValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statBadge {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statBadgeValue {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statBadgeLabel {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statSkeleton {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global([data-theme="dark"]) .statSkeletonLabel,
+:global([data-theme="dark"]) .statSkeletonIcon,
+:global([data-theme="dark"]) .statSkeletonValue,
+:global([data-theme="dark"]) .statSkeletonTrend {
+  background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+  background-size: 200% 100%;
+}
+
+:global([data-theme="dark"]) .statTooltipContent {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+:global([data-theme="dark"]) .statTooltipContent::after {
+  border-top-color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statPeriod {
+  background: #334155;
+}
+
+:global([data-theme="dark"]) .statPeriodBtn {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .statPeriodBtn:hover {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .statPeriodBtn.active {
+  background: #1e293b;
+  color: #a78bfa;
+}

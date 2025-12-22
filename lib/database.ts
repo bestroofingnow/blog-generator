@@ -1,7 +1,7 @@
 // lib/database.ts
 // Database CRUD operations for Neon DB with Drizzle ORM
 
-import { db, profiles, drafts, draftImages, dailyUsage, automationSettings, generationQueue, siteStructureProposals, eq, desc, and } from "./db";
+import { db, profiles, drafts, draftImages, dailyUsage, automationSettings, generationQueue, siteStructureProposals, workflowRuns, workflowTasks, imageQaLogs, eq, desc, and } from "./db";
 import type { CompanyProfile } from "./page-types";
 import type {
   ScheduleStatus,
@@ -14,6 +14,14 @@ import type {
   ProposalStatus,
   ProposedSiteStructure,
   GenerationProgress,
+  WorkflowRun,
+  WorkflowTask,
+  ImageQaLog,
+  WorkflowStatus,
+  WorkflowStage,
+  TaskStatus,
+  IntakeData,
+  ResearchData,
 } from "./db";
 
 // ============ PROFILE OPERATIONS ============
@@ -793,7 +801,8 @@ export async function getBlogSchedule(
 
 // ============ DAILY USAGE OPERATIONS ============
 
-const DAILY_BLOG_LIMIT = 20;
+// Set to 999999 to effectively disable limit (was 20)
+const DAILY_BLOG_LIMIT = 999999;
 
 /**
  * Get today's date in YYYY-MM-DD format (UTC)
@@ -1291,5 +1300,309 @@ export async function deleteSiteProposal(
   } catch (error) {
     console.error("Error deleting site proposal:", error);
     return { success: false, error: error as Error };
+  }
+}
+
+// ============ WORKFLOW OPERATIONS ============
+
+/**
+ * Create a new workflow run
+ */
+export async function createWorkflowRun(
+  userId: string,
+  params: {
+    proposalId?: string;
+    workflowType: "site_build" | "blog_batch" | "single_page";
+    initialStage?: WorkflowStage;
+  }
+): Promise<{ success: boolean; workflowId: string | null; error: Error | null }> {
+  try {
+    const result = await db
+      .insert(workflowRuns)
+      .values({
+        userId,
+        proposalId: params.proposalId || null,
+        workflowType: params.workflowType,
+        status: "pending",
+        currentStage: params.initialStage || "intake",
+        stageProgress: {},
+        errorLog: [],
+      })
+      .returning({ id: workflowRuns.id });
+
+    if (result.length === 0) {
+      return { success: false, workflowId: null, error: new Error("Failed to create workflow") };
+    }
+
+    return { success: true, workflowId: result[0].id, error: null };
+  } catch (error) {
+    console.error("Error creating workflow run:", error);
+    return { success: false, workflowId: null, error: error as Error };
+  }
+}
+
+/**
+ * Get a workflow run by ID
+ */
+export async function getWorkflowRun(
+  userId: string,
+  workflowId: string
+): Promise<WorkflowRun | null> {
+  try {
+    const result = await db
+      .select()
+      .from(workflowRuns)
+      .where(and(eq(workflowRuns.id, workflowId), eq(workflowRuns.userId, userId)))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("Error getting workflow run:", error);
+    return null;
+  }
+}
+
+/**
+ * Get all workflow runs for a user
+ */
+export async function getUserWorkflowRuns(
+  userId: string,
+  filters?: { status?: WorkflowStatus; limit?: number }
+): Promise<WorkflowRun[]> {
+  try {
+    let result = await db
+      .select()
+      .from(workflowRuns)
+      .where(eq(workflowRuns.userId, userId))
+      .orderBy(desc(workflowRuns.createdAt));
+
+    if (filters?.status) {
+      result = result.filter((r) => r.status === filters.status);
+    }
+
+    if (filters?.limit) {
+      result = result.slice(0, filters.limit);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error getting user workflow runs:", error);
+    return [];
+  }
+}
+
+/**
+ * Update a workflow run
+ */
+export async function updateWorkflowRun(
+  userId: string,
+  workflowId: string,
+  updates: Partial<{
+    status: WorkflowStatus;
+    currentStage: WorkflowStage;
+    stageProgress: Record<string, { completed: number; total: number; status: string }>;
+    knowledgeBaseSnapshot: unknown;
+    startedAt: Date;
+    pausedAt: Date | null;
+    completedAt: Date;
+  }>
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    await db
+      .update(workflowRuns)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(workflowRuns.id, workflowId), eq(workflowRuns.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating workflow run:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
+ * Start a workflow (set status to running)
+ */
+export async function startWorkflowRun(
+  userId: string,
+  workflowId: string
+): Promise<{ success: boolean; error: Error | null }> {
+  return updateWorkflowRun(userId, workflowId, {
+    status: "running",
+    startedAt: new Date(),
+  });
+}
+
+/**
+ * Get workflow tasks for a run
+ */
+export async function getWorkflowTasks(
+  workflowId: string,
+  filters?: { taskType?: WorkflowStage; status?: TaskStatus }
+): Promise<WorkflowTask[]> {
+  try {
+    let result = await db
+      .select()
+      .from(workflowTasks)
+      .where(eq(workflowTasks.workflowRunId, workflowId))
+      .orderBy(desc(workflowTasks.priority), workflowTasks.createdAt);
+
+    if (filters?.taskType) {
+      result = result.filter((t) => t.taskType === filters.taskType);
+    }
+
+    if (filters?.status) {
+      result = result.filter((t) => t.status === filters.status);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error getting workflow tasks:", error);
+    return [];
+  }
+}
+
+/**
+ * Get a single workflow task
+ */
+export async function getWorkflowTask(taskId: string): Promise<WorkflowTask | null> {
+  try {
+    const result = await db
+      .select()
+      .from(workflowTasks)
+      .where(eq(workflowTasks.id, taskId))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("Error getting workflow task:", error);
+    return null;
+  }
+}
+
+/**
+ * Get image QA logs for a task
+ */
+export async function getImageQaLogs(taskId: string): Promise<ImageQaLog[]> {
+  try {
+    const result = await db
+      .select()
+      .from(imageQaLogs)
+      .where(eq(imageQaLogs.taskId, taskId))
+      .orderBy(imageQaLogs.attempt);
+
+    return result;
+  } catch (error) {
+    console.error("Error getting image QA logs:", error);
+    return [];
+  }
+}
+
+/**
+ * Create an image QA log entry
+ */
+export async function createImageQaLog(
+  taskId: string,
+  log: {
+    attempt: number;
+    originalPrompt?: string;
+    claudeApproved?: boolean;
+    claudeFeedback?: string;
+    claudeScore?: number;
+    kimiApproved?: boolean;
+    kimiFeedback?: string;
+    kimiScore?: number;
+    textDetected?: boolean;
+    spellingErrors?: string[];
+    fixPrompt?: string;
+    regenerationModel?: string;
+    switchedToTextless?: boolean;
+    textlessPrompt?: string;
+    finalImageUrl?: string;
+    finalApproved?: boolean;
+  }
+): Promise<{ success: boolean; logId: string | null; error: Error | null }> {
+  try {
+    const result = await db
+      .insert(imageQaLogs)
+      .values({
+        taskId,
+        attempt: log.attempt,
+        originalPrompt: log.originalPrompt || null,
+        claudeApproved: log.claudeApproved ?? null,
+        claudeFeedback: log.claudeFeedback || null,
+        claudeScore: log.claudeScore ?? null,
+        kimiApproved: log.kimiApproved ?? null,
+        kimiFeedback: log.kimiFeedback || null,
+        kimiScore: log.kimiScore ?? null,
+        textDetected: log.textDetected ?? null,
+        spellingErrors: log.spellingErrors || null,
+        fixPrompt: log.fixPrompt || null,
+        regenerationModel: log.regenerationModel || null,
+        switchedToTextless: log.switchedToTextless ?? false,
+        textlessPrompt: log.textlessPrompt || null,
+        finalImageUrl: log.finalImageUrl || null,
+        finalApproved: log.finalApproved ?? null,
+      })
+      .returning({ id: imageQaLogs.id });
+
+    if (result.length === 0) {
+      return { success: false, logId: null, error: new Error("Failed to create log") };
+    }
+
+    return { success: true, logId: result[0].id, error: null };
+  } catch (error) {
+    console.error("Error creating image QA log:", error);
+    return { success: false, logId: null, error: error as Error };
+  }
+}
+
+/**
+ * Update proposal with workflow data (intake, research, blueprints)
+ */
+export async function updateProposalWorkflowData(
+  userId: string,
+  proposalId: string,
+  updates: Partial<{
+    workflowRunId: string;
+    intakeData: IntakeData;
+    researchData: ResearchData;
+    blueprintsData: Record<string, unknown>;
+  }>
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    await db
+      .update(siteStructureProposals)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(siteStructureProposals.id, proposalId), eq(siteStructureProposals.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating proposal workflow data:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
+ * Get incomplete workflows for recovery (for cron job)
+ */
+export async function getIncompleteWorkflows(): Promise<WorkflowRun[]> {
+  try {
+    const result = await db
+      .select()
+      .from(workflowRuns)
+      .where(eq(workflowRuns.status, "running"))
+      .orderBy(workflowRuns.startedAt);
+
+    return result;
+  } catch (error) {
+    console.error("Error getting incomplete workflows:", error);
+    return [];
   }
 }

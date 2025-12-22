@@ -7,10 +7,41 @@ import { authOptions } from "../auth/[...nextauth]";
 import { createSiteProposal, loadUserProfile } from "../../../lib/database";
 import type { ProposedSiteStructure } from "../../../lib/db";
 
+interface DeepResearchData {
+  research?: {
+    competitors?: Array<{ name: string; services: string[]; strengths: string[] }>;
+    industryTrends?: string[];
+    localMarketInsights?: string[];
+    searchTerms?: string[];
+  };
+  recommendations?: {
+    services?: Array<{
+      name: string;
+      rationale: string;
+      priority: "high" | "medium" | "low";
+      estimatedDemand: string;
+    }>;
+    locationPages?: Array<{
+      area: string;
+      rationale: string;
+      targetServices: string[];
+    }>;
+    blogTopics?: Array<{
+      title: string;
+      angle: string;
+      targetKeyword: string;
+      priority: number;
+    }>;
+    uniqueSellingPoints?: string[];
+    contentStrategy?: string;
+  };
+}
+
 interface ResearchRequest {
   industry?: string;
   targetCities?: string[];
   services?: string[];
+  deepResearch?: DeepResearchData;
 }
 
 interface ResearchResponse {
@@ -37,7 +68,7 @@ export default async function handler(
   }
 
   const userId = (session.user as { id: string }).id;
-  const { industry: requestedIndustry, targetCities, services } = req.body as ResearchRequest;
+  const { industry: requestedIndustry, targetCities, services, deepResearch } = req.body as ResearchRequest;
 
   try {
     // Get company profile for context
@@ -51,13 +82,14 @@ export default async function handler(
     const locations = targetCities || profile?.cities || [];
     const state = profile?.state || "";
 
-    // Generate site structure proposal using AI
+    // Generate site structure proposal using AI + deep research
     const proposedStructure = await generateSiteStructure({
       industry,
       companyName,
       services: companyServices,
       locations,
       state,
+      deepResearch,
     });
 
     // Calculate estimated pages
@@ -67,12 +99,13 @@ export default async function handler(
       proposedStructure.locationPages.length +
       proposedStructure.blogTopics.length;
 
-    // Generate AI reasoning
+    // Generate AI reasoning (enhanced with deep research insights)
     const aiReasoning = generateAIReasoning({
       industry,
       serviceCount: proposedStructure.servicePages.length,
       locationCount: proposedStructure.locationPages.length,
       blogCount: proposedStructure.blogTopics.length,
+      deepResearch,
     });
 
     // Create proposal in database
@@ -112,38 +145,96 @@ interface GenerateStructureParams {
   services: string[];
   locations: string[];
   state: string;
+  deepResearch?: DeepResearchData;
 }
 
 async function generateSiteStructure(params: GenerateStructureParams): Promise<ProposedSiteStructure> {
-  const { industry, companyName, services, locations, state } = params;
+  const { industry, companyName, services, locations, state, deepResearch } = params;
 
-  // Generate service pages based on services or industry defaults
-  const servicePages = services.length > 0
-    ? services.map((service) => ({
-        title: service,
-        slug: generateSlug(service),
-        description: `Professional ${service.toLowerCase()} services from ${companyName}`,
-        priority: 1,
+  // Use deep research recommendations if available, otherwise fall back to defaults
+  let servicePages: Array<{
+    title: string;
+    slug: string;
+    description: string;
+    priority: number;
+  }>;
+
+  if (deepResearch?.recommendations?.services && deepResearch.recommendations.services.length > 0) {
+    // Use AI-recommended services from deep research
+    servicePages = deepResearch.recommendations.services.map((service, index) => ({
+      title: service.name,
+      slug: generateSlug(service.name),
+      description: service.rationale,
+      priority: service.priority === "high" ? 1 : service.priority === "medium" ? 2 : 3,
+    }));
+  } else if (services.length > 0) {
+    // Use user-provided services
+    servicePages = services.map((service) => ({
+      title: service,
+      slug: generateSlug(service),
+      description: `Professional ${service.toLowerCase()} services from ${companyName}`,
+      priority: 1,
+    }));
+  } else {
+    // Fall back to industry defaults
+    servicePages = getDefaultServicesForIndustry(industry).map((service) => ({
+      title: service,
+      slug: generateSlug(service),
+      description: `Professional ${service.toLowerCase()} services`,
+      priority: 1,
+    }));
+  }
+
+  // Generate location pages from deep research or based on provided locations
+  let locationPages: Array<{
+    city: string;
+    state: string;
+    service: string;
+    slug: string;
+  }>;
+
+  if (deepResearch?.recommendations?.locationPages && deepResearch.recommendations.locationPages.length > 0) {
+    // Use AI-recommended location pages
+    locationPages = deepResearch.recommendations.locationPages.flatMap((loc) =>
+      loc.targetServices.slice(0, 2).map((service) => ({
+        city: loc.area,
+        state: state,
+        service: service,
+        slug: `${generateSlug(loc.area)}-${generateSlug(service)}`,
       }))
-    : getDefaultServicesForIndustry(industry).map((service) => ({
-        title: service,
-        slug: generateSlug(service),
-        description: `Professional ${service.toLowerCase()} services`,
-        priority: 1,
-      }));
+    );
+  } else if (locations.length > 0) {
+    // Use provided locations
+    locationPages = locations.flatMap((location) =>
+      servicePages.slice(0, 3).map((service) => ({
+        city: location,
+        state: state,
+        service: service.title,
+        slug: `${generateSlug(location)}-${service.slug}`,
+      }))
+    );
+  } else {
+    locationPages = [];
+  }
 
-  // Generate location pages if locations provided
-  const locationPages = locations.flatMap((location) =>
-    servicePages.slice(0, 3).map((service) => ({
-      city: location,
-      state: state,
-      service: service.title,
-      slug: `${generateSlug(location)}-${service.slug}`,
-    }))
-  );
+  // Generate blog topics from deep research or fall back to industry defaults
+  let blogTopics: Array<{
+    title: string;
+    keywords?: string[];
+    priority?: number;
+  }>;
 
-  // Generate blog topics based on industry
-  const blogTopics = generateBlogTopicsForIndustry(industry);
+  if (deepResearch?.recommendations?.blogTopics && deepResearch.recommendations.blogTopics.length > 0) {
+    // Use AI-recommended blog topics with unique angles
+    blogTopics = deepResearch.recommendations.blogTopics.map((topic) => ({
+      title: topic.title,
+      keywords: [topic.targetKeyword],
+      priority: topic.priority,
+    }));
+  } else {
+    // Fall back to industry defaults
+    blogTopics = generateBlogTopicsForIndustry(industry);
+  }
 
   // Create sitemap structure
   const allPages = [
@@ -337,11 +428,47 @@ interface ReasoningParams {
   serviceCount: number;
   locationCount: number;
   blogCount: number;
+  deepResearch?: DeepResearchData;
 }
 
 function generateAIReasoning(params: ReasoningParams): string {
-  const { industry, serviceCount, locationCount, blogCount } = params;
+  const { industry, serviceCount, locationCount, blogCount, deepResearch } = params;
 
+  // If we have deep research, provide enhanced reasoning
+  if (deepResearch?.recommendations) {
+    const competitors = deepResearch.research?.competitors?.slice(0, 3) || [];
+    const trends = deepResearch.research?.industryTrends?.slice(0, 3) || [];
+    const usps = deepResearch.recommendations.uniqueSellingPoints || [];
+    const strategy = deepResearch.recommendations.contentStrategy || "";
+
+    return `Based on **deep market analysis** of your local ${industry} market, we've created a personalized site strategy:
+
+**Market Intelligence:**
+${competitors.length > 0 ? `We analyzed ${competitors.length} local competitors including ${competitors.map(c => c.name).join(", ")}. ` : ""}${trends.length > 0 ? `Key industry trends include: ${trends.join("; ")}.` : ""}
+
+**Service Pages (${serviceCount}):**
+Each service page targets high-demand services in your market. These recommendations are based on competitor analysis and local search patterns. Pages will follow a proven conversion-focused structure.
+
+${locationCount > 0 ? `**Location Pages (${locationCount}):**
+AI-recommended location pages target nearby areas with high potential. Each page combines local relevance with your top services.` : ""}
+
+**Blog Content (${blogCount} topics):**
+Blog topics are specifically chosen based on local customer needs and keyword gaps left by competitors. Each topic has a unique angle to differentiate your content.
+
+${usps.length > 0 ? `**Recommended Differentiators:**
+${usps.map(usp => `- ${usp}`).join("\n")}` : ""}
+
+${strategy ? `**Content Strategy:**
+${strategy}` : ""}
+
+**Expected Outcomes:**
+- Stand out from ${competitors.length || "local"} competitors
+- Capture untapped local search traffic
+- Establish authority with unique content angles
+- Higher conversion rates through market-informed messaging`;
+  }
+
+  // Fallback to default reasoning
   return `Based on analysis of top-performing ${industry} websites and SEO best practices, I recommend the following site structure:
 
 **Service Pages (${serviceCount}):**

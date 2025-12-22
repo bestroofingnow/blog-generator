@@ -1,0 +1,378 @@
+/* Workflow Dashboard Styles */
+
+.dashboard {
+  background: var(--bg-secondary, #1a1a2e);
+  border-radius: 12px;
+  padding: 24px;
+  min-height: 400px;
+}
+
+.loading,
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color, #333);
+  border-top-color: var(--primary, #3b82f6);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error h3 {
+  color: #ef4444;
+  margin-bottom: 8px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color, #333);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerLeft h2 {
+  margin: 0;
+  color: var(--text-primary, #fff);
+  font-size: 1.5rem;
+}
+
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.statusBadge.pending { background: #6b7280; color: white; }
+.statusBadge.running { background: #3b82f6; color: white; }
+.statusBadge.paused { background: #f59e0b; color: white; }
+.statusBadge.completed { background: #10b981; color: white; }
+.statusBadge.failed { background: #ef4444; color: white; }
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton,
+.cancelButton,
+.retryButton {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.actionButton {
+  background: var(--primary, #3b82f6);
+  color: white;
+}
+
+.actionButton:hover {
+  background: #2563eb;
+}
+
+.cancelButton {
+  background: #ef4444;
+  color: white;
+}
+
+.cancelButton:hover {
+  background: #dc2626;
+}
+
+.retryButton {
+  background: #6b7280;
+  color: white;
+}
+
+.retryButton:hover {
+  background: #4b5563;
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #333);
+  background: transparent;
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: var(--bg-hover, #2a2a4e);
+}
+
+/* Health Banner */
+.healthBanner {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.healthBanner.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid #f59e0b;
+}
+
+.healthBanner.critical {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+}
+
+.healthBanner strong {
+  color: var(--text-primary, #fff);
+}
+
+.healthBanner ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+/* Progress Section */
+.progressSection {
+  margin-bottom: 24px;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 0.875rem;
+}
+
+.progressBar {
+  height: 8px;
+  background: var(--bg-tertiary, #2a2a4e);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.currentStage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--text-primary, #fff);
+  font-size: 0.9rem;
+}
+
+.stageIcon {
+  font-size: 1.25rem;
+}
+
+/* Pipeline */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.stageWrapper {
+  display: flex;
+  align-items: center;
+}
+
+.stageCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--bg-tertiary, #2a2a4e);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+.stageCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.stageCard.pending {
+  opacity: 0.5;
+}
+
+.stageCard.running,
+.stageCard.current {
+  border: 2px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.stageCard.completed {
+  border: 2px solid #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.stageCard.failed {
+  border: 2px solid #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.stageName {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #a0a0a0);
+  margin-top: 4px;
+}
+
+.taskCount {
+  font-size: 0.7rem;
+  color: var(--text-tertiary, #666);
+  margin-top: 2px;
+}
+
+.connector {
+  width: 20px;
+  height: 2px;
+  background: var(--border-color, #333);
+}
+
+.connector.active {
+  background: #10b981;
+}
+
+/* Task List */
+.taskList {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary, #1a1a2e);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.taskItem {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: var(--bg-tertiary, #2a2a4e);
+}
+
+.taskItem:last-child {
+  margin-bottom: 0;
+}
+
+.taskItem.done {
+  border-left: 3px solid #10b981;
+}
+
+.taskItem.running {
+  border-left: 3px solid #3b82f6;
+}
+
+.taskItem.failed {
+  border-left: 3px solid #ef4444;
+}
+
+.taskItem.queued {
+  border-left: 3px solid #6b7280;
+}
+
+.taskItem.blocked_user {
+  border-left: 3px solid #f59e0b;
+}
+
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.taskEntity {
+  color: var(--text-primary, #fff);
+  font-size: 0.875rem;
+}
+
+.taskStatus {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.taskStatus.done { background: #10b981; color: white; }
+.taskStatus.running { background: #3b82f6; color: white; }
+.taskStatus.queued { background: #6b7280; color: white; }
+.taskStatus.failed { background: #ef4444; color: white; }
+.taskStatus.blocked_user { background: #f59e0b; color: white; }
+
+.taskError {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+}
+
+.taskError p {
+  margin: 0 0 8px 0;
+  font-size: 0.8rem;
+  color: #ef4444;
+}
+
+/* Stats Footer */
+.statsFooter {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, #333);
+}
+
+.stat {
+  text-align: center;
+}
+
+.statValue {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #a0a0a0);
+}

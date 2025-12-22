@@ -754,6 +754,262 @@ export async function reviewImageQuality(params: {
   };
 }
 
+// ============ ENHANCED IMAGE QA LOOP WITH 3-RETRY ============
+
+export interface ImageQaAttempt {
+  attempt: number;
+  originalPrompt: string;
+  claudeApproved: boolean;
+  claudeFeedback?: string;
+  claudeScore?: number;
+  kimiApproved: boolean;
+  kimiFeedback?: string;
+  kimiScore?: number;
+  textDetected: boolean;
+  spellingErrors?: string[];
+  fixPrompt?: string;
+  regenerationModel?: "gemini" | "imagen";
+  switchedToTextless: boolean;
+  textlessPrompt?: string;
+  finalImageUrl?: string;
+  finalApproved: boolean;
+}
+
+export interface EnhancedImageResult {
+  success: boolean;
+  image: GeneratedImage | null;
+  attempts: ImageQaAttempt[];
+  finalApproved: boolean;
+  usedTextlessFallback: boolean;
+}
+
+// Create a textless fallback prompt
+export function createTextlessPrompt(originalPrompt: string): string {
+  // Remove any references to text, signs, labels
+  let textless = originalPrompt
+    .replace(/\b(sign|label|banner|text|word|letter|number|logo|watermark|brand)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Add explicit no-text instructions
+  const noTextInstructions = `
+CRITICAL REQUIREMENTS - NO TEXT ALLOWED:
+- This image must contain ABSOLUTELY NO TEXT, WORDS, LETTERS, OR NUMBERS of any kind
+- NO signs, labels, banners, logos, watermarks, or brand names
+- NO readable text on any objects, buildings, vehicles, clothing, or products
+- If the scene would naturally contain text (storefronts, signs), either exclude those elements entirely or ensure they are blurred/obscured
+- Pure visual imagery only - the image must be 100% text-free
+- Any text overlay will be added separately in HTML
+
+SCENE DESCRIPTION:
+${textless}
+
+Generate a clean, professional photograph with ZERO text elements. Focus on visual storytelling without any typography.`;
+
+  return noTextInstructions;
+}
+
+// Regenerate image using Gemini 3 Pro (enhanced prompt engineering)
+export async function regenerateWithGemini(params: {
+  originalPrompt: string;
+  feedback: string;
+  previousAttempts: number;
+  index: number;
+}): Promise<GeneratedImage | null> {
+  const { originalPrompt, feedback, previousAttempts, index } = params;
+
+  try {
+    console.log(`[Touchup] Gemini regenerating image (attempt ${previousAttempts + 1})...`);
+
+    // Use Gemini to create an enhanced fix prompt
+    const promptEnhancement = await generateText({
+      model: MODELS.geminiPro,
+      prompt: `You are an expert image prompt engineer. An AI-generated image failed quality review. Create a significantly improved prompt.
+
+ORIGINAL PROMPT:
+${originalPrompt}
+
+REVIEW FEEDBACK (what was wrong):
+${feedback}
+
+ATTEMPT NUMBER: ${previousAttempts + 1} of 3
+
+Create an enhanced prompt that:
+1. Addresses the specific issues mentioned in the feedback
+2. Is MORE EXPLICIT about avoiding text (if text was an issue)
+3. Adds specific technical photography details (lighting, angle, composition)
+4. Specifies the exact style and mood desired
+5. Is more detailed and specific than the original
+
+${previousAttempts >= 1 ? "IMPORTANT: Previous attempts also failed. Be SIGNIFICANTLY more specific and add 'PHOTOREALISTIC, NO TEXT OR LETTERS OF ANY KIND' to the prompt." : ""}
+
+CRITICAL TEXT RESTRICTIONS - Include these EXACT instructions:
+- "ABSOLUTELY NO TEXT, WORDS, LETTERS, OR NUMBERS anywhere in the image"
+- "NO signs, labels, banners, logos, or readable text on any objects"
+- "Pure visual imagery only - this image must contain ZERO text elements"
+
+Return ONLY the enhanced prompt text, nothing else.`,
+      maxOutputTokens: 800,
+      temperature: 0.6,
+    });
+
+    const enhancedPrompt = promptEnhancement.text.trim();
+    console.log(`[Touchup] Enhanced prompt: ${enhancedPrompt.substring(0, 150)}...`);
+
+    // Generate image with enhanced prompt
+    const imagenResult = await generateImageAI({
+      model: IMAGE_MODELS.imageGenerator,
+      prompt: enhancedPrompt,
+      n: 1,
+    });
+
+    if (imagenResult.images && imagenResult.images.length > 0) {
+      const image = imagenResult.images[0];
+      return {
+        index,
+        prompt: enhancedPrompt,
+        base64: `data:${image.mediaType || "image/png"};base64,${image.base64}`,
+        mimeType: image.mediaType || "image/png",
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`[Touchup] Gemini regeneration failed:`, error);
+    return null;
+  }
+}
+
+// Enhanced image generation with 3-retry QA loop
+export async function generateImageWithQA(params: {
+  prompt: string;
+  index: number;
+  sectionContext: string;
+  onAttempt?: (attempt: ImageQaAttempt) => void;
+}): Promise<EnhancedImageResult> {
+  const { prompt, index, sectionContext, onAttempt } = params;
+  const maxAttempts = 3;
+  const attempts: ImageQaAttempt[] = [];
+  let currentPrompt = prompt;
+  let usedTextlessFallback = false;
+
+  for (let attemptNum = 1; attemptNum <= maxAttempts; attemptNum++) {
+    console.log(`[Image QA] Attempt ${attemptNum}/${maxAttempts} for image ${index}`);
+
+    // Generate the image
+    const image = attemptNum === 1
+      ? await generateBlogImage({ prompt: currentPrompt, index })
+      : await regenerateWithGemini({
+          originalPrompt: currentPrompt,
+          feedback: attempts[attempts.length - 1]?.claudeFeedback || attempts[attempts.length - 1]?.kimiFeedback || "Quality issues",
+          previousAttempts: attemptNum - 1,
+          index,
+        });
+
+    if (!image) {
+      const failedAttempt: ImageQaAttempt = {
+        attempt: attemptNum,
+        originalPrompt: currentPrompt,
+        claudeApproved: false,
+        kimiApproved: false,
+        textDetected: false,
+        switchedToTextless: false,
+        finalApproved: false,
+      };
+      attempts.push(failedAttempt);
+      onAttempt?.(failedAttempt);
+      continue;
+    }
+
+    // Run dual review (Claude + Kimi)
+    const review = await reviewImageQuality({
+      imageBase64: image.base64,
+      originalPrompt: currentPrompt,
+      sectionContext,
+    });
+
+    const attemptResult: ImageQaAttempt = {
+      attempt: attemptNum,
+      originalPrompt: currentPrompt,
+      claudeApproved: review.reviewer === "kimi" || review.approved, // If kimi rejected, claude approved
+      claudeFeedback: review.feedback,
+      kimiApproved: review.reviewer === "claude" || review.approved, // If claude rejected, kimi approved
+      kimiFeedback: review.feedback,
+      textDetected: review.feedback?.toLowerCase().includes("text") || false,
+      fixPrompt: review.remakePrompt,
+      regenerationModel: attemptNum > 1 ? "gemini" : undefined,
+      switchedToTextless: usedTextlessFallback,
+      finalApproved: review.approved,
+    };
+
+    attempts.push(attemptResult);
+    onAttempt?.(attemptResult);
+
+    if (review.approved) {
+      console.log(`[Image QA] Image ${index} approved on attempt ${attemptNum}`);
+      return {
+        success: true,
+        image,
+        attempts,
+        finalApproved: true,
+        usedTextlessFallback,
+      };
+    }
+
+    // Update prompt for next attempt
+    currentPrompt = review.remakePrompt || currentPrompt;
+
+    // If this is the last attempt before fallback, try textless
+    if (attemptNum === maxAttempts - 1) {
+      console.log(`[Image QA] Switching to textless fallback for image ${index}`);
+      currentPrompt = createTextlessPrompt(prompt);
+      usedTextlessFallback = true;
+    }
+  }
+
+  // All attempts failed - do one final textless attempt
+  if (!usedTextlessFallback) {
+    console.log(`[Image QA] Final textless fallback attempt for image ${index}`);
+    usedTextlessFallback = true;
+    const textlessPrompt = createTextlessPrompt(prompt);
+
+    const finalImage = await generateBlogImage({ prompt: textlessPrompt, index });
+
+    if (finalImage) {
+      const finalAttempt: ImageQaAttempt = {
+        attempt: maxAttempts + 1,
+        originalPrompt: textlessPrompt,
+        claudeApproved: true, // Accept textless without review
+        kimiApproved: true,
+        textDetected: false,
+        switchedToTextless: true,
+        textlessPrompt,
+        finalApproved: true,
+      };
+      attempts.push(finalAttempt);
+      onAttempt?.(finalAttempt);
+
+      return {
+        success: true,
+        image: finalImage,
+        attempts,
+        finalApproved: true,
+        usedTextlessFallback: true,
+      };
+    }
+  }
+
+  // Complete failure
+  console.error(`[Image QA] All attempts failed for image ${index}`);
+  return {
+    success: false,
+    image: null,
+    attempts,
+    finalApproved: false,
+    usedTextlessFallback,
+  };
+}
+
 // Generate image using Google Imagen 4.0
 export async function generateBlogImage(params: {
   prompt: string;

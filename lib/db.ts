@@ -158,10 +158,13 @@ export const knowledgeBase = pgTable("knowledge_base", {
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  workflowRunId: uuid("workflow_run_id"), // Links to workflow that generated this entry
   category: text("category").notNull(), // services, usps, facts, locations, certifications, team, faqs, testimonials
   title: text("title").notNull(),
   content: text("content").notNull(),
   tags: jsonb("tags").$type<string[]>().default([]),
+  source: text("source"), // user_input | research | intake | competitor_analysis | ai_inference
+  confidence: integer("confidence").default(100), // 0-100 confidence score for AI-generated entries
   isAiGenerated: boolean("is_ai_generated").default(false),
   isVerified: boolean("is_verified").default(false), // User has reviewed and approved
   priority: integer("priority").default(0), // Higher priority = more likely to be included
@@ -250,14 +253,98 @@ export const siteStructureProposals = pgTable("site_structure_proposals", {
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  workflowRunId: uuid("workflow_run_id"), // Links to workflow_runs when using autopilot
   status: text("status").default("draft"), // draft | proposed | approved | generating | completed | failed
   industry: text("industry"),
   proposedStructure: jsonb("proposed_structure"), // { homepage, servicePages, locationPages, blogTopics, sitemap }
   aiReasoning: text("ai_reasoning"), // Why AI proposed this structure
   userModifications: jsonb("user_modifications"), // { removedPages, addedPages, changedPages }
   generationProgress: jsonb("generation_progress"), // { total, completed, current, errors }
+  // Autopilot workflow data
+  intakeData: jsonb("intake_data"), // User intake questionnaire responses
+  researchData: jsonb("research_data"), // Deep research results from Perplexity/Gemini
+  blueprintsData: jsonb("blueprints_data"), // Per-page blueprints from Kimi
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============ WORKFLOW ORCHESTRATION TABLES ============
+
+// Workflow runs - Track overall workflow execution with crash recovery
+export const workflowRuns = pgTable("workflow_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  proposalId: uuid("proposal_id").references(() => siteStructureProposals.id, { onDelete: "set null" }),
+  workflowType: text("workflow_type").notNull(), // site_build | blog_batch | single_page
+  status: text("status").default("pending"), // pending | running | paused | completed | failed
+  currentStage: text("current_stage"), // intake | research | kb_build | sitemap | blueprint | copywrite | image_generate | image_qa | image_fix | image_store | codegen | qa_site | publish
+  stageProgress: jsonb("stage_progress").$type<Record<string, { completed: number; total: number; status: string }>>(),
+  knowledgeBaseSnapshot: jsonb("knowledge_base_snapshot"), // Frozen KB at workflow start
+  errorLog: jsonb("error_log").$type<Array<{ stage: string; task: string; error: string; timestamp: string }>>(),
+  startedAt: timestamp("started_at"),
+  pausedAt: timestamp("paused_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Workflow tasks - Granular task tracking with dependencies
+export const workflowTasks = pgTable("workflow_tasks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workflowRunId: uuid("workflow_run_id")
+    .notNull()
+    .references(() => workflowRuns.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  taskType: text("task_type").notNull(), // intake | research | kb_build | sitemap | blueprint | copywrite | image_generate | image_qa | image_fix | image_store | codegen | qa_site | publish
+  targetEntity: text("target_entity"), // page slug, image id, etc.
+  status: text("status").default("queued"), // queued | running | blocked_user | failed | done
+  priority: integer("priority").default(0), // Higher = process first
+  dependsOn: jsonb("depends_on").$type<string[]>().default([]), // Array of task IDs this depends on
+  attempt: integer("attempt").default(1),
+  maxAttempts: integer("max_attempts").default(3),
+  agentAssigned: text("agent_assigned"), // llama | gemini | claude | kimi | imagen | perplexity
+  input: jsonb("input"), // Task-specific input data
+  output: jsonb("output"), // Task result data
+  errorMessage: text("error_message"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Image QA logs - Track image QA attempts for debugging and improvement
+export const imageQaLogs = pgTable("image_qa_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  taskId: uuid("task_id")
+    .notNull()
+    .references(() => workflowTasks.id, { onDelete: "cascade" }),
+  attempt: integer("attempt").notNull().default(1),
+  originalPrompt: text("original_prompt"),
+  // Claude review
+  claudeApproved: boolean("claude_approved"),
+  claudeFeedback: text("claude_feedback"),
+  claudeScore: integer("claude_score"), // 1-10 quality score
+  // Kimi review
+  kimiApproved: boolean("kimi_approved"),
+  kimiFeedback: text("kimi_feedback"),
+  kimiScore: integer("kimi_score"), // 1-10 quality score
+  // Text detection
+  textDetected: boolean("text_detected"),
+  spellingErrors: jsonb("spelling_errors").$type<string[]>(),
+  // Fix attempt data
+  fixPrompt: text("fix_prompt"), // Enhanced prompt for retry
+  regenerationModel: text("regeneration_model"), // gemini | imagen
+  // Fallback
+  switchedToTextless: boolean("switched_to_textless").default(false),
+  textlessPrompt: text("textless_prompt"),
+  // Final result
+  finalImageUrl: text("final_image_url"),
+  finalApproved: boolean("final_approved"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // ============ TYPE EXPORTS ============
@@ -280,11 +367,41 @@ export type GenerationQueueItem = typeof generationQueue.$inferSelect;
 export type NewGenerationQueueItem = typeof generationQueue.$inferInsert;
 export type SiteStructureProposal = typeof siteStructureProposals.$inferSelect;
 
+// Workflow types
+export type WorkflowRun = typeof workflowRuns.$inferSelect;
+export type NewWorkflowRun = typeof workflowRuns.$inferInsert;
+export type WorkflowTask = typeof workflowTasks.$inferSelect;
+export type NewWorkflowTask = typeof workflowTasks.$inferInsert;
+export type ImageQaLog = typeof imageQaLogs.$inferSelect;
+export type NewImageQaLog = typeof imageQaLogs.$inferInsert;
+
 // Automation status types
 export type QueueStatus = "pending" | "generating" | "generated" | "scheduled" | "published" | "failed";
 export type ProposalStatus = "draft" | "proposed" | "approved" | "generating" | "completed" | "failed";
 export type AutoPostPlatform = "wordpress" | "ghl";
 export type AutoCreateMode = "automatic" | "queue_for_review";
+
+// Workflow status types
+export type WorkflowStatus = "pending" | "running" | "paused" | "completed" | "failed";
+export type WorkflowType = "site_build" | "blog_batch" | "single_page";
+export type WorkflowStage =
+  | "intake"
+  | "research"
+  | "kb_build"
+  | "sitemap"
+  | "blueprint"
+  | "copywrite"
+  | "image_generate"
+  | "image_qa"
+  | "image_fix"
+  | "image_store"
+  | "codegen"
+  | "qa_site"
+  | "publish";
+export type TaskStatus = "queued" | "running" | "blocked_user" | "failed" | "done";
+export type TaskType = WorkflowStage; // Same as workflow stages
+export type AgentType = "llama" | "gemini" | "claude" | "kimi" | "imagen" | "perplexity";
+export type KnowledgeSource = "user_input" | "research" | "intake" | "competitor_analysis" | "ai_inference";
 
 // Proposed site structure interface
 export interface ProposedSiteStructure {
@@ -335,6 +452,146 @@ export interface ScheduledBlog {
   scheduledPublishAt: Date | null;
   scheduleStatus: ScheduleStatus;
   featuredImageUrl?: string;
+}
+
+// ============ WORKFLOW INTERFACES ============
+
+// Stage progress tracking
+export interface StageProgress {
+  completed: number;
+  total: number;
+  status: "pending" | "running" | "completed" | "failed";
+}
+
+// Workflow error log entry
+export interface WorkflowError {
+  stage: string;
+  task: string;
+  error: string;
+  timestamp: string;
+}
+
+// Intake data from questionnaire
+export interface IntakeData {
+  businessName: string;
+  industry: string;
+  city: string;
+  state: string;
+  services?: string[];
+  targetAudience?: string;
+  competitors?: string[];
+  uniqueValue?: string;
+  goals?: string[];
+  additionalInfo?: string;
+}
+
+// Research data from Perplexity/Gemini
+export interface ResearchData {
+  competitors: Array<{
+    name: string;
+    services: string[];
+    strengths: string[];
+    weaknesses?: string[];
+    website?: string;
+  }>;
+  industryTrends: string[];
+  localMarketInsights: string[];
+  searchTerms: string[];
+  customerPains?: string[];
+  opportunities?: string[];
+}
+
+// Blueprint data for individual pages
+export interface PageBlueprint {
+  pageType: "homepage" | "service" | "location" | "blog";
+  slug: string;
+  title: string;
+  sections: Array<{
+    type: string;
+    content?: string;
+    imagePrompt?: string;
+    schema?: Record<string, unknown>;
+  }>;
+  seo: {
+    metaTitle: string;
+    metaDescription: string;
+    primaryKeyword: string;
+    secondaryKeywords: string[];
+  };
+  estimatedWordCount: number;
+}
+
+// Image QA review result
+export interface ImageQaResult {
+  approved: boolean;
+  score: number; // 1-10
+  feedback: string;
+  textDetected: boolean;
+  spellingErrors?: string[];
+  suggestions?: string[];
+}
+
+// Task input/output interfaces for type safety
+export interface TaskInput {
+  // Common fields
+  pageSlug?: string;
+  imageId?: string;
+
+  // Intake
+  questionnaire?: IntakeData;
+
+  // Research
+  industry?: string;
+  location?: { city: string; state: string };
+
+  // Blueprint
+  pageType?: string;
+  pageTitle?: string;
+
+  // Copywrite
+  blueprint?: PageBlueprint;
+  knowledgeContext?: string;
+
+  // Image
+  prompt?: string;
+  section?: string;
+  previousAttempts?: number;
+
+  // Generic
+  [key: string]: unknown;
+}
+
+export interface TaskOutput {
+  // Common fields
+  success: boolean;
+  error?: string;
+
+  // Research output
+  research?: ResearchData;
+
+  // KB output
+  entriesCreated?: number;
+
+  // Blueprint output
+  blueprint?: PageBlueprint;
+
+  // Copywrite output
+  content?: string;
+  wordCount?: number;
+
+  // Image output
+  imageUrl?: string;
+  storagePath?: string;
+
+  // QA output
+  qaResult?: ImageQaResult;
+  fixPrompt?: string;
+
+  // Compile output
+  html?: string;
+
+  // Generic
+  [key: string]: unknown;
 }
 
 // Re-export drizzle operators

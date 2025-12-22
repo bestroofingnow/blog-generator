@@ -23,6 +23,45 @@ interface BlogTopic {
   title: string;
   keywords?: string[];
   priority?: number;
+  angle?: string;
+  targetKeyword?: string;
+}
+
+// Deep research types
+interface Competitor {
+  name: string;
+  services: string[];
+  strengths: string[];
+}
+
+interface DeepResearchData {
+  research: {
+    competitors: Competitor[];
+    industryTrends: string[];
+    localMarketInsights: string[];
+    searchTerms: string[];
+  };
+  recommendations: {
+    services: Array<{
+      name: string;
+      rationale: string;
+      priority: "high" | "medium" | "low";
+      estimatedDemand: string;
+    }>;
+    locationPages: Array<{
+      area: string;
+      rationale: string;
+      targetServices: string[];
+    }>;
+    blogTopics: Array<{
+      title: string;
+      angle: string;
+      targetKeyword: string;
+      priority: number;
+    }>;
+    uniqueSellingPoints: string[];
+    contentStrategy: string;
+  };
 }
 
 interface ProposedStructure {
@@ -52,7 +91,7 @@ interface SiteBuilderWizardProps {
   onSuccess?: () => void;
 }
 
-type WizardStep = "industry" | "research" | "review" | "confirm" | "progress";
+type WizardStep = "industry" | "deep-research" | "research" | "review" | "confirm" | "progress";
 
 export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWizardProps) {
   const [step, setStep] = useState<WizardStep>("industry");
@@ -73,6 +112,9 @@ export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWiz
     completed: number;
     current: string;
   } | null>(null);
+  const [deepResearch, setDeepResearch] = useState<DeepResearchData | null>(null);
+  const [researchPhase, setResearchPhase] = useState<string>("");
+  const [showResearchDetails, setShowResearchDetails] = useState(false);
 
   const INDUSTRY_OPTIONS = [
     "HVAC",
@@ -100,6 +142,9 @@ export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWiz
       setSelectedPages(new Set());
       setError(null);
       setGenerationProgress(null);
+      setDeepResearch(null);
+      setResearchPhase("");
+      setShowResearchDetails(false);
     }
   }, [isOpen]);
 
@@ -118,15 +163,45 @@ export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWiz
       return;
     }
 
-    setStep("research");
+    setStep("deep-research");
     setIsResearching(true);
     setError(null);
+    setResearchPhase("Analyzing your market...");
 
     try {
+      // Step 1: Deep research with Perplexity + Claude
+      setResearchPhase("Researching competitors in your area...");
+
+      const deepResearchResponse = await fetch("/api/site-builder/deep-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          industry: finalIndustry,
+          businessName: "", // Could be from user profile
+          city: "", // Could be from user profile
+          state: "", // Could be from user profile
+        }),
+      });
+
+      const deepResearchData = await deepResearchResponse.json();
+
+      if (!deepResearchData.success) {
+        console.warn("Deep research failed, continuing with default research");
+      } else {
+        setDeepResearch(deepResearchData);
+      }
+
+      setResearchPhase("Generating site structure...");
+      setStep("research");
+
+      // Step 2: Generate site structure using the research
       const response = await fetch("/api/site-builder/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ industry: finalIndustry }),
+        body: JSON.stringify({
+          industry: finalIndustry,
+          deepResearch: deepResearchData.success ? deepResearchData : null,
+        }),
       });
 
       const data = await response.json();
@@ -289,13 +364,13 @@ export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWiz
 
           {/* Step Indicator */}
           <div className={styles.stepIndicator}>
-            {(["industry", "research", "review", "confirm", "progress"] as WizardStep[]).map((s, i) => (
+            {(["industry", "deep-research", "research", "review", "progress"] as WizardStep[]).map((s, i) => (
               <div
                 key={s}
                 className={`${styles.stepDot} ${
                   step === s ? styles.active : ""
                 } ${
-                  ["industry", "research", "review", "confirm", "progress"].indexOf(step) > i
+                  ["industry", "deep-research", "research", "review", "progress"].indexOf(step) > i
                     ? styles.completed
                     : ""
                 }`}
@@ -358,7 +433,75 @@ export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWiz
               </motion.div>
             )}
 
-            {/* Step 2: Research Loading */}
+            {/* Step 2: Deep Research with AI */}
+            {step === "deep-research" && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className={styles.wizardStep}
+              >
+                <div className={styles.researchLoading}>
+                  <div className={styles.aiSpinner}>
+                    <svg viewBox="0 0 24 24" width="48" height="48">
+                      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.2" />
+                      <path
+                        d="M12 2a10 10 0 0 1 10 10"
+                        fill="none"
+                        stroke="url(#gradient)"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      >
+                        <animateTransform
+                          attributeName="transform"
+                          type="rotate"
+                          from="0 12 12"
+                          to="360 12 12"
+                          dur="1s"
+                          repeatCount="indefinite"
+                        />
+                      </path>
+                      <defs>
+                        <linearGradient id="gradient">
+                          <stop offset="0%" stopColor="#667eea" />
+                          <stop offset="100%" stopColor="#764ba2" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                  <h3>Deep Industry Research</h3>
+                  <p>{researchPhase}</p>
+                  <div className={styles.researchSteps}>
+                    <div className={styles.researchStepItem}>
+                      <span className={researchPhase.includes("competitors") ? styles.loading : styles.checkmark}>
+                        {researchPhase.includes("competitors") ? "..." : "✓"}
+                      </span>
+                      Analyzing local competitors
+                    </div>
+                    <div className={styles.researchStepItem}>
+                      <span className={researchPhase.includes("trends") ? styles.loading : researchPhase.includes("competitors") ? styles.pending : styles.checkmark}>
+                        {researchPhase.includes("trends") ? "..." : researchPhase.includes("competitors") ? "○" : "✓"}
+                      </span>
+                      Identifying industry trends
+                    </div>
+                    <div className={styles.researchStepItem}>
+                      <span className={researchPhase.includes("market") ? styles.loading : researchPhase.includes("competitors") || researchPhase.includes("trends") ? styles.pending : styles.checkmark}>
+                        {researchPhase.includes("market") ? "..." : (researchPhase.includes("competitors") || researchPhase.includes("trends")) ? "○" : "✓"}
+                      </span>
+                      Discovering market opportunities
+                    </div>
+                    <div className={styles.researchStepItem}>
+                      <span className={researchPhase.includes("Generating") ? styles.loading : styles.pending}>
+                        {researchPhase.includes("Generating") ? "..." : "○"}
+                      </span>
+                      Generating unique recommendations
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 3: Research Loading */}
             {step === "research" && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -424,9 +567,78 @@ export function SiteBuilderWizard({ isOpen, onClose, onSuccess }: SiteBuilderWiz
               >
                 <h3>Review Site Structure</h3>
                 <p className={styles.stepDescription}>
-                  Based on our analysis of top {proposal.industry} websites, here&apos;s our recommended
-                  structure. Uncheck any pages you don&apos;t want to include.
+                  Based on our deep analysis of your market and competitors, here&apos;s your
+                  personalized site structure. Uncheck any pages you don&apos;t want.
                 </p>
+
+                {/* Research Insights */}
+                {deepResearch && (
+                  <div className={styles.researchInsights}>
+                    <button
+                      type="button"
+                      className={styles.insightsToggle}
+                      onClick={() => setShowResearchDetails(!showResearchDetails)}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                      View Market Research Insights
+                      <span className={styles.chevron}>{showResearchDetails ? "▲" : "▼"}</span>
+                    </button>
+
+                    {showResearchDetails && (
+                      <div className={styles.insightsContent}>
+                        {/* Competitors */}
+                        {deepResearch.research?.competitors?.length > 0 && (
+                          <div className={styles.insightSection}>
+                            <h5>Local Competitors Analyzed</h5>
+                            <ul>
+                              {deepResearch.research.competitors.slice(0, 3).map((comp, i) => (
+                                <li key={i}>
+                                  <strong>{comp.name}</strong>: {comp.services.slice(0, 3).join(", ")}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Industry Trends */}
+                        {deepResearch.research?.industryTrends?.length > 0 && (
+                          <div className={styles.insightSection}>
+                            <h5>Industry Trends</h5>
+                            <ul>
+                              {deepResearch.research.industryTrends.slice(0, 3).map((trend, i) => (
+                                <li key={i}>{trend}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* USPs */}
+                        {deepResearch.recommendations?.uniqueSellingPoints?.length > 0 && (
+                          <div className={styles.insightSection}>
+                            <h5>Recommended Differentiators</h5>
+                            <ul>
+                              {deepResearch.recommendations.uniqueSellingPoints.map((usp, i) => (
+                                <li key={i}>{usp}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Content Strategy */}
+                        {deepResearch.recommendations?.contentStrategy && (
+                          <div className={styles.insightSection}>
+                            <h5>Content Strategy</h5>
+                            <p>{deepResearch.recommendations.contentStrategy}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className={styles.proposalSummary}>
                   <span className={styles.summaryItem}>

@@ -4,5 +4,11 @@
     "pages/api/**/*.ts": {
       "maxDuration": 180
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/workflow-processor",
+      "schedule": "* * * * *"
+    }
+  ]
 }
