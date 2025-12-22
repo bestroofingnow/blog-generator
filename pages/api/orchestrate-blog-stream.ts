@@ -67,6 +67,7 @@ async function callInternalApi(endpoint: string, body: unknown): Promise<unknown
 
 function insertImagesIntoContent(content: string, imageUrls: string[], seoData: SEOData): string {
   let result = content;
+  let featuredImageFound = false;
 
   // Debug: Log what we're working with
   console.log(`[Image Insertion] Processing ${imageUrls.length} images`);
@@ -74,6 +75,20 @@ function insertImagesIntoContent(content: string, imageUrls: string[], seoData: 
     const urlPreview = url ? (url.startsWith('data:') ? 'base64 data URL' : url.substring(0, 80)) : 'EMPTY';
     console.log(`  Image ${i}: ${urlPreview}`);
   });
+
+  // Helper to generate alt and title text for an image
+  const getImageText = (index: number, isFeatured: boolean = false): { alt: string; title: string } => {
+    if (isFeatured || index === 0) {
+      return {
+        alt: `${seoData.primaryKeyword} - Featured Image`,
+        title: `${seoData.primaryKeyword} | ${seoData.metaTitle || 'Featured Image'}`,
+      };
+    }
+    return {
+      alt: `${seoData.primaryKeyword} - Image ${index + 1}`,
+      title: `${seoData.primaryKeyword} - Section ${index}`,
+    };
+  };
 
   // First pass: Replace src="[IMAGE:X]" with actual URLs (most common case)
   // This handles cases where the AI generates <img src="[IMAGE:0]" ...>
@@ -99,13 +114,12 @@ function insertImagesIntoContent(content: string, imageUrls: string[], seoData: 
 
     // Handle both [IMAGE:X] and [IMAGE: X] (with space)
     const placeholders = [`[IMAGE:${index}]`, `[IMAGE: ${index}]`];
+    const isFeatured = index === 0;
+    const { alt: altText, title: titleText } = getImageText(index, isFeatured);
+    const featuredClass = isFeatured ? ' featured-image' : '';
 
     placeholders.forEach(placeholder => {
       if (result.includes(placeholder)) {
-        const altText = index === 0
-          ? `${seoData.primaryKeyword} - Featured Image`
-          : `${seoData.primaryKeyword} - Image ${index}`;
-
         // Only replace standalone placeholders (not inside src="...")
         // Split and check context to avoid double-wrapping
         const parts = result.split(placeholder);
@@ -123,7 +137,9 @@ function insertImagesIntoContent(content: string, imageUrls: string[], seoData: 
               newParts.push(url);
             } else {
               // Standalone placeholder - create full img tag with proper styling
-              newParts.push(`<figure class="blog-image"><img src="${url}" alt="${altText}" width="800" height="600" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;" /><figcaption>${altText}</figcaption></figure>`);
+              // Mark first image as featured
+              if (isFeatured) featuredImageFound = true;
+              newParts.push(`<figure class="blog-image${featuredClass}"><img src="${url}" alt="${altText}" title="${titleText}" width="800" height="600" loading="${isFeatured ? 'eager' : 'lazy'}" style="max-width:100%;height:auto;border-radius:8px;"${isFeatured ? ' data-featured="true"' : ''} /><figcaption>${altText}</figcaption></figure>`);
             }
           }
         }
@@ -140,37 +156,103 @@ function insertImagesIntoContent(content: string, imageUrls: string[], seoData: 
     remainingPlaceholders.forEach(placeholder => {
       const match = placeholder.match(/\d+/);
       const index = match ? parseInt(match[0], 10) : 0;
+      const isFeatured = index === 0 && !featuredImageFound;
+      const { alt: altText, title: titleText } = getImageText(index, isFeatured);
       const fallbackUrl = `https://placehold.co/800x400/667eea/ffffff?text=${encodeURIComponent(`${seoData.primaryKeyword} ${index + 1}`)}`;
-      const altText = `${seoData.primaryKeyword} - Image ${index + 1}`;
+      const featuredClass = isFeatured ? ' featured-image' : '';
+
+      if (isFeatured) featuredImageFound = true;
       result = result.replace(
         placeholder,
-        `<figure class="blog-image"><img src="${fallbackUrl}" alt="${altText}" width="800" height="400" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;" /></figure>`
+        `<figure class="blog-image${featuredClass}"><img src="${fallbackUrl}" alt="${altText}" title="${titleText}" width="800" height="400" loading="${isFeatured ? 'eager' : 'lazy'}" style="max-width:100%;height:auto;border-radius:8px;"${isFeatured ? ' data-featured="true"' : ''} /></figure>`
       );
     });
   }
 
-  // Fourth pass: Ensure all img tags have proper attributes for display
-  // Fix any img tags without width/height or with broken src
+  // Fourth pass: Ensure ALL img tags have alt, title, and proper attributes - NO EXCEPTIONS
+  let imageCounter = 0;
   result = result.replace(/<img([^>]*?)>/gi, (match, attrs) => {
+    imageCounter++;
+    const isFirstImage = imageCounter === 1;
+    const isFeatured = isFirstImage && !featuredImageFound;
+
     // Check if src is present and valid
     const srcMatch = attrs.match(/src=["']([^"']+)["']/);
     if (!srcMatch || !srcMatch[1] || srcMatch[1] === '' || srcMatch[1] === 'undefined') {
-      // Replace with placeholder
+      // Replace with placeholder - ALWAYS with alt and title
+      const { alt: altText, title: titleText } = getImageText(imageCounter - 1, isFeatured);
       const fallbackUrl = `https://placehold.co/800x400/667eea/ffffff?text=Image`;
-      return `<img src="${fallbackUrl}" alt="${seoData.primaryKeyword}" width="800" height="400" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;" />`;
+      if (isFeatured) featuredImageFound = true;
+      return `<img src="${fallbackUrl}" alt="${altText}" title="${titleText}" width="800" height="400" loading="${isFeatured ? 'eager' : 'lazy'}" style="max-width:100%;height:auto;border-radius:8px;"${isFeatured ? ' class="featured-image" data-featured="true"' : ''} />`;
     }
 
-    // Ensure loading="lazy" and style for proper display
     let newAttrs = attrs;
-    if (!attrs.includes('loading=')) {
-      newAttrs += ' loading="lazy"';
+
+    // ALWAYS ensure alt attribute exists
+    if (!attrs.match(/\balt=/i)) {
+      const { alt: altText } = getImageText(imageCounter - 1, isFeatured);
+      newAttrs += ` alt="${altText}"`;
+      console.log(`[Image Insertion] Added missing alt to image ${imageCounter}: "${altText}"`);
     }
+
+    // ALWAYS ensure title attribute exists
+    if (!attrs.match(/\btitle=/i)) {
+      const { title: titleText } = getImageText(imageCounter - 1, isFeatured);
+      newAttrs += ` title="${titleText}"`;
+      console.log(`[Image Insertion] Added missing title to image ${imageCounter}: "${titleText}"`);
+    }
+
+    // Mark first image as featured if not already done
+    if (isFeatured) {
+      featuredImageFound = true;
+      if (!attrs.includes('data-featured')) {
+        newAttrs += ' data-featured="true"';
+      }
+      if (!attrs.includes('featured-image')) {
+        // Add featured-image class
+        if (attrs.match(/class=["']([^"']+)["']/)) {
+          newAttrs = newAttrs.replace(/class=["']([^"']+)["']/, 'class="$1 featured-image"');
+        } else {
+          newAttrs += ' class="featured-image"';
+        }
+      }
+      // Featured image should load eagerly
+      newAttrs = newAttrs.replace(/loading=["']lazy["']/i, 'loading="eager"');
+      if (!attrs.includes('loading=')) {
+        newAttrs += ' loading="eager"';
+      }
+    } else {
+      // Ensure loading="lazy" for non-featured images
+      if (!attrs.includes('loading=')) {
+        newAttrs += ' loading="lazy"';
+      }
+    }
+
     if (!attrs.includes('style=')) {
       newAttrs += ' style="max-width:100%;height:auto;border-radius:8px;"';
     }
 
     return `<img${newAttrs}>`;
   });
+
+  // Final validation log
+  const imgTagCount = (result.match(/<img/gi) || []).length;
+  const altCount = (result.match(/\balt=/gi) || []).length;
+  const titleCount = (result.match(/\btitle=/gi) || []).length;
+  const featuredCount = (result.match(/data-featured="true"/gi) || []).length;
+
+  console.log(`[Image Insertion] Final validation:`);
+  console.log(`  - Total images: ${imgTagCount}`);
+  console.log(`  - Images with alt: ${altCount}`);
+  console.log(`  - Images with title: ${titleCount}`);
+  console.log(`  - Featured images: ${featuredCount}`);
+
+  if (altCount < imgTagCount || titleCount < imgTagCount) {
+    console.error(`[Image Insertion] WARNING: Some images missing alt or title attributes!`);
+  }
+  if (featuredCount === 0 && imgTagCount > 0) {
+    console.error(`[Image Insertion] WARNING: No featured image found!`);
+  }
 
   return result;
 }
