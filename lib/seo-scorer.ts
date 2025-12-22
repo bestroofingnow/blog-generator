@@ -308,7 +308,8 @@ export function scoreContent({
 }
 
 /**
- * Generate a rewrite prompt based on SEO score results
+ * Generate a targeted adjustment prompt based on SEO score results
+ * This creates specific, surgical edits rather than a full rewrite
  */
 export function generateRewritePrompt(
   originalContent: string,
@@ -320,33 +321,58 @@ export function generateRewritePrompt(
     .map((imp, i) => `${i + 1}. ${imp}`)
     .join("\n");
 
-  return `You are an expert SEO content optimizer. The current content scored ${scoreResult.overall}/100 but needs to score 90+ to pass.
+  // Calculate specific adjustments needed
+  const plainText = stripHtml(originalContent);
+  const currentWordCount = plainText.split(/\\s+/).filter((w) => w.length > 0).length;
+  const wordsNeeded = Math.max(0, targetWordCount - currentWordCount);
+  const keywordCount = countKeyword(plainText, primaryKeyword);
+  const keywordDensity = currentWordCount > 0 ? (keywordCount / currentWordCount) * 100 : 0;
+  const targetKeywordCount = Math.ceil((1.2 * currentWordCount) / 100); // Target 1.2% density
 
-CURRENT SEO SCORES:
+  return `You are an expert SEO content editor. Make TARGETED ADJUSTMENTS to improve this content from ${scoreResult.overall}/100 to 90+.
+
+CRITICAL: Do NOT rewrite the entire blog. Make SURGICAL EDITS only where needed.
+
+CURRENT SEO ANALYSIS:
 - Keyword Usage: ${scoreResult.metrics.keywordUsage.score}/100 - ${scoreResult.metrics.keywordUsage.detail}
 - Content Length: ${scoreResult.metrics.contentLength.score}/100 - ${scoreResult.metrics.contentLength.detail}
 - Readability: ${scoreResult.metrics.readability.score}/100 - ${scoreResult.metrics.readability.detail}
 - Heading Structure: ${scoreResult.metrics.headingStructure.score}/100 - ${scoreResult.metrics.headingStructure.detail}
 - Image Optimization: ${scoreResult.metrics.imageOptimization.score}/100 - ${scoreResult.metrics.imageOptimization.detail}
 
-REQUIRED IMPROVEMENTS TO REACH 90+:
+SPECIFIC ADJUSTMENTS NEEDED:
 ${improvementsList}
 
 PRIMARY KEYWORD: "${primaryKeyword}"
-TARGET WORD COUNT: ${targetWordCount}+ words
+CURRENT STATS:
+- Current word count: ${currentWordCount} (target: ${targetWordCount}+)
+- Current keyword mentions: ${keywordCount} (target: ~${targetKeywordCount} for 1.2% density)
+- Current density: ${keywordDensity.toFixed(2)}% (target: 0.8-2.0%)
 
-REWRITE INSTRUCTIONS:
-1. Keep the same overall structure and topic
-2. Address EVERY improvement listed above
-3. Ensure primary keyword appears naturally 0.8-2.0% density
-4. Use exactly ONE H1 heading at the start containing the primary keyword
-5. Include 3-6 H2 subheadings for clear structure
-6. Write at a 6th-8th grade reading level (short sentences, simple words)
-7. Ensure all image placeholders have descriptive alt text with keywords
-8. Maintain the professional yet engaging tone
+ADJUSTMENT RULES (follow strictly):
+1. PRESERVE 90%+ of the existing content exactly as written
+2. Only modify sentences/paragraphs that directly address the improvements needed
+3. If keyword density is low: Add the keyword naturally to 2-3 existing sentences
+4. If content is short: Expand 2-3 paragraphs with additional relevant details (add ${wordsNeeded > 0 ? wordsNeeded : 100}+ words)
+5. If H1 is missing keyword: Only modify the H1 tag to include "${primaryKeyword}"
+6. If readability is low: Shorten the longest sentences, don't rewrite everything
+7. If image alt text is missing keywords: Only update the alt attributes
+8. Keep all HTML structure, classes, and formatting intact
+9. Keep all [IMAGE:X] placeholders exactly as they are
 
-OUTPUT: Return ONLY the improved HTML content. No explanations.
+WRONG APPROACH (do NOT do this):
+- Rewriting paragraphs that are already good
+- Changing the writing style throughout
+- Removing existing content
+- Restructuring sections unnecessarily
 
-CURRENT CONTENT TO IMPROVE:
+CORRECT APPROACH (do this):
+- Find specific sentences where keyword can be added naturally
+- Add 1-2 sentences to expand thin paragraphs
+- Modify only the specific elements that need fixing
+
+OUTPUT: Return the ADJUSTED HTML content with minimal changes. No explanations.
+
+CONTENT TO ADJUST:
 ${originalContent}`;
 }

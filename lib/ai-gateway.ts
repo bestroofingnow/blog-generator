@@ -488,37 +488,45 @@ IMPORTANT:
 }
 
 /**
- * Improve content for SEO based on specific feedback
- * Uses Claude to rewrite content addressing SEO score issues
+ * Make targeted SEO adjustments to content
+ * Uses Claude to make surgical edits, NOT full rewrites
  */
-export async function improveContentForSEO(rewritePrompt: string): Promise<string> {
+export async function improveContentForSEO(adjustmentPrompt: string): Promise<string> {
   try {
-    console.log("[Craftsman] Improving content for SEO...");
+    console.log("[Craftsman] Making targeted SEO adjustments...");
 
     const result = await generateText({
       model: MODELS.contentWriter,
-      system: `You are an expert SEO content optimizer. Your job is to improve existing blog content to achieve a 90+ SEO score.
+      system: `You are an expert SEO content EDITOR (not rewriter). Your job is to make MINIMAL, TARGETED adjustments to existing blog content.
 
-CRITICAL REQUIREMENTS:
-- Maintain the same overall topic and structure
-- Ensure proper keyword density (0.8-2.0%)
-- Use exactly ONE H1 heading with the primary keyword
-- Include 3-6 H2 subheadings
-- Write at 6th-8th grade reading level
-- Keep content engaging and human-like
-- Ensure all images have descriptive alt text
-- Output ONLY the improved HTML content - no explanations
-- Write ONLY in American English`,
-      prompt: rewritePrompt,
+CRITICAL - READ CAREFULLY:
+- Do NOT rewrite the entire content
+- Make SURGICAL EDITS only - change specific words, phrases, or sentences
+- PRESERVE at least 90% of the original content exactly as written
+- Only modify what is specifically needed to improve SEO scores
+- Keep the same writing style, voice, and structure
+- Do NOT add unnecessary filler content
+- Do NOT remove good content that already exists
+
+TARGETED ADJUSTMENTS ONLY:
+1. Add primary keyword to 2-3 strategic locations if density is low
+2. Modify only the H1 heading if it's missing the keyword
+3. Expand only thin paragraphs that need more content
+4. Update only image alt attributes that are missing keywords
+5. Shorten only the longest sentences if readability is low
+
+OUTPUT: Return the HTML with minimal targeted adjustments. No explanations.
+LANGUAGE: American English only.`,
+      prompt: adjustmentPrompt,
       maxOutputTokens: 10000,
-      temperature: 0.6,
+      temperature: 0.3, // Lower temperature for more consistent, minimal changes
     });
 
-    console.log("[Craftsman] SEO improvement complete, length:", result.text.length);
+    console.log("[Craftsman] SEO adjustments complete, length:", result.text.length);
     return result.text;
   } catch (error) {
-    console.error("[Craftsman] SEO improvement failed:", error);
-    throw new Error(`SEO improvement failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    console.error("[Craftsman] SEO adjustment failed:", error);
+    throw new Error(`SEO adjustment failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 

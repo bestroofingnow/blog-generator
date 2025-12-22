@@ -388,13 +388,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       companyName,
     });
 
-    // STEP 4: SEO Validation & Improvement Loop (90+ score required)
+    // STEP 4: SEO Validation & Targeted Adjustment Loop (90+ score required)
     sendProgress(res, "seo", "Analyzing SEO quality...");
 
     const targetWordCount = parseInt(wordCountRange.split("-")[0]) || 1800;
     let seoScore: SEOScoreResult;
     let seoAttempts = 0;
     const maxSEOAttempts = 3;
+    let originalContentLength = rawContent.length;
 
     seoScore = scoreContent({
       content: rawContent,
@@ -406,20 +407,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     console.log(`[SEO] Initial score: ${seoScore.overall}/100 (${seoScore.letterGrade})`);
+    console.log(`[SEO] Initial content length: ${originalContentLength} chars`);
 
-    // Keep improving until we hit 90+ or max attempts
+    // Keep making targeted adjustments until we hit 90+ or max attempts
     while (!seoScore.passed && seoAttempts < maxSEOAttempts) {
       seoAttempts++;
       sendProgress(
         res,
         "seo",
-        `SEO score ${seoScore.overall}/100 - Improving content (attempt ${seoAttempts}/${maxSEOAttempts})...`
+        `SEO score ${seoScore.overall}/100 - Making targeted adjustments (${seoAttempts}/${maxSEOAttempts})...`
       );
 
-      console.log(`[SEO] Attempt ${seoAttempts}: Score ${seoScore.overall}, improvements needed:`, seoScore.improvements);
+      console.log(`[SEO] Adjustment ${seoAttempts}: Score ${seoScore.overall}, fixes needed:`, seoScore.improvements);
 
-      // Generate rewrite prompt with specific improvements
-      const rewritePrompt = generateRewritePrompt(
+      // Generate targeted adjustment prompt (not a full rewrite)
+      const adjustmentPrompt = generateRewritePrompt(
         rawContent,
         seoScore,
         seoData.primaryKeyword,
@@ -427,10 +429,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       try {
-        // Ask AI to improve the content
-        rawContent = await improveContentForSEO(rewritePrompt);
+        // Store previous content in case adjustment fails badly
+        const previousContent = rawContent;
+        const previousScore = seoScore.overall;
 
-        // Re-score the improved content
+        // Ask AI to make targeted adjustments
+        rawContent = await improveContentForSEO(adjustmentPrompt);
+
+        // Validate the adjustment didn't break the content
+        if (!rawContent || rawContent.length < originalContentLength * 0.5) {
+          console.warn(`[SEO] Adjustment produced invalid content, reverting`);
+          rawContent = previousContent;
+          break;
+        }
+
+        // Re-score the adjusted content
         seoScore = scoreContent({
           content: rawContent,
           primaryKeyword: seoData.primaryKeyword,
@@ -440,19 +453,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           metaDescription: seoData.metaDescription,
         });
 
-        console.log(`[SEO] After attempt ${seoAttempts}: ${seoScore.overall}/100 (${seoScore.letterGrade})`);
+        console.log(`[SEO] After adjustment ${seoAttempts}: ${seoScore.overall}/100 (${seoScore.letterGrade})`);
+        console.log(`[SEO] Content length change: ${previousContent.length} -> ${rawContent.length} chars`);
+
+        // If score got worse, revert to previous content
+        if (seoScore.overall < previousScore - 5) {
+          console.warn(`[SEO] Score dropped significantly (${previousScore} -> ${seoScore.overall}), reverting`);
+          rawContent = previousContent;
+          seoScore = scoreContent({
+            content: rawContent,
+            primaryKeyword: seoData.primaryKeyword,
+            secondaryKeywords: seoData.secondaryKeywords,
+            targetWordCount,
+            metaTitle: seoData.metaTitle,
+            metaDescription: seoData.metaDescription,
+          });
+          break;
+        }
       } catch (error) {
-        console.error(`[SEO] Improvement attempt ${seoAttempts} failed:`, error);
-        break;
+        console.error(`[SEO] Adjustment attempt ${seoAttempts} failed:`, error);
+        // Don't break on first error, try again with current content
+        if (seoAttempts >= 2) break;
       }
     }
 
     // Log final SEO status
     if (seoScore.passed) {
-      console.log(`[SEO] PASSED with score ${seoScore.overall}/100 after ${seoAttempts} improvement(s)`);
+      console.log(`[SEO] PASSED with score ${seoScore.overall}/100 after ${seoAttempts} adjustment(s)`);
       sendProgress(res, "seo", `SEO score: ${seoScore.overall}/100 - Passed!`);
     } else {
-      console.warn(`[SEO] Could not reach 90+ after ${maxSEOAttempts} attempts. Final score: ${seoScore.overall}/100`);
+      console.warn(`[SEO] Could not reach 90+ after ${maxSEOAttempts} adjustments. Final score: ${seoScore.overall}/100`);
       sendProgress(res, "seo", `SEO score: ${seoScore.overall}/100 (best achieved)`);
     }
 
