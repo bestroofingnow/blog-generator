@@ -6,6 +6,7 @@ import { gateway } from "@ai-sdk/gateway";
 import { generateText } from "ai";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+import { loadUserProfile, loadDrafts } from "../../lib/database";
 
 export const maxDuration = 120;
 
@@ -32,6 +33,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!topic || !industry) {
     return res.status(400).json({ error: "Missing required parameters: topic and industry" });
+  }
+
+  // Load user profile and past blogs for context
+  const userId = (session.user as { id?: string }).id || session.user?.email || "";
+  const userProfile = await loadUserProfile(userId);
+  const pastBlogs = await loadDrafts(userId);
+
+  // Extract profile context
+  const companyProfile = userProfile?.companyProfile;
+  let profileContextStr = "";
+  if (companyProfile) {
+    profileContextStr = "\n\nCOMPANY PROFILE CONTEXT:";
+    if (companyProfile.services && companyProfile.services.length > 0) {
+      profileContextStr += `\n- Services: ${companyProfile.services.join(", ")}`;
+    }
+    if (companyProfile.usps && companyProfile.usps.length > 0) {
+      profileContextStr += `\n- Unique Selling Points: ${companyProfile.usps.join(", ")}`;
+    }
+    if (companyProfile.certifications && companyProfile.certifications.length > 0) {
+      profileContextStr += `\n- Certifications: ${companyProfile.certifications.join(", ")}`;
+    }
+    if (companyProfile.brandVoice) {
+      profileContextStr += `\n- Brand Voice: ${companyProfile.brandVoice}`;
+    }
+    if (companyProfile.audience) {
+      profileContextStr += `\n- Target Audience: ${companyProfile.audience}`;
+    }
+    if (companyProfile.cities && companyProfile.cities.length > 0) {
+      profileContextStr += `\n- Service Areas: ${companyProfile.cities.slice(0, 10).join(", ")}`;
+    }
+  }
+
+  // Build existing content context
+  let existingContentStr = "";
+  if (pastBlogs.length > 0) {
+    existingContentStr = "\n\nEXISTING CONTENT (avoid suggesting similar topics):";
+    pastBlogs.slice(0, 15).forEach(blog => {
+      existingContentStr += `\n- "${blog.title}"`;
+    });
   }
 
   // Build research prompt based on type
@@ -176,7 +216,9 @@ Format as comprehensive JSON:
 }`,
   };
 
-  const prompt = prompts[researchType] || prompts.comprehensive;
+  // Append profile and existing content context to the prompt
+  const basePrompt = prompts[researchType] || prompts.comprehensive;
+  const prompt = basePrompt + profileContextStr + existingContentStr + "\n\nIMPORTANT: Tailor recommendations to the company's specific services, strengths, and target audience. Avoid suggesting content topics that are too similar to their existing content.";
 
   try {
     const result = await generateText({

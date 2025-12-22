@@ -13,6 +13,7 @@ import {
 } from "../../lib/page-types";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+import { loadDrafts } from "../../lib/database";
 
 interface SEOPlanRequest {
   companyProfile: CompanyProfile;
@@ -50,12 +51,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: `Unknown industry type: ${companyProfile.industryType}` });
     }
 
+    // Load past blogs to avoid suggesting duplicates
+    const userId = (session.user as { id?: string }).id || session.user?.email || "";
+    const pastBlogs = await loadDrafts(userId);
+    const existingTitles = pastBlogs.map(blog => blog.title.toLowerCase());
+    const existingKeywords = pastBlogs
+      .map(blog => blog.seoData?.primaryKeyword?.toLowerCase())
+      .filter((k): k is string => !!k);
+
     // Generate SEO Plan
     const pillarPages = generatePillarPages(companyProfile, industry);
     const keywords = generateKeywordDatabase(companyProfile, industry);
-    const blogTopics = generateBlogTopics(companyProfile, industry);
+    const allBlogTopics = generateBlogTopics(companyProfile, industry);
+
+    // Filter out topics that are too similar to existing content
+    const blogTopics = allBlogTopics.filter(topic => {
+      const titleLower = topic.title.toLowerCase();
+      // Check if title is too similar to existing blogs
+      const isTitleDuplicate = existingTitles.some(existing => {
+        // Check for exact match or high similarity
+        return existing === titleLower ||
+               titleLower.includes(existing) ||
+               existing.includes(titleLower);
+      });
+      // Check if the template matches an existing keyword
+      const isKeywordDuplicate = existingKeywords.some(keyword => {
+        return titleLower.includes(keyword) || keyword.includes(titleLower);
+      });
+      return !isTitleDuplicate && !isKeywordDuplicate;
+    });
+
     const calendar = generateContentCalendar(blogTopics, calendarLength, postFrequency);
     const recommendations = generateRecommendations(companyProfile, industry, contentDepth);
+
+    // Add recommendation about existing content if any was filtered
+    if (allBlogTopics.length > blogTopics.length) {
+      recommendations.unshift(
+        `Note: ${allBlogTopics.length - blogTopics.length} suggested topics were filtered out because you already have similar content. Keep creating unique content!`
+      );
+    }
 
     const seoPlan: SEOPlan = {
       companyProfile,

@@ -9,6 +9,7 @@ import {
   BlogOutline,
   GeneratedImage,
 } from "../../lib/ai-gateway";
+import { loadUserProfile } from "../../lib/database";
 
 interface WordPressCredentials {
   siteUrl: string;
@@ -121,6 +122,27 @@ export default async function handler(
       });
     }
 
+    // Load user profile for brand context
+    const userId = (session.user as { id?: string }).id || session.user?.email || "";
+    const userProfile = await loadUserProfile(userId);
+    const companyProfile = userProfile?.companyProfile;
+
+    // Extract profile context for content generation
+    const profileContext = companyProfile ? {
+      services: companyProfile.services || [],
+      usps: companyProfile.usps || [],
+      certifications: companyProfile.certifications || [],
+      brandVoice: companyProfile.brandVoice,
+      writingStyle: companyProfile.writingStyle,
+      targetAudience: companyProfile.audience,
+      industryType: companyProfile.industryType,
+      yearsInBusiness: companyProfile.yearsInBusiness,
+    } : null;
+
+    // Use profile data as defaults if not provided in request
+    const companyName = request.companyName || companyProfile?.name;
+    const tone = request.tone || companyProfile?.brandVoice || "professional yet friendly";
+
     // STEP 1: Generate outline
     console.log("Step 1: Designing the blog structure...");
     let outline: BlogOutline;
@@ -132,10 +154,12 @@ export default async function handler(
         location: request.location,
         blogType: request.blogType,
         numberOfSections: request.numberOfSections || 5,
-        tone: request.tone || "professional yet friendly",
+        tone: tone,
         primaryKeyword: request.primaryKeyword,
         secondaryKeywords: request.secondaryKeywords,
         imageThemes: request.imageThemes,
+        // Pass profile context for more targeted outlines
+        profileContext: profileContext || undefined,
       });
       steps.outline = true;
       console.log("Outline generated successfully");
@@ -348,9 +372,11 @@ export default async function handler(
       outline,
       topic: request.topic,
       location: request.location,
-      tone: request.tone || "professional yet friendly",
+      tone: tone,
       readingLevel: request.readingLevel || "8th Grade",
-      companyName: request.companyName,
+      companyName: companyName,
+      // Pass profile context for more personalized content
+      profileContext: profileContext || undefined,
     });
     steps.content = true;
 

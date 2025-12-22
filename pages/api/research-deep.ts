@@ -8,6 +8,7 @@ import { generateText } from "ai";
 import { BrightData } from "../../lib/brightdata";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+import { loadUserProfile, loadDrafts } from "../../lib/database";
 
 export const maxDuration = 180;
 
@@ -122,6 +123,30 @@ export default async function handler(
   }
 
   try {
+    // Load user profile and past blogs for context
+    const userId = (session.user as { id?: string }).id || session.user?.email || "";
+    const userProfile = await loadUserProfile(userId);
+    const pastBlogs = await loadDrafts(userId);
+
+    // Extract profile context for AI research
+    const companyProfile = userProfile?.companyProfile;
+    const profileContext = companyProfile ? {
+      services: companyProfile.services || [],
+      usps: companyProfile.usps || [],
+      certifications: companyProfile.certifications || [],
+      brandVoice: companyProfile.brandVoice,
+      writingStyle: companyProfile.writingStyle,
+      targetAudience: companyProfile.audience,
+      cities: companyProfile.cities || [],
+      competitors: companyProfile.competitors || [],
+    } : null;
+
+    // Get past blog titles to avoid suggesting duplicates
+    const existingBlogTitles = pastBlogs.map(blog => blog.title);
+    const existingBlogTopics = pastBlogs.map(blog => ({
+      title: blog.title,
+      primaryKeyword: blog.seoData?.primaryKeyword,
+    }));
     // Phase 1: Fetch Bright Data (real-time data) in parallel
     const brightDataPromises: Promise<unknown>[] = [];
     const brightDataResults: BrightDataResults = {};
@@ -212,10 +237,46 @@ export default async function handler(
     }
 
     // Phase 3: AI Research with Perplexity
-    const aiPrompt = `Conduct comprehensive SEO research for ${companyName || `a ${industry} business`}${location ? ` in ${location}` : ""} on "${topic}".
-${enrichedContext}
+    // Build company profile context for more targeted research
+    let companyContext = "";
+    if (profileContext) {
+      companyContext = `\n\nCOMPANY PROFILE CONTEXT:`;
+      if (profileContext.services.length > 0) {
+        companyContext += `\n- Services Offered: ${profileContext.services.join(", ")}`;
+      }
+      if (profileContext.usps.length > 0) {
+        companyContext += `\n- Unique Selling Points: ${profileContext.usps.join(", ")}`;
+      }
+      if (profileContext.certifications.length > 0) {
+        companyContext += `\n- Certifications: ${profileContext.certifications.join(", ")}`;
+      }
+      if (profileContext.brandVoice) {
+        companyContext += `\n- Brand Voice: ${profileContext.brandVoice}`;
+      }
+      if (profileContext.targetAudience) {
+        companyContext += `\n- Target Audience: ${profileContext.targetAudience}`;
+      }
+      if (profileContext.cities.length > 0) {
+        companyContext += `\n- Service Areas: ${profileContext.cities.slice(0, 10).join(", ")}`;
+      }
+      if (profileContext.competitors.length > 0) {
+        companyContext += `\n- Known Competitors: ${profileContext.competitors.join(", ")}`;
+      }
+    }
 
-Analyze and provide strategic recommendations. Return JSON:
+    // Include existing blog topics to avoid duplicates
+    let existingContentContext = "";
+    if (existingBlogTitles.length > 0) {
+      existingContentContext = `\n\nEXISTING CONTENT (avoid suggesting similar topics):`;
+      existingBlogTopics.slice(0, 20).forEach(blog => {
+        existingContentContext += `\n- "${blog.title}"${blog.primaryKeyword ? ` (keyword: ${blog.primaryKeyword})` : ""}`;
+      });
+    }
+
+    const aiPrompt = `Conduct comprehensive SEO research for ${companyName || `a ${industry} business`}${location ? ` in ${location}` : ""} on "${topic}".
+${enrichedContext}${companyContext}${existingContentContext}
+
+Analyze and provide strategic recommendations that align with the company's services and unique strengths. Avoid suggesting content similar to what they've already created. Return JSON:
 {
   "keywords": {
     "primary": [{"keyword": "", "volume": "high/medium/low", "difficulty": "easy/medium/hard", "intent": "informational/transactional/navigational"}],

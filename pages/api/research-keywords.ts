@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { researchKeywords, KeywordResearch } from "../../lib/ai-gateway";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+import { loadUserProfile, loadDrafts } from "../../lib/database";
 
 interface ResearchRequest {
   topic: string;
@@ -49,12 +50,33 @@ export default async function handler(
       });
     }
 
+    // Load user profile and past blogs for context
+    const userId = (session.user as { id?: string }).id || session.user?.email || "";
+    const userProfile = await loadUserProfile(userId);
+    const pastBlogs = await loadDrafts(userId);
+
+    // Extract profile context
+    const companyProfile = userProfile?.companyProfile;
+
+    // Get existing blog titles to avoid duplicates
+    const existingBlogTitles = pastBlogs.map(blog => blog.title);
+
     const suggestions = await researchKeywords({
       topic: request.topic,
       location: request.location,
-      companyName: request.companyName,
-      companyWebsite: request.companyWebsite,
+      companyName: request.companyName || companyProfile?.name,
+      companyWebsite: request.companyWebsite || companyProfile?.website,
       blogType: request.blogType,
+      // Additional profile context
+      profileContext: companyProfile ? {
+        services: companyProfile.services || [],
+        usps: companyProfile.usps || [],
+        certifications: companyProfile.certifications || [],
+        brandVoice: companyProfile.brandVoice,
+        targetAudience: companyProfile.audience,
+        industryType: companyProfile.industryType,
+      } : undefined,
+      existingBlogTitles: existingBlogTitles.slice(0, 20),
     });
 
     return res.status(200).json({

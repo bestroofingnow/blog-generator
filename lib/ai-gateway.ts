@@ -106,6 +106,16 @@ export async function generateOutline(params: {
   primaryKeyword?: string;
   secondaryKeywords?: string[];
   imageThemes?: string[];
+  profileContext?: {
+    services?: string[];
+    usps?: string[];
+    certifications?: string[];
+    brandVoice?: string;
+    writingStyle?: string;
+    targetAudience?: string;
+    industryType?: string;
+    yearsInBusiness?: number;
+  };
 }): Promise<BlogOutline> {
   const {
     topic,
@@ -116,7 +126,32 @@ export async function generateOutline(params: {
     primaryKeyword,
     secondaryKeywords,
     imageThemes,
+    profileContext,
   } = params;
+
+  // Build profile context for better targeted outlines
+  let profileSection = "";
+  if (profileContext) {
+    profileSection = "\n\nCOMPANY CONTEXT (use this to make content more specific and authentic):";
+    if (profileContext.services && profileContext.services.length > 0) {
+      profileSection += `\n- Services Offered: ${profileContext.services.join(", ")}`;
+    }
+    if (profileContext.usps && profileContext.usps.length > 0) {
+      profileSection += `\n- Unique Selling Points to Highlight: ${profileContext.usps.join(", ")}`;
+    }
+    if (profileContext.certifications && profileContext.certifications.length > 0) {
+      profileSection += `\n- Certifications/Credentials: ${profileContext.certifications.join(", ")}`;
+    }
+    if (profileContext.targetAudience) {
+      profileSection += `\n- Target Audience: ${profileContext.targetAudience}`;
+    }
+    if (profileContext.yearsInBusiness) {
+      profileSection += `\n- Years in Business: ${profileContext.yearsInBusiness}`;
+    }
+    if (profileContext.writingStyle) {
+      profileSection += `\n- Writing Style: ${profileContext.writingStyle}`;
+    }
+  }
 
   const seoContext = primaryKeyword
     ? `\n\nSEO REQUIREMENTS:
@@ -145,6 +180,7 @@ BLOG SPECIFICATIONS:
 Your task is to create a structured outline that will guide the content writer. For each section, provide a detailed image prompt that will be used to generate a unique, professional image.
 ${seoContext}
 ${imageThemeContext}
+${profileSection}
 
 IMAGE PROMPT GUIDELINES:
 - Each image prompt should be highly specific and descriptive
@@ -228,8 +264,50 @@ export async function researchKeywords(params: {
   companyName?: string;
   companyWebsite?: string;
   blogType: string;
+  profileContext?: {
+    services?: string[];
+    usps?: string[];
+    certifications?: string[];
+    brandVoice?: string;
+    targetAudience?: string;
+    industryType?: string;
+  };
+  existingBlogTitles?: string[];
 }): Promise<KeywordResearch> {
-  const { topic, location, companyName, companyWebsite, blogType } = params;
+  const { topic, location, companyName, companyWebsite, blogType, profileContext, existingBlogTitles } = params;
+
+  // Build profile context section
+  let profileSection = "";
+  if (profileContext) {
+    profileSection = "\n\nCOMPANY PROFILE CONTEXT:";
+    if (profileContext.services && profileContext.services.length > 0) {
+      profileSection += `\n- Services Offered: ${profileContext.services.join(", ")}`;
+    }
+    if (profileContext.usps && profileContext.usps.length > 0) {
+      profileSection += `\n- Unique Selling Points: ${profileContext.usps.join(", ")}`;
+    }
+    if (profileContext.certifications && profileContext.certifications.length > 0) {
+      profileSection += `\n- Certifications: ${profileContext.certifications.join(", ")}`;
+    }
+    if (profileContext.brandVoice) {
+      profileSection += `\n- Brand Voice: ${profileContext.brandVoice}`;
+    }
+    if (profileContext.targetAudience) {
+      profileSection += `\n- Target Audience: ${profileContext.targetAudience}`;
+    }
+    if (profileContext.industryType) {
+      profileSection += `\n- Industry: ${profileContext.industryType}`;
+    }
+  }
+
+  // Build existing content section
+  let existingContentSection = "";
+  if (existingBlogTitles && existingBlogTitles.length > 0) {
+    existingContentSection = "\n\nEXISTING CONTENT (suggest unique angles different from these):";
+    existingBlogTitles.slice(0, 15).forEach(title => {
+      existingContentSection += `\n- "${title}"`;
+    });
+  }
 
   const prompt = `You are an expert SEO researcher and content strategist. Analyze the following business topic and provide comprehensive keyword and content research.
 
@@ -238,7 +316,7 @@ BUSINESS DETAILS:
 - Location: ${location}
 - Company Name: ${companyName || "Local service provider"}
 - Company Website: ${companyWebsite || "Not provided"}
-- Blog Type: ${blogType}
+- Blog Type: ${blogType}${profileSection}${existingContentSection}
 
 RESEARCH TASKS:
 1. Identify the best PRIMARY KEYWORD for this topic + location (high-intent, local search term)
@@ -363,6 +441,16 @@ export async function generateContent(params: {
   companyName?: string;
   wordCountRange?: string;
   numberOfImages?: number;
+  profileContext?: {
+    services?: string[];
+    usps?: string[];
+    certifications?: string[];
+    brandVoice?: string;
+    writingStyle?: string;
+    targetAudience?: string;
+    industryType?: string;
+    yearsInBusiness?: number;
+  };
 }): Promise<string> {
   const {
     outline,
@@ -373,6 +461,7 @@ export async function generateContent(params: {
     companyName,
     wordCountRange = "1800-2400",
     numberOfImages = 3,
+    profileContext,
   } = params;
 
   const readingGuidelines = READING_LEVEL_GUIDELINES[readingLevel] || READING_LEVEL_GUIDELINES["8th Grade"];
@@ -385,6 +474,30 @@ export async function generateContent(params: {
   const imageInstructions = numberOfImages > 1
     ? `Use [IMAGE:0] for the hero/featured image, then [IMAGE:1] through [IMAGE:${numberOfImages - 1}] for section images. Distribute images evenly throughout the content.`
     : `Use [IMAGE:0] for the hero/featured image only.`;
+
+  // Build profile context section for more personalized content
+  let profileSection = "";
+  if (profileContext) {
+    profileSection = "\n\nCOMPANY DETAILS (incorporate naturally into content):";
+    if (profileContext.services && profileContext.services.length > 0) {
+      profileSection += `\n- Services to Reference: ${profileContext.services.slice(0, 5).join(", ")}`;
+    }
+    if (profileContext.usps && profileContext.usps.length > 0) {
+      profileSection += `\n- Unique Selling Points to Weave In: ${profileContext.usps.join(", ")}`;
+    }
+    if (profileContext.certifications && profileContext.certifications.length > 0) {
+      profileSection += `\n- Credentials to Mention: ${profileContext.certifications.join(", ")}`;
+    }
+    if (profileContext.targetAudience) {
+      profileSection += `\n- Target Audience: ${profileContext.targetAudience}`;
+    }
+    if (profileContext.yearsInBusiness) {
+      profileSection += `\n- Years of Experience: ${profileContext.yearsInBusiness}`;
+    }
+    if (profileContext.writingStyle) {
+      profileSection += `\n- Writing Style: ${profileContext.writingStyle}`;
+    }
+  }
 
   const prompt = `You are an expert content writer who creates engaging, human-like content for local service businesses. Write a comprehensive, SEO-optimized blog post based on this outline.
 
@@ -411,6 +524,7 @@ REQUIREMENTS:
 
 READING LEVEL GUIDELINES (${readingLevel}):
 ${readingGuidelines}
+${profileSection}
 
 HUMAN-LIKE WRITING STYLE:
 - Write like a knowledgeable friend explaining things, NOT like a corporate brochure
