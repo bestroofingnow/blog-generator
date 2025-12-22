@@ -519,8 +519,15 @@ export default function Home() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
   const [isResearchingCompany, setIsResearchingCompany] = useState(false);
+  const [isResearchingTopics, setIsResearchingTopics] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [researchData, setResearchData] = useState<ResearchData | null>(null);
+  const [suggestedTopics, setSuggestedTopics] = useState<{
+    topic: string;
+    primaryKeyword: string;
+    secondaryKeywords: string[];
+    reason: string;
+  }[] | null>(null);
 
   const [state, setState] = useState<GenerationState>({
     isLoading: false,
@@ -1511,6 +1518,80 @@ export default function Home() {
       showToast("error", "Research Failed", error instanceof Error ? error.message : "Keyword research failed. Please try again.");
     }
     setIsResearching(false);
+  };
+
+  // AI Topic Research - suggests topics based on company profile and SEO opportunities
+  const handleAITopicResearch = async () => {
+    if (!companyProfile.name && !companyProfile.website) {
+      showToast("error", "Company Profile Required", "Please set up your company profile first to get AI topic suggestions.");
+      return;
+    }
+
+    setIsResearchingTopics(true);
+    setSuggestedTopics(null);
+
+    try {
+      const response = await fetch("/api/research-keywords", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: `${companyProfile.industryType || "business"} services blog topics`,
+          location: companyProfile.headquarters || formData.location || "United States",
+          companyName: companyProfile.name,
+          companyWebsite: companyProfile.website,
+          blogType: "Topic Research",
+          findTopics: true, // Signal to find topics, not just keywords
+        }),
+      });
+
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(`Server error: ${responseText.substring(0, 200)}`);
+      }
+
+      if (data.success && data.suggestions) {
+        // Create topic suggestions from the research
+        const topics = [
+          {
+            topic: `Complete Guide to ${data.suggestions.primaryKeyword} in ${companyProfile.headquarters || formData.location || "Your Area"}`,
+            primaryKeyword: data.suggestions.primaryKeyword,
+            secondaryKeywords: data.suggestions.secondaryKeywords.slice(0, 3),
+            reason: "High-value primary keyword with strong search intent",
+          },
+          ...(data.suggestions.contentAngles || []).slice(0, 4).map((angle: string, i: number) => ({
+            topic: angle,
+            primaryKeyword: data.suggestions.secondaryKeywords[i] || data.suggestions.primaryKeyword,
+            secondaryKeywords: data.suggestions.secondaryKeywords.slice(i, i + 3),
+            reason: data.suggestions.competitorInsights?.[i] || "SEO opportunity based on competitor analysis",
+          })),
+        ];
+
+        setSuggestedTopics(topics);
+        showToast("success", "Topics Found!", `${topics.length} blog topic ideas generated based on SEO research.`);
+      } else {
+        showToast("error", "Research Failed", data.error || "Could not generate topic suggestions");
+      }
+    } catch (error) {
+      console.error("Topic research error:", error);
+      showToast("error", "Research Failed", error instanceof Error ? error.message : "Topic research failed. Please try again.");
+    }
+    setIsResearchingTopics(false);
+  };
+
+  // Select a suggested topic
+  const handleSelectTopic = (topic: typeof suggestedTopics extends (infer T)[] | null ? T : never) => {
+    if (!topic) return;
+    setFormData(prev => ({
+      ...prev,
+      topic: topic.topic,
+      primaryKeyword: topic.primaryKeyword,
+      secondaryKeywords: topic.secondaryKeywords.join(", "),
+    }));
+    setSuggestedTopics(null);
+    showToast("success", "Topic Selected", "Form has been populated with your chosen topic and keywords.");
   };
 
   // Deep research company website to auto-fill profile
@@ -2686,12 +2767,73 @@ export default function Home() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setGenerationMode("page")}
-                  className={`${styles.modePill} ${generationMode === "page" ? styles.active : ""}`}
+                  disabled
+                  className={`${styles.modePill} ${styles.comingSoonPill}`}
+                  title="Coming Soon"
                 >
                   Website Page
+                  <span className={styles.comingSoonBadge}>Soon</span>
                 </button>
               </div>
+
+              {/* AI Topic Research Button */}
+              <div className={styles.topicResearchSection}>
+                <button
+                  type="button"
+                  onClick={handleAITopicResearch}
+                  disabled={isResearchingTopics || (!companyProfile.name && !companyProfile.website)}
+                  className={styles.topicResearchButton}
+                >
+                  {isResearchingTopics ? (
+                    <>
+                      <span className={styles.spinner}></span>
+                      Researching Topics...
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                        <path d="M11 8v6M8 11h6"/>
+                      </svg>
+                      AI Topic Research
+                    </>
+                  )}
+                </button>
+                <small>Find SEO-optimized blog topics based on your industry</small>
+              </div>
+
+              {/* Suggested Topics Dropdown */}
+              {suggestedTopics && suggestedTopics.length > 0 && (
+                <div className={styles.suggestedTopics}>
+                  <div className={styles.suggestedTopicsHeader}>
+                    <h4>Suggested Blog Topics</h4>
+                    <button
+                      type="button"
+                      onClick={() => setSuggestedTopics(null)}
+                      className={styles.closeSuggestions}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  <div className={styles.topicsList}>
+                    {suggestedTopics.map((topic, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => handleSelectTopic(topic)}
+                        className={styles.topicSuggestion}
+                      >
+                        <div className={styles.topicTitle}>{topic.topic}</div>
+                        <div className={styles.topicMeta}>
+                          <span className={styles.topicKeyword}>{topic.primaryKeyword}</span>
+                          <span className={styles.topicReason}>{topic.reason}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Hero Fields */}
               <div className={styles.heroFields}>
