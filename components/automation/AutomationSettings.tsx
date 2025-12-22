@@ -18,13 +18,12 @@ interface AutomationSettingsData {
 
 interface AutomationSettingsProps {
   onOpenBatchGenerator: () => void;
-  onOpenSiteBuilder: () => void;
+  onOpenSiteBuilder?: () => void; // Coming Soon - not used
   onOpenQueueDashboard: () => void;
 }
 
 export function AutomationSettings({
   onOpenBatchGenerator,
-  onOpenSiteBuilder,
   onOpenQueueDashboard,
 }: AutomationSettingsProps) {
   const [settings, setSettings] = useState<AutomationSettingsData>({
@@ -162,7 +161,8 @@ export function AutomationSettings({
           </svg>
         </button>
 
-        <button className={styles.actionCard} onClick={onOpenSiteBuilder}>
+        <button className={`${styles.actionCard} ${styles.comingSoon}`} disabled>
+          <div className={styles.comingSoonBadge}>Coming Soon</div>
           <div className={styles.actionIcon}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -204,9 +204,12 @@ export function AutomationSettings({
         <h3 className={styles.subsectionTitle}>Automation Features</h3>
 
         <div className={styles.toggleGroup}>
-          <div className={styles.toggleItem}>
+          <div className={`${styles.toggleItem} ${styles.comingSoonToggle}`}>
             <div className={styles.toggleInfo}>
-              <label className={styles.toggleLabel}>Allow AI to Build Entire Site</label>
+              <label className={styles.toggleLabel}>
+                Allow AI to Build Entire Site
+                <span className={styles.comingSoonTag}>Coming Soon</span>
+              </label>
               <span className={styles.toggleDescription}>
                 Let AI research your industry and propose a complete site structure
               </span>
@@ -214,16 +217,19 @@ export function AutomationSettings({
             <label className={styles.toggle}>
               <input
                 type="checkbox"
-                checked={settings.allowBuildEntireSite}
-                onChange={(e) => updateSetting("allowBuildEntireSite", e.target.checked)}
+                checked={false}
+                disabled
               />
               <span className={styles.toggleSlider} />
             </label>
           </div>
 
-          <div className={styles.toggleItem}>
+          <div className={`${styles.toggleItem} ${styles.comingSoonToggle}`}>
             <div className={styles.toggleInfo}>
-              <label className={styles.toggleLabel}>Auto-Create Daily Blogs</label>
+              <label className={styles.toggleLabel}>
+                Auto-Create Daily Blogs
+                <span className={styles.comingSoonTag}>Coming Soon</span>
+              </label>
               <span className={styles.toggleDescription}>
                 Automatically generate blogs based on your knowledge base
               </span>
@@ -231,16 +237,19 @@ export function AutomationSettings({
             <label className={styles.toggle}>
               <input
                 type="checkbox"
-                checked={settings.allowAutoCreateDailyBlogs}
-                onChange={(e) => updateSetting("allowAutoCreateDailyBlogs", e.target.checked)}
+                checked={false}
+                disabled
               />
               <span className={styles.toggleSlider} />
             </label>
           </div>
 
-          <div className={styles.toggleItem}>
+          <div className={`${styles.toggleItem} ${styles.comingSoonToggle}`}>
             <div className={styles.toggleInfo}>
-              <label className={styles.toggleLabel}>Auto-Schedule Blogs</label>
+              <label className={styles.toggleLabel}>
+                Auto-Schedule Blogs
+                <span className={styles.comingSoonTag}>Coming Soon</span>
+              </label>
               <span className={styles.toggleDescription}>
                 Automatically schedule generated content for publishing
               </span>
@@ -248,16 +257,19 @@ export function AutomationSettings({
             <label className={styles.toggle}>
               <input
                 type="checkbox"
-                checked={settings.allowAutoScheduleBlogs}
-                onChange={(e) => updateSetting("allowAutoScheduleBlogs", e.target.checked)}
+                checked={false}
+                disabled
               />
               <span className={styles.toggleSlider} />
             </label>
           </div>
 
-          <div className={styles.toggleItem}>
+          <div className={`${styles.toggleItem} ${styles.comingSoonToggle}`}>
             <div className={styles.toggleInfo}>
-              <label className={styles.toggleLabel}>Auto-Post Blogs</label>
+              <label className={styles.toggleLabel}>
+                Auto-Post Blogs
+                <span className={styles.comingSoonTag}>Coming Soon</span>
+              </label>
               <span className={styles.toggleDescription}>
                 Automatically publish to WordPress or GoHighLevel
               </span>
@@ -265,8 +277,8 @@ export function AutomationSettings({
             <label className={styles.toggle}>
               <input
                 type="checkbox"
-                checked={settings.allowAutoPostBlogs}
-                onChange={(e) => updateSetting("allowAutoPostBlogs", e.target.checked)}
+                checked={false}
+                disabled
               />
               <span className={styles.toggleSlider} />
             </label>

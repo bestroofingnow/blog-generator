@@ -111,10 +111,10 @@ export function generateEnhancedBlogPrompt(params: EnhancedPromptParams): string
     : "N/A";
 
   return `# TASK
-Create an exceptional, SEO-optimized blog post that ranks #1 on Google, drives organic traffic, generates qualified leads, and positions ${companyProfile.name} as the definitive authority in ${industryName}. This content must achieve award-winning quality while seamlessly integrating conversion elements.
+Create an exceptional, SEO-optimized blog post that achieves a 90+ SEO score, ranks #1 on Google, drives organic traffic, generates qualified leads, and positions ${companyProfile.name} as the definitive authority in ${industryName}. This content must achieve award-winning quality while seamlessly integrating conversion elements.
 
 # ROLE
-You are an elite SEO copywriting specialist and content strategist with 15+ years of experience creating viral, conversion-focused content. You combine the analytical precision of an SEO technical expert with the creative genius of an award-winning journalist.
+You are an elite SEO copywriting specialist and content strategist with 15+ years of experience creating viral, conversion-focused content. You combine the analytical precision of an SEO technical expert with the creative genius of an award-winning journalist. You understand Google's E-E-A-T principles (Experience, Expertise, Authoritativeness, Trust) and write content that demonstrates all four.
 
 # CONTEXT
 Company: ${companyProfile.name}
@@ -133,48 +133,74 @@ ${companyProfile.projectsCompleted ? `Projects Completed: ${companyProfile.proje
 # TOPIC
 ${topic}
 
-# SEO REQUIREMENTS (CRITICAL)
+# SEO REQUIREMENTS (CRITICAL FOR 90+ SCORE)
 
 ## Primary Keyword: "${primaryKeyword}"
 - MINIMUM mentions: ${keywordReqs.minMentions} times (1 per 112 words)
 - MAXIMUM mentions: ${keywordReqs.maxMentions} times (no more than 2 per 122 words)
 - Target density: ${keywordReqs.minDensity}% - ${keywordReqs.maxDensity}%
-- Must appear in: H1 title, first paragraph, at least 2 H2 headers, conclusion, and meta description
+- STRATEGIC PLACEMENT (MANDATORY):
+  * In H1 title (ideally within first 3 words)
+  * In first sentence of introduction (first 100 words)
+  * In at least 3 H2 headers
+  * In last paragraph/conclusion
+  * In meta description (within first 60 characters)
+  * In image alt text suggestions
 
 ## Secondary Keywords (integrate naturally throughout):
-${secondaryKeywords.map((kw, i) => `${i + 1}. "${kw}"`).join("\n")}
+${secondaryKeywords.map((kw, i) => `${i + 1}. "${kw}" - use 2-4 times throughout`).join("\n")}
 
 ## Technical SEO Elements Required:
-- Title Tag: 55-60 characters with primary keyword near the front
-- Meta Description: 155-160 characters with primary keyword and compelling CTA
-- H1: One unique H1 with primary keyword
-- H2s: 5-8 section headers, at least 3 containing keywords
-- H3s: Use for subsections where appropriate
-- Internal Linking: Suggest 3-5 places to link to other service/location pages
-- External Authority: Reference 2-3 credible industry sources or statistics
+- Title Tag: 55-60 characters with primary keyword in first 3-4 words, power word included
+- Meta Description: 155-160 characters starting with primary keyword, includes benefit + CTA verb (Learn, Discover, Get)
+- H1: One unique H1 with primary keyword near the beginning, emotionally compelling
+- H2s: 6-8 section headers, at least 4 containing primary/secondary keywords
+- H3s: Use for ALL subsections to improve scannability and SEO structure
+- Internal Linking: Include 4-6 internal link suggestions with anchor text
+- External Authority: Reference 3-4 credible industry sources, statistics, or studies
+
+## FEATURED SNIPPET OPTIMIZATION:
+- Include a "What is ${primaryKeyword}?" definition in the first 50-60 words
+- Add a numbered list or step-by-step process (Google loves lists)
+- Include a comparison table if relevant
+- Format FAQ answers as direct, concise responses (40-60 words each)
+
+## E-E-A-T SIGNALS TO INCLUDE:
+- Experience: Reference specific ${industryName} projects, real scenarios, years of practice
+- Expertise: Include technical details, industry terminology (explained simply), data points
+- Authoritativeness: Cite industry standards, regulations, best practices
+- Trust: Include specific guarantees, certifications, credentials, customer proof
 
 # CONTENT STRUCTURE TEMPLATE
 
 ## 1. MAGNETIC HEADLINE (H1)
 Create a headline that:
-- Includes primary keyword naturally
+- Starts with or contains primary keyword in first 3 words
 - Has emotional trigger (fear, curiosity, urgency, or aspiration)
-- Promises clear benefit
-- Is under 60 characters
+- Uses power words: Ultimate, Complete, Essential, Proven, Expert, Professional
+- Promises clear benefit or outcome
+- Is 50-60 characters for optimal display
+- Examples: "${primaryKeyword}: The Complete Guide for ${targetLocation} Homeowners" or "Expert ${primaryKeyword} Tips That Save You Thousands"
 
 ## 2. HOOK INTRODUCTION (150-200 words)
-Pattern to follow:
-"If you're in [location] and dealing with [pain point], you're not alone. [Statistic or fact about the problem]. But what if there was a proven solution that [benefit]? In this comprehensive guide, we'll reveal..."
-- Agitate the problem
-- Preview the solution
-- Establish authority
-- Include primary keyword in first 100 words
+CRITICAL: Include primary keyword in FIRST SENTENCE. Pattern to follow:
+"${primaryKeyword} is essential for [audience] in ${targetLocation}. [Statistic or fact about the problem - use specific numbers]. If you're dealing with [pain point], you're not alone. But what if there was a proven solution that [benefit]? In this comprehensive guide from ${companyProfile.name}, we'll reveal everything you need to know about ${primaryKeyword}..."
+- Open with keyword + location + audience hook
+- Include a compelling statistic (XX% of homeowners, $X,XXX average cost, etc.)
+- Preview 3-4 key benefits readers will learn
+- Establish authority by mentioning company expertise
+- End with a promise of what they'll discover
 
-## 3. TABLE OF CONTENTS
-Create a clickable outline of all H2 sections
+## 3. TABLE OF CONTENTS (FEATURED SNIPPET BAIT)
+Create a clickable outline of all H2 sections - this helps win featured snippets
 
 ## 4. MAIN CONTENT SECTIONS (H2s with supporting H3s)
-Each section should be 200-300 words with subheading. Include:
+READABILITY REQUIREMENTS FOR EACH SECTION:
+- 200-350 words per major section
+- Maximum 3-4 sentences per paragraph (critical for mobile)
+- Use bullet points or numbered lists in EVERY section
+- Bold key phrases and important statistics
+- Include at least one H3 subheading per H2 section
 
 ### Section 1: Problem Definition & Impact
 - What is the problem?
@@ -211,16 +237,34 @@ Each section should be 200-300 words with subheading. Include:
 - Each point should be actionable
 - Reinforce primary keyword and main benefits
 
-## 6. FAQ SECTION (Schema-ready)
-Include 5-6 common questions formatted as:
-Q: [Question with keyword variation]
-A: [Concise, helpful answer 50-75 words]
+## 6. FAQ SECTION (Schema-ready - OPTIMIZED FOR FEATURED SNIPPETS)
+Include 6-8 common questions optimized for "People Also Ask":
+- Start each question with: What, How, Why, When, Where, Is, Can, Does
+- Include primary/secondary keywords in questions naturally
+- Format as:
 
-## 7. COMPELLING CONCLUSION
-- Reinforce value proposition
-- Include primary CTA
-- Create urgency without being pushy
-- Mention ${companyProfile.name}'s key differentiators
+Q: What is ${primaryKeyword} and why is it important?
+A: [Direct 40-60 word answer starting with a clear definition]
+
+Q: How much does ${primaryKeyword} cost in ${targetLocation}?
+A: [Include specific price ranges: $X,XXX - $X,XXX with factors]
+
+Q: How do I choose the best ${primaryKeyword} company?
+A: [Actionable tips starting with "Look for..." or "Consider..."]
+
+Q: When should I get ${primaryKeyword} services?
+A: [Time-specific answer with seasonal/situational triggers]
+
+Q: [Add 2-4 more relevant questions with keyword variations]
+
+## 7. COMPELLING CONCLUSION (Include Primary Keyword)
+CRITICAL: Mention primary keyword "${primaryKeyword}" in conclusion paragraph.
+- Summarize 3 key takeaways in bullet points
+- Reinforce the main benefit of choosing ${companyProfile.name}
+- Include primary CTA with specific action (Call, Schedule, Get Quote)
+- Add local relevance: "Serving ${targetLocation} and surrounding areas"
+- Create subtle urgency: "seasonal availability" or "limited appointments"
+- End with company differentiator + contact method
 
 # TONE & VOICE
 
@@ -265,28 +309,33 @@ ${companyProfile.yearsInBusiness ? `- ${companyProfile.yearsInBusiness}+ years s
 - Seasonal maintenance checklist
 - Buyer's guide PDF
 
-# THINGS TO AVOID (CRITICAL)
+# THINGS TO AVOID (CRITICAL - THESE HURT SEO SCORES)
 
-## Content Problems:
-- Generic advice available everywhere
-- Keyword stuffing or unnatural phrasing
-- Promotional content disguised as education
+## Content Problems That Kill Rankings:
+- Generic advice available everywhere (add unique insights, local data, expert tips)
+- Keyword stuffing or unnatural phrasing (max 2 keyword mentions per 100 words)
+- Long paragraphs over 4 sentences (breaks mobile readability)
+- No bullet points or lists in a section (add at least one per H2)
+- Walls of text without subheadings (use H3s to break up content)
+- Missing keyword in first 100 words (CRITICAL for SEO score)
+- Missing keyword in conclusion (search engines check end of content)
 - Outdated statistics or irrelevant examples
-- Jargon without explanation
-- Shallow coverage of complex topics
-- Clickbait that doesn't deliver value
 
-## Technical Errors:
-- Missing or poorly optimized title/meta
-- No internal linking opportunities noted
-- Images without alt text suggestions
+## Technical SEO Errors:
+- Title/meta missing primary keyword or over character limits
+- No internal linking opportunities (need 4-6 suggestions)
+- Images without descriptive alt text (include keyword naturally)
 - Thin content under ${Math.round(wordCount * 0.9)} words
+- Missing FAQ schema-ready format
+- No Table of Contents for long-form content
+- H2 headers without keywords (at least 3 H2s need keywords)
 
 ## Writing Mistakes:
 - Subject-verb disagreement
 - Incorrect tense usage
 - Misspellings of industry terms
 - Errors in headlines, CTAs, or company name
+- Passive voice overuse (keep under 15% passive sentences)
 
 ${customInstructions ? `# CUSTOM INSTRUCTIONS\n${customInstructions}` : ""}
 
@@ -314,7 +363,28 @@ Example start:
 </article>
 \`\`\`
 
-Now generate the complete blog post following all requirements above. The content must be EXACTLY ${wordCount} words (excluding HTML tags).`;
+## FINAL SEO CHECKLIST (VERIFY BEFORE COMPLETING):
+Before finalizing, confirm ALL of these are present:
+[ ] Primary keyword "${primaryKeyword}" appears in title within first 3-4 words
+[ ] Primary keyword in first sentence/100 words of introduction
+[ ] Primary keyword in at least 3 H2 headings
+[ ] Primary keyword in conclusion paragraph
+[ ] Primary keyword in meta description (first 60 characters)
+[ ] Secondary keywords each used 2-4 times naturally
+[ ] 6-8 H2 headings total, 4+ with keywords
+[ ] H3 subheadings under each H2 section
+[ ] Bullet points or numbered list in every major section
+[ ] Paragraphs max 3-4 sentences each
+[ ] FAQ section with 6-8 questions in schema format
+[ ] 4-6 internal link suggestions with anchor text
+[ ] 3-4 external authority references/statistics
+[ ] Table of Contents at the beginning
+[ ] Meta title 55-60 characters with keyword
+[ ] Meta description 155-160 characters with keyword + CTA
+[ ] Word count within 5% of ${wordCount} target
+[ ] Alt text suggestions for all image placeholders
+
+Now generate the complete blog post following all requirements above. The content must be EXACTLY ${wordCount} words (excluding HTML tags). PRIORITIZE: keyword placement, readability (short paragraphs), and comprehensive coverage.`;
 }
 
 // Generate outline prompt for enhanced blog
