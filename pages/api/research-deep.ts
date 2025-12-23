@@ -139,6 +139,16 @@ export default async function handler(
       targetAudience: companyProfile.audience,
       cities: companyProfile.cities || [],
       competitors: companyProfile.competitors || [],
+      industryType: companyProfile.industryType,
+      // SEO & Site Identity
+      primarySiteKeyword: companyProfile.primarySiteKeyword,
+      secondarySiteKeywords: companyProfile.secondarySiteKeywords || [],
+      siteDescription: companyProfile.siteDescription,
+      // Business Personality & Identity
+      businessPersonality: companyProfile.businessPersonality,
+      valueProposition: companyProfile.valueProposition,
+      // Competitor Research
+      competitorWebsites: companyProfile.competitorWebsites || [],
     } : null;
 
     // Get past blog titles to avoid suggesting duplicates
@@ -241,6 +251,17 @@ export default async function handler(
     let companyContext = "";
     if (profileContext) {
       companyContext = `\n\nCOMPANY PROFILE CONTEXT:`;
+      // SEO & Site Identity
+      if (profileContext.primarySiteKeyword) {
+        companyContext += `\n- Primary Site Keyword: ${profileContext.primarySiteKeyword}`;
+      }
+      if (profileContext.secondarySiteKeywords.length > 0) {
+        companyContext += `\n- Secondary Keywords: ${profileContext.secondarySiteKeywords.join(", ")}`;
+      }
+      if (profileContext.siteDescription) {
+        companyContext += `\n- Site Description: ${profileContext.siteDescription}`;
+      }
+      // Business services and strengths
       if (profileContext.services.length > 0) {
         companyContext += `\n- Services Offered: ${profileContext.services.join(", ")}`;
       }
@@ -250,8 +271,15 @@ export default async function handler(
       if (profileContext.certifications.length > 0) {
         companyContext += `\n- Certifications: ${profileContext.certifications.join(", ")}`;
       }
+      // Brand voice and personality
       if (profileContext.brandVoice) {
         companyContext += `\n- Brand Voice: ${profileContext.brandVoice}`;
+      }
+      if (profileContext.businessPersonality) {
+        companyContext += `\n- Business Personality: ${profileContext.businessPersonality}`;
+      }
+      if (profileContext.valueProposition) {
+        companyContext += `\n- Value Proposition: ${profileContext.valueProposition}`;
       }
       if (profileContext.targetAudience) {
         companyContext += `\n- Target Audience: ${profileContext.targetAudience}`;
@@ -259,8 +287,12 @@ export default async function handler(
       if (profileContext.cities.length > 0) {
         companyContext += `\n- Service Areas: ${profileContext.cities.slice(0, 10).join(", ")}`;
       }
+      // Competitor information
       if (profileContext.competitors.length > 0) {
         companyContext += `\n- Known Competitors: ${profileContext.competitors.join(", ")}`;
+      }
+      if (profileContext.competitorWebsites.length > 0) {
+        companyContext += `\n- Competitor Websites to Research: ${profileContext.competitorWebsites.join(", ")}`;
       }
     }
 

@@ -45,6 +45,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let profileContextStr = "";
   if (companyProfile) {
     profileContextStr = "\n\nCOMPANY PROFILE CONTEXT:";
+    // SEO & Site Identity
+    if (companyProfile.primarySiteKeyword) {
+      profileContextStr += `\n- Primary Site Keyword: ${companyProfile.primarySiteKeyword}`;
+    }
+    if (companyProfile.secondarySiteKeywords && companyProfile.secondarySiteKeywords.length > 0) {
+      profileContextStr += `\n- Secondary Keywords: ${companyProfile.secondarySiteKeywords.join(", ")}`;
+    }
+    if (companyProfile.siteDescription) {
+      profileContextStr += `\n- Site Description: ${companyProfile.siteDescription}`;
+    }
+    // Business services and strengths
     if (companyProfile.services && companyProfile.services.length > 0) {
       profileContextStr += `\n- Services: ${companyProfile.services.join(", ")}`;
     }
@@ -54,14 +65,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (companyProfile.certifications && companyProfile.certifications.length > 0) {
       profileContextStr += `\n- Certifications: ${companyProfile.certifications.join(", ")}`;
     }
+    // Brand voice and personality
     if (companyProfile.brandVoice) {
       profileContextStr += `\n- Brand Voice: ${companyProfile.brandVoice}`;
+    }
+    if (companyProfile.businessPersonality) {
+      profileContextStr += `\n- Business Personality: ${companyProfile.businessPersonality}`;
+    }
+    if (companyProfile.valueProposition) {
+      profileContextStr += `\n- Value Proposition: ${companyProfile.valueProposition}`;
     }
     if (companyProfile.audience) {
       profileContextStr += `\n- Target Audience: ${companyProfile.audience}`;
     }
     if (companyProfile.cities && companyProfile.cities.length > 0) {
       profileContextStr += `\n- Service Areas: ${companyProfile.cities.slice(0, 10).join(", ")}`;
+    }
+    // Competitor information
+    if (companyProfile.competitors && companyProfile.competitors.length > 0) {
+      profileContextStr += `\n- Known Competitors: ${companyProfile.competitors.join(", ")}`;
+    }
+    if (companyProfile.competitorWebsites && companyProfile.competitorWebsites.length > 0) {
+      profileContextStr += `\n- Competitor Websites to Research: ${companyProfile.competitorWebsites.join(", ")}`;
     }
   }
 

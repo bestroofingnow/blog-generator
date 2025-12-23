@@ -67,7 +67,7 @@ export default async function handler(
       companyName: request.companyName || companyProfile?.name,
       companyWebsite: request.companyWebsite || companyProfile?.website,
       blogType: request.blogType,
-      // Additional profile context
+      // Complete profile context including new fields
       profileContext: companyProfile ? {
         services: companyProfile.services || [],
         usps: companyProfile.usps || [],
@@ -75,6 +75,13 @@ export default async function handler(
         brandVoice: companyProfile.brandVoice,
         targetAudience: companyProfile.audience,
         industryType: companyProfile.industryType,
+        // New SEO & branding fields
+        primarySiteKeyword: companyProfile.primarySiteKeyword,
+        secondarySiteKeywords: companyProfile.secondarySiteKeywords || [],
+        siteDescription: companyProfile.siteDescription,
+        businessPersonality: companyProfile.businessPersonality,
+        valueProposition: companyProfile.valueProposition,
+        competitorWebsites: companyProfile.competitorWebsites || [],
       } : undefined,
       existingBlogTitles: existingBlogTitles.slice(0, 20),
     });

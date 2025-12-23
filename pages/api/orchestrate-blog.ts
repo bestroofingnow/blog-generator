@@ -137,6 +137,15 @@ export default async function handler(
       targetAudience: companyProfile.audience,
       industryType: companyProfile.industryType,
       yearsInBusiness: companyProfile.yearsInBusiness,
+      // SEO & Site Identity
+      primarySiteKeyword: companyProfile.primarySiteKeyword,
+      secondarySiteKeywords: companyProfile.secondarySiteKeywords || [],
+      siteDescription: companyProfile.siteDescription,
+      // Business Personality
+      businessPersonality: companyProfile.businessPersonality,
+      valueProposition: companyProfile.valueProposition,
+      // Competitor Research
+      competitorWebsites: companyProfile.competitorWebsites || [],
     } : null;
 
     // Use profile data as defaults if not provided in request

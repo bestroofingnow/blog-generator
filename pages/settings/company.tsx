@@ -376,6 +376,157 @@ export default function CompanySettingsPage() {
           </div>
         </Section>
 
+        {/* SEO & Site Identity */}
+        <Section
+          id="seo"
+          icon="🎯"
+          title="SEO & Site Identity"
+          subtitle="Primary keywords and site focus for all content"
+          isOpen={openSections.has("seo")}
+          onToggle={() => toggleSection("seo")}
+        >
+          <div className={styles.formGrid}>
+            <div className={styles.formGridFull}>
+              <InputField
+                label="Primary Site Keyword"
+                value={profile.primarySiteKeyword || ""}
+                onChange={(v) => updateField("primarySiteKeyword", v)}
+                placeholder="Main keyword for your entire site (e.g., 'horse farm realty', 'landscape lighting')"
+              />
+              <p className={styles.fieldHelp}>
+                This is the #1 keyword you want to rank for. All research and content will be tailored around this.
+              </p>
+            </div>
+            <div className={styles.formGridFull}>
+              <TagsField
+                label="Secondary Site Keywords"
+                tags={profile.secondarySiteKeywords || []}
+                onChange={(tags) => updateField("secondarySiteKeywords", tags)}
+                placeholder="Add supporting keywords..."
+              />
+            </div>
+            <div className={styles.formGridFull}>
+              <TextAreaField
+                label="Site Description"
+                value={profile.siteDescription || ""}
+                onChange={(v) => updateField("siteDescription", v)}
+                placeholder="Brief description of what your business/website is about..."
+                rows={3}
+              />
+            </div>
+          </div>
+        </Section>
+
+        {/* Brand & Personality */}
+        <Section
+          id="branding"
+          icon="✨"
+          title="Brand & Personality"
+          subtitle="How your business communicates and presents itself"
+          isOpen={openSections.has("branding")}
+          onToggle={() => toggleSection("branding")}
+        >
+          <div className={styles.formGrid}>
+            <SelectField
+              label="Brand Voice"
+              value={profile.brandVoice || ""}
+              onChange={(v) => updateField("brandVoice", v)}
+              options={[
+                { value: "professional", label: "Professional" },
+                { value: "friendly", label: "Friendly" },
+                { value: "authoritative", label: "Authoritative" },
+                { value: "educational", label: "Educational" },
+                { value: "innovative", label: "Innovative" },
+                { value: "local", label: "Local/Community" },
+                { value: "luxury", label: "Premium/Luxury" },
+                { value: "value", label: "Value-Focused" },
+                { value: "custom", label: "Custom" },
+              ]}
+            />
+            <SelectField
+              label="Writing Style"
+              value={profile.writingStyle || ""}
+              onChange={(v) => updateField("writingStyle", v)}
+              options={[
+                { value: "conversational", label: "Conversational" },
+                { value: "formal", label: "Formal" },
+                { value: "storytelling", label: "Storytelling" },
+                { value: "data-driven", label: "Data-Driven" },
+                { value: "actionable", label: "Actionable" },
+                { value: "persuasive", label: "Persuasive" },
+                { value: "custom", label: "Custom" },
+              ]}
+            />
+            <div className={styles.formGridFull}>
+              <InputField
+                label="Business Personality"
+                value={profile.businessPersonality || ""}
+                onChange={(v) => updateField("businessPersonality", v)}
+                placeholder="How you want to be perceived (e.g., 'friendly neighborhood expert', 'premium luxury service')"
+              />
+            </div>
+            <div className={styles.formGridFull}>
+              <TextAreaField
+                label="Value Proposition"
+                value={profile.valueProposition || ""}
+                onChange={(v) => updateField("valueProposition", v)}
+                placeholder="What makes your business unique? Why should customers choose you?"
+                rows={2}
+              />
+            </div>
+            <div className={styles.formGridFull}>
+              <TextAreaField
+                label="Mission Statement"
+                value={profile.missionStatement || ""}
+                onChange={(v) => updateField("missionStatement", v)}
+                placeholder="Your company's mission or purpose..."
+                rows={2}
+              />
+            </div>
+            <div className={styles.formGridFull}>
+              <TextAreaField
+                label="Brand Story"
+                value={profile.brandStory || ""}
+                onChange={(v) => updateField("brandStory", v)}
+                placeholder="Brief background story about your company (used in content)..."
+                rows={3}
+              />
+            </div>
+          </div>
+        </Section>
+
+        {/* Competitors */}
+        <Section
+          id="competitors"
+          icon="🏁"
+          title="Competitors"
+          subtitle="Track competitors for research and content strategy"
+          isOpen={openSections.has("competitors")}
+          onToggle={() => toggleSection("competitors")}
+        >
+          <div className={styles.formGrid}>
+            <div className={styles.formGridFull}>
+              <TagsField
+                label="Competitor Names"
+                tags={profile.competitors || []}
+                onChange={(tags) => updateField("competitors", tags)}
+                placeholder="Add competitor business names..."
+              />
+            </div>
+            <div className={styles.formGridFull}>
+              <TagsField
+                label="Competitor Websites"
+                tags={profile.competitorWebsites || []}
+                onChange={(tags) => updateField("competitorWebsites", tags)}
+                placeholder="Add competitor website URLs (e.g., competitor.com)..."
+              />
+              <p className={styles.fieldHelp}>
+                We&apos;ll research these competitors to find content gaps and opportunities for your blog.
+              </p>
+            </div>
+          </div>
+        </Section>
+
         {/* Social Media */}
         <Section
           id="social"
@@ -508,6 +659,34 @@ function InputField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={styles.input}
+      />
+    </div>
+  );
+}
+
+// TextArea Field Component
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+}) {
+  return (
+    <div className={styles.inputGroup}>
+      <label className={styles.label}>{label}</label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={styles.textarea}
+        rows={rows}
       />
     </div>
   );

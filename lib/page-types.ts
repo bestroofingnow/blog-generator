@@ -391,13 +391,27 @@ export interface CompanyProfile {
   climate?: string;
   painPoints?: string[];
 
+  // SEO & Site Identity
+  primarySiteKeyword?: string;        // Main keyword for the entire website (e.g., "horse farm realty", "landscape lighting")
+  secondarySiteKeywords?: string[];   // Supporting keywords for the site
+  siteDescription?: string;           // Brief description of what the site/business is about
+
   // Branding & Content Style
   brandVoice?: BrandVoice;
   customBrandVoice?: string; // Used when brandVoice is "custom"
   writingStyle?: WritingStyle;
   customWritingStyle?: string; // Used when writingStyle is "custom"
   customTargetAudience?: string; // Used when targetAudience is "custom"
-  competitors?: string[];
+
+  // Business Personality & Identity
+  businessPersonality?: string;       // How the business wants to be perceived (e.g., "friendly neighborhood expert", "premium luxury service")
+  missionStatement?: string;          // Company mission
+  valueProposition?: string;          // What makes them unique/different
+  brandStory?: string;                // Brief company story/background for content
+
+  // Competitor Information
+  competitors?: string[];             // Competitor business names
+  competitorWebsites?: string[];      // Competitor website URLs for research
 
   // Social & Online Presence (extended)
   socialLinks?: SocialLinks;
