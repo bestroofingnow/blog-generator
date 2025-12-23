@@ -16,6 +16,7 @@ import {
   WordPressCredentials,
 } from "../../lib/wordpress";
 import { put } from "@vercel/blob";
+import { loadUserProfile } from "../../lib/database";
 
 interface SEOData {
   primaryKeyword: string;
@@ -336,6 +337,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
+    // Load user profile for brand context
+    const userId = (session.user as { id?: string }).id || session.user?.email || "";
+    const userProfile = await loadUserProfile(userId);
+    const companyProfile = userProfile?.companyProfile;
+
+    // Extract profile context for content generation (including branding fields)
+    const profileContext = companyProfile ? {
+      services: companyProfile.services || [],
+      usps: companyProfile.usps || [],
+      certifications: companyProfile.certifications || [],
+      brandVoice: companyProfile.brandVoice,
+      writingStyle: companyProfile.writingStyle,
+      targetAudience: companyProfile.audience,
+      industryType: companyProfile.industryType,
+      yearsInBusiness: companyProfile.yearsInBusiness,
+      // SEO & Site Identity
+      primarySiteKeyword: companyProfile.primarySiteKeyword,
+      secondarySiteKeywords: companyProfile.secondarySiteKeywords || [],
+      siteDescription: companyProfile.siteDescription,
+      // Business Personality
+      businessPersonality: companyProfile.businessPersonality,
+      valueProposition: companyProfile.valueProposition,
+      // Competitor Research
+      competitorWebsites: companyProfile.competitorWebsites || [],
+    } : undefined;
+
+    // Use profile data as defaults if not provided in request
+    const effectiveCompanyName = companyName || companyProfile?.name;
+    const effectiveTone = tone || companyProfile?.brandVoice || "professional yet friendly";
+
+    console.log("[Profile] Loaded profile context:", profileContext ? "yes" : "no");
+    if (profileContext?.primarySiteKeyword) {
+      console.log("[Profile] Primary site keyword:", profileContext.primarySiteKeyword);
+    }
+    if (profileContext?.industryType) {
+      console.log("[Profile] Industry type:", profileContext.industryType);
+    }
+
     // STEP 1: Generate outline
     sendProgress(res, "outline", "AI is designing your blog structure...");
 
@@ -346,10 +385,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         location,
         blogType,
         numberOfSections,
-        tone,
+        tone: effectiveTone,
         primaryKeyword,
         secondaryKeywords: secondaryKeywords || [],
         imageThemes: imageThemes || [],
+        profileContext,
       });
     } catch (error) {
       console.error("Outline generation failed:", error);
@@ -453,11 +493,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       outline,
       topic,
       location,
-      tone,
+      tone: effectiveTone,
       readingLevel,
-      companyName,
+      companyName: effectiveCompanyName,
       wordCountRange,
       numberOfImages,
+      profileContext,
     });
 
     // STEP 4: SEO Validation & Targeted Adjustment Loop (90+ score required)
