@@ -671,7 +671,7 @@ export async function loadScheduledBlogs(
       });
     }
 
-    // Get featured images for these blogs
+    // Get featured images for these blogs (filter by userId for security)
     const blogIds = filteredResults.map((b) => b.id);
     const featuredImages = blogIds.length > 0
       ? await db
@@ -680,7 +680,7 @@ export async function loadScheduledBlogs(
             storagePath: draftImages.storagePath,
           })
           .from(draftImages)
-          .where(eq(draftImages.isFeatured, true))
+          .where(and(eq(draftImages.isFeatured, true), eq(draftImages.userId, userId)))
       : [];
 
     // Create a map of blog ID to featured image URL
@@ -729,7 +729,7 @@ export async function loadUnscheduledBlogs(
       )
       .orderBy(desc(drafts.updatedAt));
 
-    // Get featured images for these blogs
+    // Get featured images for these blogs (filter by userId for security)
     const blogIds = result.map((b) => b.id);
     const featuredImages = blogIds.length > 0
       ? await db
@@ -738,7 +738,7 @@ export async function loadUnscheduledBlogs(
             storagePath: draftImages.storagePath,
           })
           .from(draftImages)
-          .where(eq(draftImages.isFeatured, true))
+          .where(and(eq(draftImages.isFeatured, true), eq(draftImages.userId, userId)))
       : [];
 
     // Create a map of blog ID to featured image URL
