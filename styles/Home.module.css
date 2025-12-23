@@ -49237,12 +49237,8 @@
 
 /* Wizard Step Content */
 .wizardStep {
-  display: none;
-  animation: wizardStepFade 0.4s ease;
-}
-
-.wizardStep.active {
   display: block;
+  animation: wizardStepFade 0.4s ease;
 }
 
 @keyframes wizardStepFade {
