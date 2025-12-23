@@ -216,9 +216,13 @@ Format as comprehensive JSON:
 }`,
   };
 
-  // Append profile and existing content context to the prompt
+  // Use profile industry if available, otherwise use request industry
+  const effectiveIndustry = companyProfile?.industryType || industry;
+
+  // Append profile and existing content context to the prompt with strict industry enforcement
   const basePrompt = prompts[researchType] || prompts.comprehensive;
-  const prompt = basePrompt + profileContextStr + existingContentStr + "\n\nIMPORTANT: Tailor recommendations to the company's specific services, strengths, and target audience. Avoid suggesting content topics that are too similar to their existing content.";
+  const industryConstraint = `\n\nCRITICAL INDUSTRY CONSTRAINT: This research is EXCLUSIVELY for a ${effectiveIndustry.toUpperCase()} business. ALL recommendations MUST be specific to the ${effectiveIndustry} industry. Do NOT include suggestions from other industries.`;
+  const prompt = basePrompt + industryConstraint + profileContextStr + existingContentStr + "\n\nIMPORTANT: Tailor recommendations to the company's specific services, strengths, and target audience. Avoid suggesting content topics that are too similar to their existing content. Stay strictly within the specified industry.";
 
   try {
     const result = await generateText({

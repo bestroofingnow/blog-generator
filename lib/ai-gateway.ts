@@ -165,11 +165,17 @@ export async function generateOutline(params: {
 ${imageThemes.map((theme, i) => `${i + 1}. ${theme}`).join("\n")}`
     : "";
 
+  // Determine industry from profile context
+  const industry = profileContext?.industryType || "local services";
+
   const prompt = `You are an expert content strategist and SEO specialist. Create a detailed blog post outline for a local service company.
 
 IMPORTANT: All content MUST be written in American English only. Do not use any other languages.
 
+CRITICAL INDUSTRY CONSTRAINT: This content is EXCLUSIVELY for a ${industry.toUpperCase()} business. ALL topics, angles, and image prompts MUST be specific to the ${industry} industry. Do NOT reference or include content from other industries.
+
 BLOG SPECIFICATIONS:
+- Industry: ${industry} (IMPORTANT - stay within this industry only)
 - Topic: ${topic}
 - Location: ${location}
 - Blog Type: ${blogType}
@@ -309,9 +315,15 @@ export async function researchKeywords(params: {
     });
   }
 
+  // Determine industry from profile context
+  const industry = profileContext?.industryType || "general services";
+
   const prompt = `You are an expert SEO researcher and content strategist. Analyze the following business topic and provide comprehensive keyword and content research.
 
+CRITICAL: This research is EXCLUSIVELY for a ${industry.toUpperCase()} business. ALL keywords, content angles, and recommendations MUST be relevant to the ${industry} industry. Do NOT suggest topics from other industries.
+
 BUSINESS DETAILS:
+- Industry: ${industry} (IMPORTANT - stay within this industry only)
 - Topic/Service: ${topic}
 - Location: ${location}
 - Company Name: ${companyName || "Local service provider"}
@@ -499,14 +511,20 @@ export async function generateContent(params: {
     }
   }
 
+  // Determine industry from profile context
+  const industry = profileContext?.industryType || "local services";
+
   const prompt = `You are an expert content writer who creates engaging, human-like content for local service businesses. Write a comprehensive, SEO-optimized blog post based on this outline.
 
 CRITICAL: All content MUST be written in American English only. Do not use any other languages, characters, or scripts.
+
+CRITICAL INDUSTRY CONSTRAINT: This content is EXCLUSIVELY for a ${industry.toUpperCase()} business. ALL content, examples, and references MUST be specific to the ${industry} industry. Do NOT reference or include content from other industries.
 
 BLOG OUTLINE:
 ${JSON.stringify(outline, null, 2)}
 
 REQUIREMENTS:
+- Industry: ${industry} (IMPORTANT - stay within this industry only)
 - Topic: ${topic}
 - Location: ${location}
 - Tone: ${tone}

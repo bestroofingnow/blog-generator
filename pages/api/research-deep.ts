@@ -273,10 +273,16 @@ export default async function handler(
       });
     }
 
-    const aiPrompt = `Conduct comprehensive SEO research for ${companyName || `a ${industry} business`}${location ? ` in ${location}` : ""} on "${topic}".
+    // Use profile industry if available, otherwise use request industry
+    const effectiveIndustry = companyProfile?.industryType || industry;
+
+    const aiPrompt = `Conduct comprehensive SEO research for ${companyName || `a ${effectiveIndustry} business`}${location ? ` in ${location}` : ""} on "${topic}".
+
+CRITICAL INDUSTRY CONSTRAINT: This research is EXCLUSIVELY for a ${effectiveIndustry.toUpperCase()} business. ALL keywords, strategies, and recommendations MUST be specific to the ${effectiveIndustry} industry. Do NOT include suggestions from other industries like roofing, HVAC, plumbing, etc. unless that is the specified industry.
+
 ${enrichedContext}${companyContext}${existingContentContext}
 
-Analyze and provide strategic recommendations that align with the company's services and unique strengths. Avoid suggesting content similar to what they've already created. Return JSON:
+Analyze and provide strategic recommendations that align with the company's services and unique strengths. Avoid suggesting content similar to what they've already created. Stay strictly within the ${effectiveIndustry} industry. Return JSON:
 {
   "keywords": {
     "primary": [{"keyword": "", "volume": "high/medium/low", "difficulty": "easy/medium/hard", "intent": "informational/transactional/navigational"}],
