@@ -52,8 +52,16 @@ interface ResearchResult {
     audience?: "homeowners" | "commercial" | "both" | "property";
     brandVoice?: string;
     writingStyle?: string;
+    // SEO & Site Identity
+    primarySiteKeyword?: string;
+    secondarySiteKeywords?: string[];
+    siteDescription?: string;
+    // Business Personality
+    businessPersonality?: string;
+    valueProposition?: string;
     // Deep research additions
     competitors?: string[];
+    competitorWebsites?: string[];
     keywords?: string[];
     suggestedContent?: SuggestedContent[];
     seoInsights?: {
@@ -375,7 +383,13 @@ Extract and return a JSON object with the following fields (use null for any fie
   "targetAudience": "One of: 'homeowners', 'commercial', 'both', or 'property'",
   "brandVoice": "Detected tone: 'professional', 'friendly', 'authoritative', 'educational', 'innovative', 'local', 'luxury', or 'value'",
   "writingStyle": "Detected style: 'conversational', 'formal', 'storytelling', 'data-driven', 'actionable', or 'persuasive'",
+  "primarySiteKeyword": "The MAIN keyword this website should rank for (e.g., 'roofing contractor Charlotte', 'horse farm realty NC', 'landscape lighting installation'). Combine their primary service/product with location.",
+  "secondarySiteKeywords": ["Array of 5-8 supporting keywords they should also target"],
+  "siteDescription": "A brief 1-2 sentence description of what this business does and who they serve",
+  "businessPersonality": "How this business presents itself (e.g., 'friendly neighborhood expert', 'premium luxury service', 'trusted family business', 'innovative industry leader')",
+  "valueProposition": "What makes this business unique - their main differentiator or reason customers should choose them",
   "competitors": ["Names of any competitors mentioned or implied"],
+  "competitorWebsites": ["URLs of competitor websites if mentioned or easily identifiable from context"],
   "keywords": ["Top 10 relevant SEO keywords this business should target based on their services and location"],
   "suggestedContent": [
     {
@@ -459,8 +473,16 @@ CRITICAL INSTRUCTIONS:
       audience: extractedData.targetAudience || "both",
       brandVoice: extractedData.brandVoice || undefined,
       writingStyle: extractedData.writingStyle || undefined,
+      // SEO & Site Identity
+      primarySiteKeyword: extractedData.primarySiteKeyword || undefined,
+      secondarySiteKeywords: extractedData.secondarySiteKeywords || [],
+      siteDescription: extractedData.siteDescription || undefined,
+      // Business Personality
+      businessPersonality: extractedData.businessPersonality || undefined,
+      valueProposition: extractedData.valueProposition || undefined,
       // Deep research data
       competitors: extractedData.competitors || [],
+      competitorWebsites: extractedData.competitorWebsites || [],
       keywords: extractedData.keywords || [],
       suggestedContent: extractedData.suggestedContent || [],
       seoInsights: extractedData.seoInsights || undefined,

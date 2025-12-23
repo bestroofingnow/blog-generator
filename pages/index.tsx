@@ -1793,6 +1793,16 @@ export default function Home() {
           audience: research.audience || prev.audience,
           brandVoice: research.brandVoice || prev.brandVoice,
           writingStyle: research.writingStyle || prev.writingStyle,
+          // SEO & Site Identity
+          primarySiteKeyword: research.primarySiteKeyword || prev.primarySiteKeyword,
+          secondarySiteKeywords: research.secondarySiteKeywords?.length > 0 ? research.secondarySiteKeywords : prev.secondarySiteKeywords,
+          siteDescription: research.siteDescription || prev.siteDescription,
+          // Business Personality
+          businessPersonality: research.businessPersonality || prev.businessPersonality,
+          valueProposition: research.valueProposition || prev.valueProposition,
+          // Competitors
+          competitors: research.competitors?.length > 0 ? research.competitors : prev.competitors,
+          competitorWebsites: research.competitorWebsites?.length > 0 ? research.competitorWebsites : prev.competitorWebsites,
         }));
 
         // Update cities input field
