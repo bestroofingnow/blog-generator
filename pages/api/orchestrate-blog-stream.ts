@@ -392,7 +392,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         profileContext,
       });
     } catch (error) {
-      console.error("Outline generation failed:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Outline generation failed:", errorMessage);
+
+      // Check if it's an API authentication error
+      if (errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("auth")) {
+        console.error("[AI Gateway] Authentication error - check AI_GATEWAY_API_KEY");
+        sendProgress(res, "outline", "AI service temporarily unavailable, using fallback...");
+      }
+
       outline = createFallbackOutline(topic, location, numberOfSections);
     }
 
@@ -489,17 +497,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log(`[Content Gen] Generating content with wordCount: ${wordCountRange}, images: ${numberOfImages}`);
 
-    let rawContent = await generateContent({
-      outline,
-      topic,
-      location,
-      tone: effectiveTone,
-      readingLevel,
-      companyName: effectiveCompanyName,
-      wordCountRange,
-      numberOfImages,
-      profileContext,
-    });
+    let rawContent: string;
+    try {
+      rawContent = await generateContent({
+        outline,
+        topic,
+        location,
+        tone: effectiveTone,
+        readingLevel,
+        companyName: effectiveCompanyName,
+        wordCountRange,
+        numberOfImages,
+        profileContext,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("[Content Gen] Failed:", errorMessage);
+
+      // Check if it's an API authentication error
+      if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
+        console.error("[AI Gateway] Content generation authentication error");
+        sendError(res, "AI service authentication failed. Please contact support.");
+        res.end();
+        return;
+      }
+
+      // Other errors - send to client
+      sendError(res, `Content generation failed: ${errorMessage}`);
+      res.end();
+      return;
+    }
 
     // STEP 4: SEO Validation & Targeted Adjustment Loop (90+ score required)
     sendProgress(res, "seo", "Analyzing SEO quality...");
