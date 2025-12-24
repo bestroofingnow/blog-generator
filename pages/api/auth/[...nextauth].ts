@@ -1,11 +1,35 @@
 // pages/api/auth/[...nextauth].ts
 // NextAuth.js configuration for Neon DB
 
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth, { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { db, users, accounts, sessions, verificationTokens, eq } from "../../../lib/db";
+import { db, users, accounts, eq, UserRole } from "../../../lib/db";
 import bcrypt from "bcryptjs";
+
+// Extend the built-in types
+declare module "next-auth" {
+  interface User {
+    id: string;
+    role: UserRole;
+  }
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name?: string | null;
+      image?: string | null;
+      role: UserRole;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: UserRole;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -46,6 +70,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           image: user.image,
+          role: (user.role as UserRole) || "user",
         };
       },
     }),
@@ -60,15 +85,28 @@ export const authOptions: NextAuthOptions = {
       : []),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+        token.role = user.role || "user";
+      }
+      // Refresh role from database on session update
+      if (trigger === "update" && token.id) {
+        const dbUser = await db
+          .select({ role: users.role })
+          .from(users)
+          .where(eq(users.id, token.id))
+          .limit(1);
+        if (dbUser[0]) {
+          token.role = dbUser[0].role as UserRole;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { id: string }).id = token.id as string;
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
@@ -82,7 +120,7 @@ export const authOptions: NextAuthOptions = {
           .limit(1);
 
         if (existingUser.length === 0) {
-          // Create new user
+          // Create new user with default role
           const newUser = await db
             .insert(users)
             .values({
@@ -90,8 +128,12 @@ export const authOptions: NextAuthOptions = {
               name: user.name,
               image: user.image,
               emailVerified: new Date(),
+              role: "user", // Default role for new users
             })
             .returning();
+
+          // Set role on user object for JWT
+          user.role = "user";
 
           // Link account
           await db.insert(accounts).values({
@@ -107,6 +149,10 @@ export const authOptions: NextAuthOptions = {
             id_token: account.id_token,
           });
         } else {
+          // Set role from existing user for JWT
+          user.id = existingUser[0].id;
+          user.role = (existingUser[0].role as UserRole) || "user";
+
           // Update existing user's OAuth account if needed
           const existingAccount = await db
             .select()

@@ -30,8 +30,12 @@ export const users = pgTable("users", {
   emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
   password: text("password"), // For credentials auth
+  role: text("role").default("user").notNull(), // admin | user
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// User role types
+export type UserRole = "admin" | "user";
 
 // Accounts table (for NextAuth OAuth)
 export const accounts = pgTable(
@@ -347,6 +351,36 @@ export const imageQaLogs = pgTable("image_qa_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ============ CONVERSATIONAL AI CHAT TABLES ============
+
+// Conversations - chat sessions
+export const conversations = pgTable("conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").default("New Conversation"),
+  status: text("status").default("active"), // active | archived
+  metadata: jsonb("metadata"), // Store any additional data (model used, token counts, etc.)
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Conversation messages - individual messages in a conversation
+export const conversationMessages = pgTable("conversation_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: uuid("conversation_id")
+    .notNull()
+    .references(() => conversations.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull(), // user | assistant | system | tool
+  content: text("content").notNull(),
+  metadata: jsonb("metadata"), // Store tool calls, tool results, token usage, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ============ TYPE EXPORTS ============
 
 export type User = typeof users.$inferSelect;
@@ -375,11 +409,21 @@ export type NewWorkflowTask = typeof workflowTasks.$inferInsert;
 export type ImageQaLog = typeof imageQaLogs.$inferSelect;
 export type NewImageQaLog = typeof imageQaLogs.$inferInsert;
 
+// Conversation types
+export type Conversation = typeof conversations.$inferSelect;
+export type NewConversation = typeof conversations.$inferInsert;
+export type ConversationMessage = typeof conversationMessages.$inferSelect;
+export type NewConversationMessage = typeof conversationMessages.$inferInsert;
+
 // Automation status types
 export type QueueStatus = "pending" | "generating" | "generated" | "scheduled" | "published" | "failed";
 export type ProposalStatus = "draft" | "proposed" | "approved" | "generating" | "completed" | "failed";
 export type AutoPostPlatform = "wordpress" | "ghl";
 export type AutoCreateMode = "automatic" | "queue_for_review";
+
+// Conversation status types
+export type ConversationStatus = "active" | "archived";
+export type MessageRole = "user" | "assistant" | "system" | "tool";
 
 // Workflow status types
 export type WorkflowStatus = "pending" | "running" | "paused" | "completed" | "failed";

@@ -394,12 +394,13 @@ Extract and return a JSON object with the following fields (use null for any fie
   "suggestedContent": [
     {
       "type": "blog or service_page or location_page",
-      "title": "Suggested page/blog title",
-      "primaryKeyword": "Target keyword for this content",
+      "title": "Page/blog title SPECIFIC to their industry and services - NEVER generic marketing topics",
+      "primaryKeyword": "Industry-specific keyword combining their service + location",
       "priority": "high or medium or low",
-      "reason": "Brief explanation of why this content would help their SEO"
+      "reason": "Why this helps their specific industry SEO"
     }
   ],
+  "CRITICAL_CONTENT_RULES": "NEVER suggest generic topics like 'blogging tips', 'marketing strategies', 'social media', 'business growth', or similar. ALL suggested content MUST be directly about their services, products, or industry. For example, a roofing company should get topics about roof types, repairs, materials, warranties - NOT about 'how to blog' or 'content marketing'.",
   "seoInsights": {
     "missingPages": ["Pages they should have but don't seem to (e.g., 'Individual service pages', 'City-specific landing pages')"],
     "contentGaps": ["Topics they should cover but haven't (based on common industry content)"],
@@ -413,6 +414,11 @@ CRITICAL INSTRUCTIONS:
 3. For cities, include ALL areas/neighborhoods/cities mentioned
 4. For USPs, look for guarantees, warranties, certifications, awards, response times, etc.
 5. For suggestedContent, provide 5-10 actionable content ideas based on their services and location
+   IMPORTANT: Every suggested topic MUST be directly about their industry/services. Examples:
+   - Roofing company → "Signs You Need a Roof Replacement", "Asphalt vs Metal Roofing in [City]"
+   - HVAC company → "How Often to Change Your Air Filter", "AC Maintenance Checklist"
+   - Landscape lighting → "Best Outdoor Lighting for Security", "Pathway Lighting Ideas"
+   NEVER suggest generic topics like blogging, marketing, social media, business tips, etc.
 6. Return ONLY the JSON object, no other text`;
 
     const analysisResult = await generateText({

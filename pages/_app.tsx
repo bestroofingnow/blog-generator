@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { SessionProvider } from "next-auth/react";
 import { AuthProvider } from "../lib/auth-context";
 import { ThemeProvider } from "../lib/theme-context";
+import { ChatProvider } from "../lib/chat-context";
 import AuthGuard from "../components/AuthGuard";
 import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
 import CommandPalette from "../components/CommandPalette";
@@ -24,9 +25,11 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
             <Component {...pageProps} />
           ) : (
             <AuthGuard>
-              <OnboardingTrigger />
-              <CommandPalette />
-              <Component {...pageProps} />
+              <ChatProvider>
+                <OnboardingTrigger />
+                <CommandPalette />
+                <Component {...pageProps} />
+              </ChatProvider>
             </AuthGuard>
           )}
         </AuthProvider>

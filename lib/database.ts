@@ -1,7 +1,7 @@
 // lib/database.ts
 // Database CRUD operations for Neon DB with Drizzle ORM
 
-import { db, profiles, drafts, draftImages, dailyUsage, automationSettings, generationQueue, siteStructureProposals, workflowRuns, workflowTasks, imageQaLogs, eq, desc, and } from "./db";
+import { db, profiles, drafts, draftImages, dailyUsage, automationSettings, generationQueue, siteStructureProposals, workflowRuns, workflowTasks, imageQaLogs, conversations, conversationMessages, eq, desc, and } from "./db";
 import type { CompanyProfile } from "./page-types";
 import type {
   ScheduleStatus,
@@ -22,6 +22,10 @@ import type {
   TaskStatus,
   IntakeData,
   ResearchData,
+  Conversation,
+  ConversationMessage,
+  ConversationStatus,
+  MessageRole,
 } from "./db";
 
 // ============ PROFILE OPERATIONS ============
@@ -1604,5 +1608,346 @@ export async function getIncompleteWorkflows(): Promise<WorkflowRun[]> {
   } catch (error) {
     console.error("Error getting incomplete workflows:", error);
     return [];
+  }
+}
+
+// ============ CONVERSATION OPERATIONS ============
+
+/**
+ * Message metadata for tool calls and results
+ */
+export interface MessageMetadata {
+  toolCalls?: Array<{
+    id: string;
+    name: string;
+    args: Record<string, unknown>;
+  }>;
+  toolResults?: Array<{
+    toolCallId: string;
+    result: unknown;
+  }>;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+  };
+  model?: string;
+  error?: string;
+}
+
+/**
+ * Conversation metadata
+ */
+export interface ConversationMetadata {
+  modelUsed?: string;
+  totalMessages?: number;
+  lastMessageAt?: string;
+}
+
+/**
+ * Create a new conversation
+ */
+export async function createConversation(
+  userId: string,
+  params?: {
+    title?: string;
+    metadata?: ConversationMetadata;
+  }
+): Promise<{ success: boolean; conversationId: string | null; error: Error | null }> {
+  try {
+    const result = await db
+      .insert(conversations)
+      .values({
+        userId,
+        title: params?.title || "New Conversation",
+        status: "active",
+        metadata: params?.metadata || null,
+      })
+      .returning({ id: conversations.id });
+
+    if (result.length === 0) {
+      return { success: false, conversationId: null, error: new Error("Failed to create conversation") };
+    }
+
+    return { success: true, conversationId: result[0].id, error: null };
+  } catch (error) {
+    console.error("Error creating conversation:", error);
+    return { success: false, conversationId: null, error: error as Error };
+  }
+}
+
+/**
+ * Get a conversation by ID
+ */
+export async function getConversation(
+  userId: string,
+  conversationId: string
+): Promise<Conversation | null> {
+  try {
+    const result = await db
+      .select()
+      .from(conversations)
+      .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("Error getting conversation:", error);
+    return null;
+  }
+}
+
+/**
+ * Get all conversations for a user
+ */
+export async function getUserConversations(
+  userId: string,
+  filters?: {
+    status?: ConversationStatus;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<Conversation[]> {
+  try {
+    let result = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.userId, userId))
+      .orderBy(desc(conversations.updatedAt));
+
+    if (filters?.status) {
+      result = result.filter((c) => c.status === filters.status);
+    }
+
+    if (filters?.offset) {
+      result = result.slice(filters.offset);
+    }
+
+    if (filters?.limit) {
+      result = result.slice(0, filters.limit);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error getting user conversations:", error);
+    return [];
+  }
+}
+
+/**
+ * Update a conversation
+ */
+export async function updateConversation(
+  userId: string,
+  conversationId: string,
+  updates: Partial<{
+    title: string;
+    status: ConversationStatus;
+    metadata: ConversationMetadata;
+  }>
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    await db
+      .update(conversations)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error updating conversation:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
+ * Delete a conversation and all its messages
+ */
+export async function deleteConversation(
+  userId: string,
+  conversationId: string
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    // Messages are cascade deleted via foreign key
+    await db
+      .delete(conversations)
+      .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error deleting conversation:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
+ * Archive a conversation
+ */
+export async function archiveConversation(
+  userId: string,
+  conversationId: string
+): Promise<{ success: boolean; error: Error | null }> {
+  return updateConversation(userId, conversationId, { status: "archived" });
+}
+
+/**
+ * Save a message to a conversation
+ */
+export async function saveConversationMessage(
+  userId: string,
+  conversationId: string,
+  message: {
+    role: MessageRole;
+    content: string;
+    metadata?: MessageMetadata;
+  }
+): Promise<{ success: boolean; messageId: string | null; error: Error | null }> {
+  try {
+    // First verify the conversation belongs to this user
+    const conversation = await getConversation(userId, conversationId);
+    if (!conversation) {
+      return { success: false, messageId: null, error: new Error("Conversation not found or access denied") };
+    }
+
+    const result = await db
+      .insert(conversationMessages)
+      .values({
+        conversationId,
+        userId,
+        role: message.role,
+        content: message.content,
+        metadata: message.metadata || null,
+      })
+      .returning({ id: conversationMessages.id });
+
+    if (result.length === 0) {
+      return { success: false, messageId: null, error: new Error("Failed to save message") };
+    }
+
+    // Update conversation's updatedAt timestamp
+    await db
+      .update(conversations)
+      .set({ updatedAt: new Date() })
+      .where(eq(conversations.id, conversationId));
+
+    return { success: true, messageId: result[0].id, error: null };
+  } catch (error) {
+    console.error("Error saving conversation message:", error);
+    return { success: false, messageId: null, error: error as Error };
+  }
+}
+
+/**
+ * Get messages for a conversation
+ */
+export async function getConversationMessages(
+  userId: string,
+  conversationId: string,
+  options?: {
+    limit?: number;
+    beforeId?: string;
+  }
+): Promise<ConversationMessage[]> {
+  try {
+    // First verify the conversation belongs to this user
+    const conversation = await getConversation(userId, conversationId);
+    if (!conversation) {
+      return [];
+    }
+
+    let result = await db
+      .select()
+      .from(conversationMessages)
+      .where(eq(conversationMessages.conversationId, conversationId))
+      .orderBy(conversationMessages.createdAt);
+
+    // Filter messages before a certain ID for pagination
+    if (options?.beforeId) {
+      const beforeIndex = result.findIndex((m) => m.id === options.beforeId);
+      if (beforeIndex > 0) {
+        result = result.slice(0, beforeIndex);
+      }
+    }
+
+    // Limit results (from the end for pagination)
+    if (options?.limit && result.length > options.limit) {
+      result = result.slice(-options.limit);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error getting conversation messages:", error);
+    return [];
+  }
+}
+
+/**
+ * Get the last N messages from a conversation (for context)
+ */
+export async function getRecentConversationMessages(
+  userId: string,
+  conversationId: string,
+  limit: number = 20
+): Promise<ConversationMessage[]> {
+  return getConversationMessages(userId, conversationId, { limit });
+}
+
+/**
+ * Delete a specific message
+ */
+export async function deleteConversationMessage(
+  userId: string,
+  messageId: string
+): Promise<{ success: boolean; error: Error | null }> {
+  try {
+    // Verify the message belongs to this user
+    const message = await db
+      .select()
+      .from(conversationMessages)
+      .where(and(eq(conversationMessages.id, messageId), eq(conversationMessages.userId, userId)))
+      .limit(1);
+
+    if (message.length === 0) {
+      return { success: false, error: new Error("Message not found or access denied") };
+    }
+
+    await db
+      .delete(conversationMessages)
+      .where(and(eq(conversationMessages.id, messageId), eq(conversationMessages.userId, userId)));
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error deleting conversation message:", error);
+    return { success: false, error: error as Error };
+  }
+}
+
+/**
+ * Generate a title for a conversation based on the first message
+ * (Called after first user message to auto-title the conversation)
+ */
+export async function generateConversationTitle(
+  userId: string,
+  conversationId: string,
+  firstMessage: string
+): Promise<{ success: boolean; title: string; error: Error | null }> {
+  try {
+    // Generate a short title from the first message (max 50 chars)
+    const words = firstMessage.trim().split(/\s+/).slice(0, 8);
+    let title = words.join(" ");
+    if (title.length > 50) {
+      title = title.slice(0, 47) + "...";
+    }
+    if (!title) {
+      title = "New Conversation";
+    }
+
+    await updateConversation(userId, conversationId, { title });
+
+    return { success: true, title, error: null };
+  } catch (error) {
+    console.error("Error generating conversation title:", error);
+    return { success: false, title: "New Conversation", error: error as Error };
   }
 }

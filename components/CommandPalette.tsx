@@ -34,6 +34,7 @@ export const COMMAND_EVENTS = {
   EXPORT_CONTENT: "cmd:export-content",
   TOGGLE_THEME: "cmd:toggle-theme",
   SAVE_DRAFT: "cmd:save-draft",
+  OPEN_CHAT: "cmd:open-chat",
 } as const;
 
 export function dispatchCommandEvent(event: string, detail?: Record<string, unknown>) {
@@ -235,6 +236,14 @@ export default function CommandPalette() {
           icon: theme === "dark" ? <SunIcon /> : <MoonIcon />,
           action: () => setTheme(theme === "dark" ? "light" : "dark"),
           keywords: ["dark", "light", "theme", "mode"],
+        },
+        {
+          id: "action-chat",
+          label: "Open AI Chat",
+          shortcut: ["Ctrl", "J"],
+          icon: <ChatIcon />,
+          action: () => dispatchCommandEvent(COMMAND_EVENTS.OPEN_CHAT),
+          keywords: ["assistant", "help", "ai", "conversation"],
         },
       ],
     },
@@ -497,6 +506,14 @@ function MoonIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
+function ChatIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   );
 }
