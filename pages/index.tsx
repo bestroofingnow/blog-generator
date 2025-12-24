@@ -1590,7 +1590,7 @@ export default function Home() {
     setIsResearching(false);
   };
 
-  // AI Topic Research - suggests topics based on company profile and SEO opportunities
+  // AI Topic Research - suggests topics based on real SERP data and SEO best practices
   const handleAITopicResearch = async () => {
     if (!companyProfile.name && !companyProfile.website) {
       showToast("error", "Company Profile Required", "Please set up your company profile first to get AI topic suggestions.");
@@ -1601,20 +1601,13 @@ export default function Home() {
     setSuggestedTopics(null);
 
     const location = companyProfile.headquarters || formData.location || "United States";
-    const industry = companyProfile.industryType || "business";
 
     try {
-      const response = await fetch("/api/research-keywords", {
+      // Use the new SEO-focused topic research endpoint
+      const response = await fetch("/api/research-topics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: `${industry} services blog topics`,
-          location,
-          companyName: companyProfile.name,
-          companyWebsite: companyProfile.website,
-          blogType: "Topic Research",
-          findTopics: true,
-        }),
+        body: JSON.stringify({ location }),
       });
 
       const responseText = await response.text();
@@ -1625,58 +1618,41 @@ export default function Home() {
         throw new Error(`Server error: ${responseText.substring(0, 200)}`);
       }
 
-      if (data.success && data.suggestions) {
-        // Blog types that match different content angles
-        const blogTypes = [
-          "How-To Guide",
-          "Expert Tips",
-          "Neighborhood Guide",
-          "Before and After",
-          "Product Comparison",
-        ];
-
-        // Word count ranges based on topic complexity
-        const wordCounts: WordCountRange[] = [
-          "1800-2400", // Comprehensive guide
-          "1400-1800", // Tips article
-          "1000-1400", // Local guide
-          "1400-1800", // Case study
-          "1800-2400", // Comparison
-        ];
-
-        // Create fully populated topic suggestions
-        const topics = [
-          {
-            topic: `Complete Guide to ${data.suggestions.primaryKeyword} in ${location}`,
-            primaryKeyword: data.suggestions.primaryKeyword,
-            secondaryKeywords: data.suggestions.secondaryKeywords.slice(0, 4),
-            metaTitle: data.suggestions.metaTitle || `${data.suggestions.primaryKeyword} Guide | ${companyProfile.name}`,
-            metaDescription: data.suggestions.metaDescription || `Learn everything about ${data.suggestions.primaryKeyword} in ${location}. Expert tips from ${companyProfile.name}.`,
-            wordCountRange: "1800-2400" as WordCountRange,
-            location,
-            blogType: "How-To Guide",
-            reason: "High-value primary keyword with strong search intent",
-          },
-          ...(data.suggestions.contentAngles || []).slice(0, 4).map((angle: string, i: number) => {
-            const keyword = data.suggestions.secondaryKeywords[i] || data.suggestions.primaryKeyword;
-            return {
-              topic: angle,
-              primaryKeyword: keyword,
-              secondaryKeywords: data.suggestions.secondaryKeywords.filter((_: string, idx: number) => idx !== i).slice(0, 4),
-              metaTitle: `${keyword} | ${companyProfile.name} ${location}`,
-              metaDescription: `Discover ${keyword.toLowerCase()} tips and insights for ${location} residents. Trusted advice from ${companyProfile.name}.`,
-              wordCountRange: wordCounts[i + 1] || "1400-1800" as WordCountRange,
-              location,
-              blogType: blogTypes[i + 1] || "Expert Tips",
-              reason: data.suggestions.competitorInsights?.[i] || "SEO opportunity based on competitor analysis",
-            };
-          }),
-        ];
+      if (data.success && data.topics && data.topics.length > 0) {
+        // Map the API response to the frontend format
+        const topics = data.topics.map((topic: {
+          topic: string;
+          primaryKeyword: string;
+          blogType: string;
+          wordCount: string;
+          location: string;
+          reason: string;
+          searchIntent?: string;
+          estimatedDifficulty?: string;
+        }) => ({
+          topic: topic.topic,
+          primaryKeyword: topic.primaryKeyword,
+          secondaryKeywords: [], // Will be filled by keyword research when selected
+          metaTitle: `${topic.topic} | ${companyProfile.name}`,
+          metaDescription: `Expert guide on ${topic.primaryKeyword} in ${location}. Trusted advice from ${companyProfile.name}.`,
+          wordCountRange: topic.wordCount as WordCountRange || "1400-1800" as WordCountRange,
+          location: topic.location || location,
+          blogType: topic.blogType,
+          reason: topic.reason,
+          searchIntent: topic.searchIntent,
+          difficulty: topic.estimatedDifficulty,
+        }));
 
         setSuggestedTopics(topics);
-        showToast("success", "Topics Found!", `${topics.length} complete blog configurations generated.`);
+
+        // Show SERP insights if available
+        if (data.serpInsights?.paaQuestions?.length > 0) {
+          showToast("success", "Topics Found!", `${topics.length} SEO-optimized topics based on real search data.`);
+        } else {
+          showToast("success", "Topics Found!", `${topics.length} topic suggestions generated.`);
+        }
       } else {
-        showToast("error", "Research Failed", data.error || "Could not generate topic suggestions");
+        showToast("error", "Research Failed", data.error || "Could not generate topic suggestions. Please try again.");
       }
     } catch (error) {
       console.error("Topic research error:", error);
