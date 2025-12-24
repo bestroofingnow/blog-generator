@@ -1,9 +1,11 @@
 // components/CommandPalette.tsx
 // Full-featured command palette with navigation, AI actions, and keyboard shortcuts
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { Command } from "cmdk";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import { commandPalette, modalOverlay } from "../lib/animations";
 import styles from "../styles/CommandPalette.module.css";
 
@@ -45,7 +47,12 @@ export default function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { theme, setTheme } = useTheme();
+  const { data: session } = useSession();
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user is admin
+  const isAdmin = (session?.user as { role?: string })?.role === "admin";
 
   // Toggle command palette with keyboard shortcut
   useEffect(() => {
@@ -249,6 +256,28 @@ export default function CommandPalette() {
     },
   ];
 
+  // Add admin commands if user is admin
+  const allCommandGroups = useMemo(() => {
+    if (!isAdmin) return commandGroups;
+
+    return [
+      ...commandGroups,
+      {
+        heading: "Admin",
+        items: [
+          {
+            id: "admin-users",
+            label: "Manage Users",
+            shortcut: ["G", "U"],
+            icon: <UsersIcon />,
+            action: () => router.push("/admin/users"),
+            keywords: ["users", "admin", "roles", "permissions"],
+          },
+        ],
+      },
+    ];
+  }, [isAdmin, commandGroups, router]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -296,7 +325,7 @@ export default function CommandPalette() {
                   No results found.
                 </Command.Empty>
 
-                {commandGroups.map((group) => (
+                {allCommandGroups.map((group) => (
                   <Command.Group
                     key={group.heading}
                     heading={group.heading}
@@ -514,6 +543,17 @@ function ChatIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   );
 }
