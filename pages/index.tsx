@@ -685,37 +685,76 @@ export default function Home() {
     }
   }, []);
 
-  // Load Company Profile from localStorage and check if setup wizard should show
+  // Load Company Profile from database when user is authenticated
   useEffect(() => {
-    const saved = localStorage.getItem("companyProfile");
-    const wizardDismissed = localStorage.getItem("setupWizardDismissed");
+    const loadProfileFromDatabase = async () => {
+      if (!user?.id) {
+        // Not authenticated yet, check localStorage with legacy key (for backwards compat only)
+        const wizardDismissed = localStorage.getItem("setupWizardDismissed");
+        if (!wizardDismissed) {
+          setShowSetupWizard(true);
+        }
+        setHasCheckedSetup(true);
+        return;
+      }
 
-    if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        setCompanyProfile(parsed);
-        // Also set cities input from saved cities
-        if (parsed.cities?.length > 0) {
-          setCitiesInput(parsed.cities.join(", "));
+        // Load profile from database API
+        const response = await fetch("/api/profile");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.profile?.companyProfile) {
+            const profile = data.profile.companyProfile;
+            setCompanyProfile(profile);
+            // Also set cities input from saved cities
+            if (profile.cities?.length > 0) {
+              setCitiesInput(profile.cities.join(", "));
+            }
+            // Sync with form's companyName and companyWebsite
+            if (profile.name) {
+              setFormData(prev => ({ ...prev, companyName: profile.name, companyWebsite: profile.website || "" }));
+            }
+            // Cache in user-specific localStorage
+            localStorage.setItem(`companyProfile_${user.id}`, JSON.stringify(profile));
+            setHasCheckedSetup(true);
+            return;
+          }
         }
-        // Sync with form's companyName and companyWebsite
-        if (parsed.name) {
-          setFormData(prev => ({ ...prev, companyName: parsed.name, companyWebsite: parsed.website || "" }));
+      } catch (error) {
+        console.error("Failed to load profile from database:", error);
+      }
+
+      // Fallback: check user-specific localStorage cache
+      const userSpecificKey = `companyProfile_${user.id}`;
+      const saved = localStorage.getItem(userSpecificKey);
+      const wizardDismissed = localStorage.getItem(`setupWizardDismissed_${user.id}`);
+
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setCompanyProfile(parsed);
+          if (parsed.cities?.length > 0) {
+            setCitiesInput(parsed.cities.join(", "));
+          }
+          if (parsed.name) {
+            setFormData(prev => ({ ...prev, companyName: parsed.name, companyWebsite: parsed.website || "" }));
+          }
+        } catch {
+          if (!wizardDismissed) {
+            setShowSetupWizard(true);
+          }
         }
-      } catch {
-        // Invalid saved data - show wizard
+      } else {
+        // No profile - show wizard for new users
         if (!wizardDismissed) {
           setShowSetupWizard(true);
         }
       }
-    } else {
-      // No company profile saved - show wizard for new users
-      if (!wizardDismissed) {
-        setShowSetupWizard(true);
-      }
-    }
-    setHasCheckedSetup(true);
-  }, []);
+      setHasCheckedSetup(true);
+    };
+
+    loadProfileFromDatabase();
+  }, [user?.id]);
 
   // Load Page Library from localStorage
   useEffect(() => {
@@ -900,11 +939,37 @@ export default function Home() {
     localStorage.setItem("gohighlevelSettings", JSON.stringify(gohighlevel));
   };
 
-  // Save Company Profile to localStorage
-  const saveCompanyProfile = () => {
-    localStorage.setItem("companyProfile", JSON.stringify(companyProfile));
-    // Also update form's company info
+  // Save Company Profile to database and localStorage
+  const saveCompanyProfile = async () => {
+    // Update form's company info
     setFormData(prev => ({ ...prev, companyName: companyProfile.name, companyWebsite: companyProfile.website }));
+
+    if (!user?.id) {
+      // Not authenticated - only save to localStorage with legacy key
+      localStorage.setItem("companyProfile", JSON.stringify(companyProfile));
+      return;
+    }
+
+    // Save to user-specific localStorage for caching
+    localStorage.setItem(`companyProfile_${user.id}`, JSON.stringify(companyProfile));
+
+    // Save to database
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: companyProfile.name,
+          companyProfile: companyProfile,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save profile to database");
+      }
+    } catch (error) {
+      console.error("Error saving profile to database:", error);
+    }
   };
 
   // Handle company profile input changes
@@ -1859,7 +1924,8 @@ export default function Home() {
 
   // Skip wizard
   const handleWizardSkip = () => {
-    localStorage.setItem("setupWizardDismissed", "true");
+    const key = user?.id ? `setupWizardDismissed_${user.id}` : "setupWizardDismissed";
+    localStorage.setItem(key, "true");
     setShowSetupWizard(false);
   };
 
@@ -4581,9 +4647,8 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() => {
-                  localStorage.setItem("companyProfile", JSON.stringify(companyProfile));
-                  setFormData(prev => ({ ...prev, companyName: companyProfile.name, companyWebsite: companyProfile.website }));
+                onClick={async () => {
+                  await saveCompanyProfile();
                   showToast("success", "Profile Saved", "Your company profile has been saved.");
                 }}
                 className={styles.testButton}
