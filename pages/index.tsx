@@ -698,6 +698,24 @@ export default function Home() {
         return;
       }
 
+      // Clear existing profile data when user changes to prevent stale data
+      setCompanyProfile({
+        name: "",
+        website: "",
+        phone: "",
+        email: "",
+        address: "",
+        services: [],
+        usps: [],
+        cities: [],
+        audience: "homeowners",
+        industryType: "",
+        headquarters: "",
+        state: "",
+        stateAbbr: "",
+      });
+      setCitiesInput("");
+
       try {
         // Load profile from database API
         const response = await fetch("/api/profile");

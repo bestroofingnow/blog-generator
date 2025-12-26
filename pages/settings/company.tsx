@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
+import { useSession } from "next-auth/react";
 import styles from "../../styles/CompanySettings.module.css";
 import { useOnboardingTrigger } from "../../components/onboarding/OnboardingTrigger";
 import { useCompanyResearch } from "../../lib/hooks/useCompanyResearch";
@@ -62,9 +63,9 @@ const LINK_CATEGORIES = [
 ];
 
 export default function CompanySettingsPage() {
+  const { data: session } = useSession();
   const [profile, setProfile] = useState<Partial<CompanyProfile>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(["basic"]));
 
@@ -74,10 +75,17 @@ export default function CompanySettingsPage() {
   // Research hook
   const { research, isResearching } = useCompanyResearch();
 
-  // Load profile on mount
+  // Get user ID for dependency tracking
+  const userId = (session?.user as { id?: string })?.id;
+
+  // Load profile on mount and when user changes
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (userId) {
+      setIsLoading(true);
+      setProfile({}); // Clear profile when user changes
+      loadProfile();
+    }
+  }, [userId]);
 
   const loadProfile = async () => {
     try {
@@ -97,7 +105,6 @@ export default function CompanySettingsPage() {
 
   // Auto-save with debounce
   const saveProfile = useCallback(async (updatedProfile: Partial<CompanyProfile>) => {
-    setIsSaving(true);
     setSaveStatus("saving");
 
     try {
@@ -110,11 +117,13 @@ export default function CompanySettingsPage() {
       if (response.ok) {
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
+      } else {
+        console.error("Failed to save profile:", response.status);
+        setSaveStatus("idle");
       }
     } catch (error) {
       console.error("Failed to save profile:", error);
-    } finally {
-      setIsSaving(false);
+      setSaveStatus("idle");
     }
   }, []);
 
