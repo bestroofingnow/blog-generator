@@ -67,7 +67,7 @@ export default function CompanySettingsPage() {
   const [profile, setProfile] = useState<Partial<CompanyProfile>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["basic"]));
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["basic", "branding"]));
 
   // Onboarding wizard hook
   const { openWizard, WizardModal } = useOnboardingTrigger();
