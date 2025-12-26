@@ -134,7 +134,6 @@ export function scoreContent({
     const h1Match = content.match(/<h1[^>]*>(.*?)<\/h1>/i);
     const h1Text = h1Match ? stripHtml(h1Match[1]) : "";
     const keywordInH1 = h1Text.toLowerCase().includes(primaryKeyword.toLowerCase());
-    const keywordInMeta = metaTitle.toLowerCase().includes(primaryKeyword.toLowerCase());
 
     if (keywordDensity >= idealMin && keywordDensity <= idealMax && keywordInH1) {
       keywordScore = 100;
@@ -283,14 +282,64 @@ export function scoreContent({
     improvements.push("Add more images to improve engagement");
   }
 
-  // Calculate overall score (weighted average)
-  const overallScore = Math.round(
+  // 6. Meta Title & Description Score (bonus/penalty - affects overall)
+  let metaBonus = 0;
+
+  // Check meta title (should be under 60 chars with keyword)
+  if (metaTitle) {
+    const titleLen = metaTitle.length;
+    const titleHasKeyword = primaryKeyword && metaTitle.toLowerCase().includes(primaryKeyword.toLowerCase());
+
+    if (titleLen <= 60 && titleHasKeyword) {
+      metaBonus += 2; // Good meta title
+    } else {
+      if (titleLen > 60) {
+        improvements.push(`Meta title too long (${titleLen} chars) - aim for under 60 characters`);
+        metaBonus -= 1;
+      }
+      if (!titleHasKeyword && primaryKeyword) {
+        improvements.push(`Meta title should include primary keyword "${primaryKeyword}"`);
+        metaBonus -= 1;
+      }
+    }
+  }
+
+  // Check meta description (should be 150-160 chars with keyword)
+  if (metaDescription) {
+    const metaLen = metaDescription.length;
+    const hasKeyword = primaryKeyword && metaDescription.toLowerCase().includes(primaryKeyword.toLowerCase());
+
+    if (metaLen >= 150 && metaLen <= 160 && hasKeyword) {
+      metaBonus += 3; // Perfect meta description
+    } else if (metaLen >= 120 && metaLen <= 165 && hasKeyword) {
+      metaBonus += 1; // Good meta description
+    } else {
+      if (metaLen < 120) {
+        improvements.push(`Meta description too short (${metaLen} chars) - aim for 150-160 characters`);
+        metaBonus -= 2;
+      } else if (metaLen > 165) {
+        improvements.push(`Meta description too long (${metaLen} chars) - will be truncated. Aim for 150-160 characters`);
+        metaBonus -= 1;
+      }
+      if (!hasKeyword && primaryKeyword) {
+        improvements.push(`Meta description should include primary keyword "${primaryKeyword}"`);
+        metaBonus -= 2;
+      }
+    }
+  } else {
+    improvements.push("Add a meta description (150-160 characters) with your primary keyword");
+    metaBonus -= 3;
+  }
+
+  // Calculate overall score (weighted average + meta bonus)
+  const overallScore = Math.min(100, Math.max(0, Math.round(
     keywordScore * 0.30 +
     lengthScore * 0.25 +
     readabilityScore * 0.20 +
     headingScore * 0.15 +
-    imageScore * 0.10
-  );
+    imageScore * 0.10 +
+    metaBonus
+  )));
 
   return {
     overall: overallScore,

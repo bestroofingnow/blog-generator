@@ -834,11 +834,14 @@ REVIEW CRITERIA:
    - Is the subject matter accurate to the prompt?
 
 An image should be REJECTED if:
-- It contains ANY misspelled text
-- It contains text in the wrong language
-- It contains garbled/nonsensical text
+- It contains ANY visible text, letters, numbers, or words (regardless of spelling)
+- It contains text in ANY language (we want ZERO text)
+- It contains garbled/nonsensical text artifacts
+- It has signs, labels, banners, or watermarks with readable text
 - It has visual inaccuracies or distortions
 - It doesn't match the prompt
+
+IMPORTANT: Even if text is correctly spelled, REJECT the image. We want NO TEXT AT ALL in these images. Text will be added via HTML, not in the image itself.
 
 Respond ONLY in JSON:
 {
@@ -913,11 +916,14 @@ CRITICAL REVIEW CHECKLIST:
    - Is the lighting and perspective consistent?
 
 REJECTION CRITERIA (reject if ANY apply):
-- Image contains misspelled text
-- Image contains text in wrong language
-- Image contains garbled/nonsensical text
+- Image contains ANY visible text, letters, numbers, or words (even if correctly spelled)
+- Image contains text in ANY language - we want ZERO text in these images
+- Image contains garbled/nonsensical AI-generated text artifacts
+- Image has signs, banners, labels, or watermarks with readable text
 - Image has significant visual distortions
 - Image doesn't match the prompt
+
+IMPORTANT: REJECT all images with visible text. Even correctly spelled text is NOT acceptable. These images should be 100% text-free. Any text overlay will be added via HTML.
 
 Respond ONLY in JSON format:
 {
@@ -1284,17 +1290,18 @@ IMAGE REQUIREMENTS:
 - Composition: Rule of thirds, balanced, visually appealing focal point
 - Subject: ${prompt}
 
-CRITICAL TEXT RESTRICTIONS (VERY IMPORTANT):
-- ABSOLUTELY NO TEXT, WORDS, LETTERS, OR NUMBERS anywhere in the image
-- NO signs, labels, banners, logos, watermarks, or brand names
-- NO readable text on objects, buildings, vehicles, clothing, or products
-- If text would naturally appear (storefront signs, product labels, street signs), the image should either not include those elements OR blur/obscure any text
-- NO typography, handwriting, or digital text overlays of any kind
-- Pure visual imagery only - this image must contain ZERO text elements
+ABSOLUTELY CRITICAL - NO TEXT ALLOWED (READ THIS CAREFULLY):
+- This image must contain ZERO text, words, letters, numbers, or typography of ANY kind
+- NO signs, NO labels, NO banners, NO logos, NO watermarks, NO brand names
+- NO readable text on ANY objects, buildings, vehicles, clothing, products, or surfaces
+- DO NOT include storefronts, billboards, street signs, product packaging, or anything that would have text
+- NO handwriting, digital text, captions, or overlays
+- If the scene typically contains text elements, compose the shot to EXCLUDE them entirely
+- The image must be 100% text-free - pure visual imagery only
 
-LANGUAGE: All visual elements should be culturally neutral and universally appropriate for American business audiences.
+CULTURAL CONTEXT: American business setting, professional and appropriate.
 
-Generate a clean, professional image that tells the story visually without any text elements. The image should look like it was captured by a professional photographer for a high-end marketing campaign or business magazine.`;
+OUTPUT: A clean, professional photograph with ABSOLUTELY NO TEXT ELEMENTS. Focus on visual storytelling. The image should look like it was captured by a professional photographer for a high-end marketing campaign. Any text needed will be added separately via HTML - the image itself must be completely text-free.`;
 
   try {
     console.log(`[Image Gen] Starting image generation for index ${index}...`);
