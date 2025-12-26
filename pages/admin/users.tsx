@@ -12,7 +12,7 @@ interface User {
   id: string;
   name: string | null;
   email: string;
-  role: "admin" | "user";
+  role: "superadmin" | "admin" | "user";
   createdAt: string | null;
   image: string | null;
 }
@@ -32,18 +32,22 @@ export default function AdminUsersPage() {
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
-  // Check admin access
+  // Check admin access (superadmin or admin can access)
+  const userRole = (session?.user as { role?: string })?.role;
+  const hasAdminAccess = userRole === "superadmin" || userRole === "admin";
+  const isSuperAdmin = userRole === "superadmin";
+
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
       router.push("/login");
       return;
     }
-    if ((session.user as { role?: string }).role !== "admin") {
+    if (!hasAdminAccess) {
       router.push("/?error=admin_required");
       return;
     }
-  }, [session, status, router]);
+  }, [session, status, router, hasAdminAccess]);
 
   // Load users
   const loadUsers = useCallback(async () => {
@@ -69,10 +73,10 @@ export default function AdminUsersPage() {
   }, [router]);
 
   useEffect(() => {
-    if (session?.user && (session.user as { role?: string }).role === "admin") {
+    if (session?.user && hasAdminAccess) {
       loadUsers();
     }
-  }, [session, loadUsers]);
+  }, [session, loadUsers, hasAdminAccess]);
 
   // Show toast notification
   const showToast = (message: string, type: "success" | "error") => {
@@ -81,7 +85,12 @@ export default function AdminUsersPage() {
   };
 
   // Update user role
-  const updateRole = async (userId: string, newRole: "admin" | "user") => {
+  const updateRole = async (userId: string, newRole: "superadmin" | "admin" | "user") => {
+    // Only superadmin can promote to superadmin
+    if (newRole === "superadmin" && !isSuperAdmin) {
+      showToast("Only superadmins can promote to superadmin", "error");
+      return;
+    }
     setActionInProgress(userId);
     try {
       const response = await fetch("/api/admin/users", {
@@ -139,6 +148,7 @@ export default function AdminUsersPage() {
   );
 
   // Stats
+  const superadminCount = users.filter((u) => u.role === "superadmin").length;
   const adminCount = users.filter((u) => u.role === "admin").length;
   const userCount = users.filter((u) => u.role === "user").length;
 
@@ -224,21 +234,21 @@ export default function AdminUsersPage() {
             <div className={styles.statValue}>{users.length}</div>
           </div>
           <div className={styles.statCard}>
+            <div className={styles.statLabel}>Super Admins</div>
+            <div className={styles.statValue}>
+              {superadminCount}
+            </div>
+          </div>
+          <div className={styles.statCard}>
             <div className={styles.statLabel}>Admins</div>
             <div className={styles.statValue}>
               {adminCount}
-              <span className={styles.statValueSmall}>
-                ({Math.round((adminCount / users.length) * 100) || 0}%)
-              </span>
             </div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Regular Users</div>
             <div className={styles.statValue}>
               {userCount}
-              <span className={styles.statValueSmall}>
-                ({Math.round((userCount / users.length) * 100) || 0}%)
-              </span>
             </div>
           </div>
         </div>
@@ -300,18 +310,20 @@ export default function AdminUsersPage() {
                     <td>
                       <span
                         className={`${styles.roleBadge} ${
-                          user.role === "admin"
+                          user.role === "superadmin"
+                            ? styles.roleSuperAdmin
+                            : user.role === "admin"
                             ? styles.roleAdmin
                             : styles.roleUser
                         }`}
                       >
-                        {user.role}
+                        {user.role === "superadmin" ? "Super Admin" : user.role}
                       </span>
                     </td>
                     <td>{formatDate(user.createdAt)}</td>
                     <td>
                       <div className={styles.actions}>
-                        {user.role === "user" ? (
+                        {user.role === "user" && (
                           <button
                             className={`${styles.actionButton} ${styles.promoteBtn}`}
                             onClick={() => updateRole(user.id, "admin")}
@@ -319,21 +331,42 @@ export default function AdminUsersPage() {
                           >
                             Make Admin
                           </button>
-                        ) : (
+                        )}
+                        {user.role === "admin" && (
+                          <>
+                            <button
+                              className={`${styles.actionButton} ${styles.demoteBtn}`}
+                              onClick={() => updateRole(user.id, "user")}
+                              disabled={
+                                actionInProgress === user.id ||
+                                isCurrentUser(user.id)
+                              }
+                              title={
+                                isCurrentUser(user.id)
+                                  ? "You cannot demote yourself"
+                                  : ""
+                              }
+                            >
+                              Remove Admin
+                            </button>
+                            {isSuperAdmin && (
+                              <button
+                                className={`${styles.actionButton} ${styles.promoteBtn}`}
+                                onClick={() => updateRole(user.id, "superadmin")}
+                                disabled={actionInProgress === user.id}
+                              >
+                                Make Super Admin
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {user.role === "superadmin" && isSuperAdmin && !isCurrentUser(user.id) && (
                           <button
                             className={`${styles.actionButton} ${styles.demoteBtn}`}
-                            onClick={() => updateRole(user.id, "user")}
-                            disabled={
-                              actionInProgress === user.id ||
-                              isCurrentUser(user.id)
-                            }
-                            title={
-                              isCurrentUser(user.id)
-                                ? "You cannot demote yourself"
-                                : ""
-                            }
+                            onClick={() => updateRole(user.id, "admin")}
+                            disabled={actionInProgress === user.id}
                           >
-                            Remove Admin
+                            Demote to Admin
                           </button>
                         )}
                         <button
@@ -341,11 +374,14 @@ export default function AdminUsersPage() {
                           onClick={() => setConfirmDelete(user)}
                           disabled={
                             actionInProgress === user.id ||
-                            isCurrentUser(user.id)
+                            isCurrentUser(user.id) ||
+                            (user.role === "superadmin" && !isSuperAdmin)
                           }
                           title={
                             isCurrentUser(user.id)
                               ? "You cannot delete yourself"
+                              : user.role === "superadmin" && !isSuperAdmin
+                              ? "Only superadmins can delete superadmins"
                               : ""
                           }
                         >

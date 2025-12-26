@@ -35,7 +35,7 @@ export const users = pgTable("users", {
 });
 
 // User role types
-export type UserRole = "admin" | "user";
+export type UserRole = "superadmin" | "admin" | "user";
 
 // Accounts table (for NextAuth OAuth)
 export const accounts = pgTable(

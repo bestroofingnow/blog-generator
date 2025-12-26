@@ -201,6 +201,12 @@
   font-weight: 500;
 }
 
+.roleSuperAdmin {
+  background: rgba(234, 179, 8, 0.15);
+  color: #b45309;
+  font-weight: 600;
+}
+
 .roleAdmin {
   background: rgba(99, 102, 241, 0.1);
   color: var(--accent-primary);

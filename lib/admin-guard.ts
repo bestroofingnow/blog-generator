@@ -15,9 +15,14 @@ export interface SessionUser {
   role: UserRole;
 }
 
-// Check if user is admin from session
+// Check if user is admin from session (includes superadmin)
 export function isAdmin(session: { user?: SessionUser } | null): boolean {
-  return session?.user?.role === "admin";
+  return session?.user?.role === "admin" || session?.user?.role === "superadmin";
+}
+
+// Check if user is superadmin from session
+export function isSuperAdmin(session: { user?: SessionUser } | null): boolean {
+  return session?.user?.role === "superadmin";
 }
 
 // Check if user has specific role
@@ -28,7 +33,7 @@ export function hasRole(
   return session?.user?.role === role;
 }
 
-// API route guard - returns 403 if not admin
+// API route guard - returns 403 if not admin (superadmin also passes)
 export async function requireAdmin(
   req: NextApiRequest,
   res: NextApiResponse
@@ -40,7 +45,7 @@ export async function requireAdmin(
     return { authorized: false, session: null };
   }
 
-  if (session.user.role !== "admin") {
+  if (session.user.role !== "admin" && session.user.role !== "superadmin") {
     res.status(403).json({ error: "Forbidden - Admin access required" });
     return { authorized: false, session: null };
   }
@@ -114,8 +119,8 @@ export async function getServerSidePropsWithAdmin<P extends { [key: string]: unk
     };
   }
 
-  // Not admin - redirect to home with error
-  if (session.user.role !== "admin") {
+  // Not admin or superadmin - redirect to home with error
+  if (session.user.role !== "admin" && session.user.role !== "superadmin") {
     return {
       redirect: {
         destination: "/?error=admin_required",

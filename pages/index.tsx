@@ -1,5 +1,6 @@
 // pages/index.tsx
 import React, { useState, useEffect, lazy, Suspense } from "react";
+import { useRouter } from "next/router";
 import styles from "../styles/Home.module.css";
 
 // Lazy load heavy components for better initial load performance
@@ -216,6 +217,7 @@ interface GenerationState {
 }
 
 export default function Home() {
+  const router = useRouter();
   const { user, signOutUser } = useAuth();
 
   const [formData, setFormData] = useState<FormData>({
@@ -2683,8 +2685,8 @@ export default function Home() {
           <span className={styles.sidebarGroup}>Config</span>
           <button
             type="button"
-            className={`${styles.sidebarItem} ${activeSection === "profile" ? styles.active : ""}`}
-            onClick={() => setActiveSection("profile")}
+            className={styles.sidebarItem}
+            onClick={() => router.push("/settings/company")}
             title="Company Profile"
           >
             <span className={styles.sidebarIcon}>
@@ -5611,7 +5613,7 @@ export default function Home() {
                     </div>
                   ) : (
                     <p className={styles.knowledgeEmpty}>
-                      <a onClick={() => setActiveSection("profile")} style={{ cursor: "pointer", color: "var(--primary-color)" }}>
+                      <a onClick={() => router.push("/settings/company")} style={{ cursor: "pointer", color: "var(--primary-color)" }}>
                         Set up your company profile first
                       </a>
                     </p>

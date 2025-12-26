@@ -3,7 +3,7 @@
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { db, users, eq, desc } from "../../../lib/db";
-import { requireAdmin } from "../../../lib/admin-guard";
+import { requireAdmin, isSuperAdmin } from "../../../lib/admin-guard";
 import type { UserRole } from "../../../lib/db";
 
 interface UserData {
@@ -32,14 +32,15 @@ export default async function handler(
   if (!authorized || !session) return;
 
   const currentUserId = session.user.id;
+  const currentUserRole = session.user.role;
 
   switch (req.method) {
     case "GET":
       return handleGetUsers(res);
     case "PATCH":
-      return handleUpdateUser(req, res, currentUserId);
+      return handleUpdateUser(req, res, currentUserId, currentUserRole);
     case "DELETE":
-      return handleDeleteUser(req, res, currentUserId);
+      return handleDeleteUser(req, res, currentUserId, currentUserRole);
     default:
       return res.status(405).json({ success: false, error: "Method not allowed" });
   }
@@ -80,7 +81,8 @@ async function handleGetUsers(res: NextApiResponse<UsersResponse>) {
 async function handleUpdateUser(
   req: NextApiRequest,
   res: NextApiResponse<UsersResponse>,
-  currentUserId: string
+  currentUserId: string,
+  currentUserRole: UserRole
 ) {
   const { userId, role } = req.body;
 
@@ -92,18 +94,35 @@ async function handleUpdateUser(
   }
 
   // Validate role
-  if (role !== "admin" && role !== "user") {
+  if (role !== "superadmin" && role !== "admin" && role !== "user") {
     return res.status(400).json({
       success: false,
-      error: "Invalid role. Must be 'admin' or 'user'",
+      error: "Invalid role. Must be 'superadmin', 'admin', or 'user'",
+    });
+  }
+
+  // Only superadmin can promote to superadmin
+  if (role === "superadmin" && currentUserRole !== "superadmin") {
+    return res.status(403).json({
+      success: false,
+      error: "Only superadmins can promote users to superadmin",
+    });
+  }
+
+  // Only superadmin can demote a superadmin
+  const targetUser = await db.select({ role: users.role }).from(users).where(eq(users.id, userId));
+  if (targetUser.length > 0 && targetUser[0].role === "superadmin" && currentUserRole !== "superadmin") {
+    return res.status(403).json({
+      success: false,
+      error: "Only superadmins can modify other superadmin accounts",
     });
   }
 
   // Prevent demoting yourself
-  if (userId === currentUserId && role === "user") {
+  if (userId === currentUserId && (role === "user" || (currentUserRole === "superadmin" && role !== "superadmin"))) {
     return res.status(400).json({
       success: false,
-      error: "You cannot demote yourself from admin",
+      error: "You cannot demote yourself",
     });
   }
 
@@ -149,7 +168,8 @@ async function handleUpdateUser(
 async function handleDeleteUser(
   req: NextApiRequest,
   res: NextApiResponse<UsersResponse>,
-  currentUserId: string
+  currentUserId: string,
+  currentUserRole: UserRole
 ) {
   const { userId } = req.body;
 
@@ -165,6 +185,15 @@ async function handleDeleteUser(
     return res.status(400).json({
       success: false,
       error: "You cannot delete your own account",
+    });
+  }
+
+  // Only superadmin can delete superadmin accounts
+  const targetUser = await db.select({ role: users.role }).from(users).where(eq(users.id, userId));
+  if (targetUser.length > 0 && targetUser[0].role === "superadmin" && currentUserRole !== "superadmin") {
+    return res.status(403).json({
+      success: false,
+      error: "Only superadmins can delete superadmin accounts",
     });
   }
 
