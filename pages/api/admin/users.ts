@@ -3,8 +3,9 @@
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { db, users, eq, desc } from "../../../lib/db";
-import { requireAdmin, isSuperAdmin } from "../../../lib/admin-guard";
+import { requireAdmin } from "../../../lib/admin-guard";
 import type { UserRole } from "../../../lib/db";
+import bcrypt from "bcryptjs";
 
 interface UserData {
   id: string;
@@ -39,6 +40,8 @@ export default async function handler(
       return handleGetUsers(res);
     case "PATCH":
       return handleUpdateUser(req, res, currentUserId, currentUserRole);
+    case "PUT":
+      return handleResetPassword(req, res, currentUserRole);
     case "DELETE":
       return handleDeleteUser(req, res, currentUserId, currentUserRole);
     default:
@@ -219,6 +222,78 @@ async function handleDeleteUser(
     return res.status(500).json({
       success: false,
       error: "Failed to delete user",
+    });
+  }
+}
+
+// Reset user password (superadmin only)
+async function handleResetPassword(
+  req: NextApiRequest,
+  res: NextApiResponse<UsersResponse>,
+  currentUserRole: UserRole
+) {
+  // Only superadmins can reset passwords
+  if (currentUserRole !== "superadmin") {
+    return res.status(403).json({
+      success: false,
+      error: "Only superadmins can reset user passwords",
+    });
+  }
+
+  const { userId, newPassword } = req.body;
+
+  if (!userId || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      error: "userId and newPassword are required",
+    });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      success: false,
+      error: "Password must be at least 6 characters",
+    });
+  }
+
+  try {
+    // Check if user exists and has a password (not OAuth user)
+    const targetUser = await db
+      .select({ id: users.id, password: users.password, email: users.email })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (targetUser.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    if (!targetUser[0].password) {
+      return res.status(400).json({
+        success: false,
+        error: "Cannot reset password for OAuth users (Google sign-in)",
+      });
+    }
+
+    // Hash and update password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId));
+
+    return res.status(200).json({
+      success: true,
+      message: `Password reset successfully for ${targetUser[0].email}`,
+    });
+  } catch (error) {
+    console.error("Failed to reset password:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to reset password",
     });
   }
 }

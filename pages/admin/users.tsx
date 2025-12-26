@@ -31,6 +31,8 @@ export default function AdminUsersPage() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   // Check admin access (superadmin or admin can access)
   const userRole = (session?.user as { role?: string })?.role;
@@ -137,6 +139,36 @@ export default function AdminUsersPage() {
     } finally {
       setActionInProgress(null);
       setConfirmDelete(null);
+    }
+  };
+
+  // Reset user password (superadmin only)
+  const resetPassword = async (userId: string) => {
+    if (!newPassword || newPassword.length < 6) {
+      showToast("Password must be at least 6 characters", "error");
+      return;
+    }
+
+    setActionInProgress(userId);
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, newPassword }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        showToast(data.message || "Password reset successfully", "success");
+        setResetPasswordUser(null);
+        setNewPassword("");
+      } else {
+        showToast(data.error || "Failed to reset password", "error");
+      }
+    } catch (error) {
+      console.error("Failed to reset password:", error);
+      showToast("Failed to reset password", "error");
+    } finally {
+      setActionInProgress(null);
     }
   };
 
@@ -369,6 +401,16 @@ export default function AdminUsersPage() {
                             Demote to Admin
                           </button>
                         )}
+                        {isSuperAdmin && (
+                          <button
+                            className={`${styles.actionButton} ${styles.resetBtn}`}
+                            onClick={() => setResetPasswordUser(user)}
+                            disabled={actionInProgress === user.id}
+                            title="Reset user password"
+                          >
+                            Reset Password
+                          </button>
+                        )}
                         <button
                           className={`${styles.actionButton} ${styles.deleteBtn}`}
                           onClick={() => setConfirmDelete(user)}
@@ -430,6 +472,47 @@ export default function AdminUsersPage() {
                 onClick={() => deleteUser(confirmDelete.id)}
               >
                 Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Dialog */}
+      {resetPasswordUser && (
+        <div className={styles.confirmDialog}>
+          <div className={styles.confirmContent}>
+            <h3 className={styles.confirmTitle}>Reset Password</h3>
+            <p className={styles.confirmText}>
+              Enter a new password for{" "}
+              <strong>{resetPasswordUser.name || resetPasswordUser.email}</strong>
+            </p>
+            <div className={styles.formGroup}>
+              <input
+                type="password"
+                placeholder="New password (min 6 characters)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className={styles.passwordInput}
+                autoFocus
+              />
+            </div>
+            <div className={styles.confirmActions}>
+              <button
+                className={styles.confirmCancel}
+                onClick={() => {
+                  setResetPasswordUser(null);
+                  setNewPassword("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.confirmReset}
+                onClick={() => resetPassword(resetPasswordUser.id)}
+                disabled={!newPassword || newPassword.length < 6 || actionInProgress === resetPasswordUser.id}
+              >
+                {actionInProgress === resetPasswordUser.id ? "Resetting..." : "Reset Password"}
               </button>
             </div>
           </div>
