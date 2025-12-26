@@ -10,7 +10,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.1",
     "@ai-sdk/gateway": "^2.0.21",
+    "@ai-sdk/google": "^3.0.1",
     "@ai-sdk/openai": "^2.0.88",
     "@anthropic-ai/sdk": "^0.32.0",
     "@auth/drizzle-adapter": "^1.11.1",
