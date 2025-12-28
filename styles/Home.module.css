@@ -350,6 +350,54 @@
   color: #ef4444;
 }
 
+.userActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.settingsBtn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.settingsBtn:hover {
+  color: var(--primary-color, #6366f1);
+}
+
+.userActionsCollapsed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.settingsBtnIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.settingsBtnIcon:hover {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-color, #6366f1);
+}
+
 .sidebarToggle {
   padding-top: 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
