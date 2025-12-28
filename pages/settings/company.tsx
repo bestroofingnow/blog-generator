@@ -8,7 +8,7 @@ import styles from "../../styles/CompanySettings.module.css";
 import { useOnboardingTrigger } from "../../components/onboarding/OnboardingTrigger";
 import { useCompanyResearch } from "../../lib/hooks/useCompanyResearch";
 import type { CompanyProfile, SocialLinks, AdditionalLink, LinkCategory } from "../../lib/page-types";
-import { calculateProfileCompleteness, getIncompleteFields } from "../../lib/database";
+import { calculateProfileCompleteness, getIncompleteFields } from "../../lib/profile-utils";
 
 // Options
 const INDUSTRY_OPTIONS = [

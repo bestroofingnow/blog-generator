@@ -20,7 +20,9 @@
       "Bash(git commit:*)",
       "Bash(vercel ls:*)",
       "Bash(npm run lint:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git push:*)",
+      "Bash(curl -X POST https://app.kynex.ai/api/setup/promote-superadmin )"
     ],
     "deny": [],
     "ask": []
