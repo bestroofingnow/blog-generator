@@ -610,7 +610,12 @@ export async function generateContent(params: {
   // Determine industry from profile context
   const industry = profileContext?.industryType || "local services";
 
-  const prompt = `You are an expert content writer who creates engaging, human-like content for local service businesses. Write a comprehensive, SEO-optimized blog post based on this outline.
+  // Calculate exact keyword requirements for 90+ SEO score
+  const minKeywordMentions = Math.ceil(targetWordCount / 112); // At least 1 per 112 words
+  const maxKeywordMentions = Math.floor((targetWordCount / 122) * 2); // No more than 2 per 122 words
+  const targetKeywordMentions = Math.round((minKeywordMentions + maxKeywordMentions) / 2);
+
+  const prompt = `You are an ELITE SEO content writer who creates engaging, human-like content that achieves 90+ SEO scores on the FIRST attempt. Write a comprehensive, SEO-optimized blog post based on this outline.
 
 CRITICAL: All content MUST be written in American English only. Do not use any other languages, characters, or scripts.
 
@@ -619,7 +624,29 @@ CRITICAL INDUSTRY CONSTRAINT: This content is EXCLUSIVELY for a ${industry.toUpp
 BLOG OUTLINE:
 ${JSON.stringify(outline, null, 2)}
 
-REQUIREMENTS:
+================================================================
+SEO REQUIREMENTS FOR 90+ SCORE (FOLLOW EXACTLY - THIS IS CRITICAL)
+================================================================
+
+PRIMARY KEYWORD: "${outline.seo.primaryKeyword}"
+TARGET KEYWORD DENSITY: 0.8% - 2.0% (approximately ${minKeywordMentions}-${maxKeywordMentions} mentions for ${targetWordCount} words)
+
+MANDATORY KEYWORD PLACEMENTS (the scorer checks these locations):
+1. ✅ H1 HEADING: Primary keyword MUST appear in the first 3-4 words of the H1 title
+2. ✅ FIRST 100 WORDS: Primary keyword MUST appear in the very first sentence of the introduction
+3. ✅ H2 HEADINGS: Primary keyword MUST appear in at least 3 of your H2 section headings
+4. ✅ CONCLUSION: Primary keyword MUST appear in the final paragraph/conclusion
+5. ✅ IMAGE ALT TEXT: Primary keyword MUST appear in at least 1 image alt attribute
+
+SECONDARY KEYWORDS: ${outline.seo.secondaryKeywords?.join(", ") || "related terms"}
+- Each secondary keyword should appear 2-4 times naturally throughout
+
+HEADING STRUCTURE (scorer requires this):
+- Exactly 1 H1 tag (your main title)
+- 6-8 H2 tags (section headings - include keyword in at least 3)
+- 3+ H3 tags (subsection headings under H2s)
+
+CONTENT REQUIREMENTS:
 - Industry: ${industry} (IMPORTANT - stay within this industry only)
 - Topic: ${topic}
 - Location: ${location}
@@ -627,14 +654,23 @@ REQUIREMENTS:
 - Company: ${companyName || "our team"}
 - Reading Level: ${readingLevel}
 - Language: American English ONLY (no other languages or special characters)
-- Include the primary keyword "${outline.seo.primaryKeyword}" naturally throughout
-- Include secondary keywords where appropriate
-- Write engaging, informative content for each section
-- WORD COUNT: Write approximately ${minWords}-${maxWords} words (target: ${targetWordCount} words). This is IMPORTANT - match this word count!
+- WORD COUNT: Write EXACTLY ${targetWordCount} words (±5%). The scorer checks this!
 - Make content locally relevant to ${location}
 - Include a strong call-to-action in the conclusion
 - DO NOT include <header> or <footer> elements
 - DO NOT include navigation elements
+
+READABILITY REQUIREMENTS (for 90+ readability score):
+- Short paragraphs: Maximum 3-4 sentences per paragraph
+- Bullet points: Include at least 1 bulleted list per major section
+- Short sentences: Mix of short (5-10 words) and medium (15-25 words) sentences
+- Simple words: Use 8th grade vocabulary, avoid complex jargon
+- Target Flesch Reading Ease: 60+ (easy to fairly easy)
+
+IMAGE REQUIREMENTS (for 90+ image score):
+- ALL images MUST have descriptive alt text containing the primary keyword
+- ALL images MUST have a title attribute
+- Use this exact format: <img src="[IMAGE:X]" alt="${outline.seo.primaryKeyword} - descriptive context" title="${outline.seo.primaryKeyword} | ${topic}" width="800" height="600" loading="lazy" />
 
 READING LEVEL GUIDELINES (${readingLevel}):
 ${readingGuidelines}
@@ -653,6 +689,48 @@ HUMAN-LIKE WRITING STYLE:
 - Make transitions feel natural, not formulaic
 - Show personality - it's okay to have opinions and preferences
 - Avoid starting paragraphs with "In conclusion" or "Furthermore" - these sound robotic
+
+CONVERSION OPTIMIZATION (Critical for lead generation):
+1. TRUST SIGNALS - Weave these throughout:
+   - Reference years of experience, certifications, or customer count
+   - Include specific numbers (97% satisfaction, 500+ projects completed)
+   - Mention guarantees, warranties, or risk-free offers
+   - Reference industry standards or regulations followed
+
+2. STRATEGIC CTAs - Include EXACTLY 4 calls-to-action:
+   - SOFT CTA (after introduction): "Learn more about..." or "Download our free guide"
+   - MID-CONTENT CTA (after 3rd section): "Schedule a free consultation" or "Get your free estimate"
+   - SOCIAL PROOF CTA (after case study): "See more success stories" or "Read our reviews"
+   - STRONG CTA (conclusion): "Call now", "Get started today", "Request your free quote"
+
+3. PSYCHOLOGICAL TRIGGERS to include:
+   - Urgency: "limited availability", "seasonal demand", "before prices increase"
+   - Scarcity: "only X appointments left this month"
+   - Social proof: "thousands of satisfied customers", "top-rated"
+   - Authority: "industry experts", "certified professionals"
+   - Fear of missing out: "don't let problems get worse"
+
+4. BENEFIT-FOCUSED LANGUAGE:
+   - Lead with benefits, not features
+   - Use "you get" and "you'll enjoy" instead of "we offer"
+   - Paint the after picture: "Imagine your home..."
+   - Address objections proactively
+
+E-E-A-T SIGNALS (for Google ranking):
+- EXPERIENCE: Reference real projects, specific scenarios, lessons learned
+- EXPERTISE: Include technical details explained simply, industry terminology
+- AUTHORITATIVENESS: Cite industry standards, regulations, best practices
+- TRUSTWORTHINESS: Mention credentials, guarantees, transparent pricing
+
+BLOGGING BEST PRACTICES:
+- Hook readers in the first sentence with a bold statement or question
+- Use the "Problem-Agitate-Solution" framework in introductions
+- Break up text with visual elements every 300-400 words
+- Include at least one data point or statistic per major section
+- Use power words: Ultimate, Proven, Essential, Complete, Expert, Professional
+- Create scannable content with bold key phrases
+- End each section with a mini-conclusion or transition
+- Add a "Quick Tip" or "Pro Tip" box in at least 2 sections
 
 USE THIS EXACT HTML STRUCTURE (no header, no footer, no navigation):
 
@@ -681,10 +759,20 @@ USE THIS EXACT HTML STRUCTURE (no header, no footer, no navigation):
   <ul>
     <li><strong>Point:</strong> explanation</li>
   </ul>
-  <p><img class="content-image" src="[IMAGE:1]" alt="${outline.seo.primaryKeyword} description" width="800" height="600" /></p>
+  <div class="pro-tip">
+    <strong>Pro Tip:</strong> Add a valuable insider tip here that demonstrates expertise.
+  </div>
+  <p><img class="content-image" src="[IMAGE:1]" alt="${outline.seo.primaryKeyword} description" title="${outline.seo.primaryKeyword} | Section Topic" width="800" height="600" loading="lazy" /></p>
 </article>
 
 <!-- Repeat for each section with appropriate image placeholders -->
+
+<!-- Include a mid-content CTA after the 3rd section -->
+<div class="inline-cta">
+  <h3>Ready to Get Started?</h3>
+  <p>Benefit-focused CTA text here.</p>
+  <a class="cta-button secondary" href="/contact">Schedule Your Free Consultation</a>
+</div>
 
 <div class="key-takeaways">
   <h2>Key Takeaways</h2>
@@ -695,9 +783,15 @@ USE THIS EXACT HTML STRUCTURE (no header, no footer, no navigation):
 </div>
 
 <div class="cta-section">
-  <h2>Call to Action Title</h2>
-  <p>CTA description</p>
-  <p><a class="cta-button" href="/contact">Contact Button Text</a></p>
+  <h2>Get Expert ${outline.seo.primaryKeyword} Help Today</h2>
+  <p><strong>Don't wait until small problems become expensive emergencies.</strong> Our certified team has helped thousands of ${location} customers achieve outstanding results.</p>
+  <ul class="cta-benefits">
+    <li>Free, no-obligation consultation</li>
+    <li>Transparent pricing with no hidden fees</li>
+    <li>100% satisfaction guarantee</li>
+  </ul>
+  <p class="urgency-text">Limited appointments available this month - secure your spot today!</p>
+  <p><a class="cta-button primary" href="/contact">Get Your Free Quote Now</a></p>
 </div>
 
 <section class="faq-section">
@@ -718,13 +812,40 @@ IMPORTANT:
 - Use exactly ${numberOfImages} image placeholders: [IMAGE:0] through [IMAGE:${numberOfImages - 1}]
 - Include 5-8 relevant FAQ items
 - Do NOT wrap in any header or footer tags
-- WORD COUNT REMINDER: Write ${minWords}-${maxWords} words!`;
+- WORD COUNT REMINDER: Write ${minWords}-${maxWords} words!
+
+=== FINAL SEO CHECKLIST (VERIFY ALL BEFORE COMPLETING) ===
+Before finishing, confirm EVERY item is complete:
+✓ Primary keyword "${outline.seo.primaryKeyword}" in H1 title (first 3-4 words)
+✓ Primary keyword in FIRST SENTENCE of introduction
+✓ Primary keyword in at least 3 H2 headings
+✓ Primary keyword in conclusion paragraph
+✓ Primary keyword in at least 1 image alt text
+✓ 6-8 H2 headings total
+✓ H3 subheadings under major sections
+✓ Bullet lists in every major section
+✓ Paragraphs max 3-4 sentences
+✓ 4 strategic CTAs placed throughout
+✓ Pro tips in at least 2 sections
+✓ FAQ section with 5-8 questions
+✓ Word count ${minWords}-${maxWords}
+✓ All images have alt AND title attributes
+
+THIS CHECKLIST IS CRITICAL - missing any item will cause the SEO score to fail!`;
 
   try {
     console.log("[Craftsman] Generating content with anthropic/claude-sonnet-4.5...");
     const result = await generateText({
       model: MODELS.contentWriter,
-      system: `You are an expert blog content writer who sounds like a real person, not a robot. Write engaging, SEO-optimized content in HTML format that feels natural and conversational. Your writing should pass as human-written content - avoid stiff, formulaic language. Match the specified reading level precisely. Output ONLY the HTML content, no explanations or markdown. CRITICAL: Write ONLY in American English - never use any other language, foreign words, or non-English characters.`,
+      system: `You are an elite SEO copywriter and conversion specialist who writes like a real human expert. Your content MUST achieve a 90+ SEO score on the FIRST attempt by following EVERY SEO requirement precisely.
+
+KEY PRIORITIES (in order):
+1. SEO COMPLIANCE: Place primary keyword exactly where specified (H1, first sentence, H2s, conclusion, image alt)
+2. READABILITY: Short paragraphs (3-4 sentences max), bullet lists in every section
+3. CONVERSION: Include all 4 CTAs, trust signals, and urgency triggers
+4. HUMAN VOICE: Write conversationally - use contractions, vary sentence length, sound like a knowledgeable friend
+
+Your writing should pass as human-written content - avoid stiff, formulaic language. Match the specified reading level precisely. Output ONLY the HTML content, no explanations or markdown. CRITICAL: Write ONLY in American English - never use any other language, foreign words, or non-English characters.`,
       prompt,
       maxOutputTokens: 8000,
       temperature: 0.75,
