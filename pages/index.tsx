@@ -2685,8 +2685,8 @@ export default function Home() {
           <span className={styles.sidebarGroup}>Config</span>
           <button
             type="button"
-            className={styles.sidebarItem}
-            onClick={() => router.push("/settings/company")}
+            className={`${styles.sidebarItem} ${activeSection === "profile" ? styles.active : ""}`}
+            onClick={() => setActiveSection("profile")}
             title="Company Profile"
           >
             <span className={styles.sidebarIcon}>
@@ -4549,7 +4549,17 @@ export default function Home() {
           {/* Profile Section */}
           {activeSection === "profile" && (
             <div className={styles.sectionContent}>
-              <h2 className={styles.sectionTitle}>Company Profile</h2>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Company Profile</h2>
+                <button
+                  type="button"
+                  onClick={() => router.push("/settings/company")}
+                  className={styles.secondaryButton}
+                  style={{ fontSize: "0.85rem", padding: "0.4rem 0.8rem" }}
+                >
+                  Full Settings
+                </button>
+              </div>
               <p className={styles.sectionDescription}>
                 Your company information is used to generate relevant, branded content.
               </p>
