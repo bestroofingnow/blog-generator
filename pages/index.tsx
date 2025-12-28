@@ -4631,6 +4631,18 @@ export default function Home() {
                     ))}
                   </select>
                 </div>
+                {companyProfile.industryType === "custom" && (
+                  <div className={styles.formGroup}>
+                    <label htmlFor="profileCustomIndustry">Your Industry</label>
+                    <input
+                      type="text"
+                      id="profileCustomIndustry"
+                      value={companyProfile.customIndustryName || ""}
+                      onChange={(e) => setCompanyProfile(prev => ({ ...prev, customIndustryName: e.target.value }))}
+                      placeholder="Enter your industry (e.g., Pool Services, Tree Care)"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className={styles.formCard}>

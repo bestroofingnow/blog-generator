@@ -313,6 +313,14 @@ export default function CompanySettingsPage() {
               onChange={(v) => updateField("industryType", v)}
               options={INDUSTRY_OPTIONS}
             />
+            {profile.industryType === "custom" && (
+              <InputField
+                label="Your Industry"
+                value={profile.customIndustryName || ""}
+                onChange={(v) => updateField("customIndustryName", v)}
+                placeholder="Enter your industry (e.g., Pool Services, Tree Care)"
+              />
+            )}
             <SelectField
               label="State"
               value={profile.stateAbbr || ""}
