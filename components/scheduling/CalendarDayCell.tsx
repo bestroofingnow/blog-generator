@@ -10,6 +10,7 @@ interface ScheduledBlog {
   id: string;
   title: string;
   type: string;
+  featuredImageUrl?: string;
 }
 
 interface CalendarDayCellProps {
@@ -94,6 +95,13 @@ export default function CalendarDayCell({
               }}
               whileHover={{ scale: 1.02 }}
             >
+              {blog.featuredImageUrl && (
+                <img
+                  src={blog.featuredImageUrl}
+                  alt=""
+                  className={styles.chipThumbnail}
+                />
+              )}
               <span className={styles.chipTitle}>{blog.title}</span>
               {onUnschedule && (
                 <button
