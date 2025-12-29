@@ -178,13 +178,17 @@ export default async function handler(
       });
     }
 
-    const industry = companyProfile.industryType || "general";
+    // Use custom industry name when industryType is "custom"
+    const industry = companyProfile.industryType === "custom" && companyProfile.customIndustryName
+      ? companyProfile.customIndustryName
+      : (companyProfile.industryType || "general");
+    const industryForKeywords = companyProfile.industryType || "general"; // For seed keyword lookup
     const location = companyProfile.headquarters || req.body.location || "United States";
     const services = companyProfile.services || [];
     const existingBlogTitles = pastBlogs.map(blog => blog.title);
 
-    // Get seed keywords for this industry
-    const seedKeywords = INDUSTRY_SEED_KEYWORDS[industry] || INDUSTRY_SEED_KEYWORDS.general;
+    // Get seed keywords for this industry (use dropdown value for keyword lookup, not custom name)
+    const seedKeywords = INDUSTRY_SEED_KEYWORDS[industryForKeywords] || INDUSTRY_SEED_KEYWORDS.general;
 
     // Build search queries combining industry keywords with location
     const searchQueries = seedKeywords.slice(0, 4).map(kw => `${kw} ${location}`);
@@ -228,11 +232,16 @@ export default async function handler(
     const prompt = `You are an expert SEO content strategist. Based on REAL search engine data, generate 5 highly targeted blog topics for a ${industry} business in ${location}.
 
 COMPANY CONTEXT:
-- Industry: ${industry}
-- Location: ${location}
+- Industry: ${industry}${companyProfile.customIndustryName ? ` (${companyProfile.customIndustryName})` : ""}
+- Location: ${location}${companyProfile.state ? `, ${companyProfile.state}` : ""}
 - Company: ${companyProfile.name || "Local business"}
 - Services: ${services.join(", ") || "General services"}
 ${companyProfile.primarySiteKeyword ? `- Primary Site Keyword: ${companyProfile.primarySiteKeyword}` : ""}
+${companyProfile.valueProposition ? `- Value Proposition: ${companyProfile.valueProposition}` : ""}
+${companyProfile.audience ? `- Target Audience: ${companyProfile.audience}` : ""}
+${companyProfile.usps?.length ? `- Unique Selling Points: ${companyProfile.usps.join(", ")}` : ""}
+${companyProfile.cities?.length ? `- Service Areas: ${companyProfile.cities.join(", ")}` : ""}
+${companyProfile.competitorWebsites?.length ? `- Competitors: ${companyProfile.competitorWebsites.join(", ")}` : ""}
 
 REAL SERP DATA (What people are actually searching for):
 ${uniqueTitles.length > 0 ? `

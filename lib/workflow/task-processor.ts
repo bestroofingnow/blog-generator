@@ -215,17 +215,17 @@ export function createPageDependencies(
 export function getModelForStage(stage: WorkflowStage): string {
   const modelMap: Record<WorkflowStage, string> = {
     intake: "meta/llama-4-maverick",
-    research: "google/gemini-2.5-flash-preview-05-20",
+    research: "google/gemini-2.5-flash-preview-09-2025",
     kb_build: "meta/llama-4-maverick",
     sitemap: "moonshotai/kimi-k2",
     blueprint: "moonshotai/kimi-k2",
-    copywrite: "anthropic/claude-sonnet-4-20250514",
-    image_generate: "google/imagen-4.0-generate-001",
-    image_qa: "anthropic/claude-sonnet-4-20250514",
-    image_fix: "google/gemini-2.5-flash-preview-05-20",
-    image_store: "google/imagen-4.0-generate-001",
+    copywrite: "anthropic/claude-sonnet-4",
+    image_generate: "google/imagen-4.0-generate",
+    image_qa: "anthropic/claude-sonnet-4",
+    image_fix: "google/gemini-2.5-flash-preview-09-2025",
+    image_store: "google/imagen-4.0-generate",
     codegen: "moonshotai/kimi-k2",
-    qa_site: "anthropic/claude-sonnet-4-20250514",
+    qa_site: "anthropic/claude-sonnet-4",
     publish: "moonshotai/kimi-k2",
   };
 

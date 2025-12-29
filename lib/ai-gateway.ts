@@ -20,17 +20,17 @@ export const MODELS = {
   // Llama 4 Maverick - AI Conductor/Orchestrator (Blueprint)
   conductor: gateway("meta/llama-4-maverick"),
 
-  // Claude Sonnet 4.5 - Content writer (Craftsman)
-  contentWriter: gateway("anthropic/claude-sonnet-4.5"),
+  // Claude Sonnet 4 - Content writer (Craftsman)
+  contentWriter: gateway("anthropic/claude-sonnet-4"),
 
   // Kimi K2 - Code writer for blog posts and image review (Foreman)
   codeWriter: gateway("moonshotai/kimi-k2"),
 
   // Gemini 2.5 Flash - For image generation prompts
-  geminiFlash: gateway("google/gemini-2.5-flash"),
+  geminiFlash: gateway("google/gemini-2.5-flash-preview-09-2025"),
 
   // Gemini 3 Pro - For image editing/remaking (Touchup)
-  geminiPro: gateway("google/gemini-3-pro-preview"),
+  geminiPro: gateway("google/gemini-3.0-pro-preview"),
 
   // Perplexity Sonar - Deep SEO research (Scout)
   researcher: gateway("perplexity/sonar"),
@@ -40,7 +40,7 @@ export const MODELS = {
 // Full model ID format: provider/model-name
 export const IMAGE_MODELS = {
   // Google Imagen 4.0 for initial image generation (using full provider/model format)
-  imageGenerator: gateway.imageModel("google/imagen-4.0-generate-001"),
+  imageGenerator: gateway.imageModel("google/imagen-4.0-generate"),
 };
 
 // Types for the various AI operations
@@ -107,14 +107,23 @@ export async function generateOutline(params: {
   secondaryKeywords?: string[];
   imageThemes?: string[];
   profileContext?: {
+    // Company basics
+    companyName?: string;
+    tagline?: string;
     services?: string[];
     usps?: string[];
     certifications?: string[];
     brandVoice?: string;
     writingStyle?: string;
     targetAudience?: string;
+    // Industry (may be custom industry name if user selected "custom")
     industryType?: string;
+    customIndustryName?: string;
     yearsInBusiness?: number;
+    // Location & Service Areas
+    headquarters?: string;
+    state?: string;
+    serviceAreas?: string[];
     // SEO & Site Identity
     primarySiteKeyword?: string;
     secondarySiteKeywords?: string[];
@@ -124,6 +133,17 @@ export async function generateOutline(params: {
     valueProposition?: string;
     // Competitor Research
     competitorWebsites?: string[];
+    competitors?: string[];
+    // Contact info for CTAs
+    phone?: string;
+    email?: string;
+    website?: string;
+  };
+  // Real SERP data from Bright Data
+  serpData?: {
+    topCompetitors?: string[];
+    paaQuestions?: string[];
+    relatedSearches?: string[];
   };
 }): Promise<BlogOutline> {
   const {
@@ -136,12 +156,20 @@ export async function generateOutline(params: {
     secondaryKeywords,
     imageThemes,
     profileContext,
+    serpData,
   } = params;
 
   // Build profile context for better targeted outlines
   let profileSection = "";
   if (profileContext) {
     profileSection = "\n\nCOMPANY CONTEXT (use this to make content more specific and authentic):";
+    // Company basics
+    if (profileContext.companyName) {
+      profileSection += `\n- Company Name: ${profileContext.companyName}`;
+    }
+    if (profileContext.tagline) {
+      profileSection += `\n- Tagline: ${profileContext.tagline}`;
+    }
     // SEO & Site Identity
     if (profileContext.primarySiteKeyword) {
       profileSection += `\n- PRIMARY SITE KEYWORD: "${profileContext.primarySiteKeyword}" (align content with this main keyword)`;
@@ -151,6 +179,13 @@ export async function generateOutline(params: {
     }
     if (profileContext.siteDescription) {
       profileSection += `\n- Site Focus: ${profileContext.siteDescription}`;
+    }
+    // Location & Service Areas
+    if (profileContext.headquarters) {
+      profileSection += `\n- Headquarters: ${profileContext.headquarters}${profileContext.state ? `, ${profileContext.state}` : ""}`;
+    }
+    if (profileContext.serviceAreas && profileContext.serviceAreas.length > 0) {
+      profileSection += `\n- Service Areas: ${profileContext.serviceAreas.join(", ")}`;
     }
     // Business services and strengths
     if (profileContext.services && profileContext.services.length > 0) {
@@ -185,6 +220,16 @@ export async function generateOutline(params: {
     if (profileContext.competitorWebsites && profileContext.competitorWebsites.length > 0) {
       profileSection += `\n- Competitors to Differentiate From: ${profileContext.competitorWebsites.join(", ")}`;
     }
+    if (profileContext.competitors && profileContext.competitors.length > 0) {
+      profileSection += `\n- Named Competitors: ${profileContext.competitors.join(", ")}`;
+    }
+    // Contact info for CTAs
+    if (profileContext.phone || profileContext.email || profileContext.website) {
+      profileSection += "\n- Contact Info (for CTAs):";
+      if (profileContext.phone) profileSection += ` Phone: ${profileContext.phone}`;
+      if (profileContext.email) profileSection += ` Email: ${profileContext.email}`;
+      if (profileContext.website) profileSection += ` Website: ${profileContext.website}`;
+    }
   }
 
   const seoContext = primaryKeyword
@@ -198,6 +243,24 @@ export async function generateOutline(params: {
     ? `\n\nIMAGE THEMES (from research - use these as guides for your image prompts):
 ${imageThemes.map((theme, i) => `${i + 1}. ${theme}`).join("\n")}`
     : "";
+
+  // Build SERP research context (real search data from Bright Data)
+  let serpContext = "";
+  if (serpData) {
+    serpContext = "\n\nREAL SEARCH DATA (from Google - use this to outrank competitors):";
+    if (serpData.topCompetitors && serpData.topCompetitors.length > 0) {
+      serpContext += `\n\nTOP RANKING COMPETITORS (analyze and differentiate):
+${serpData.topCompetitors.slice(0, 5).map((c, i) => `${i + 1}. ${c}`).join("\n")}`;
+    }
+    if (serpData.paaQuestions && serpData.paaQuestions.length > 0) {
+      serpContext += `\n\nPEOPLE ALSO ASK (include answers to these questions in your content):
+${serpData.paaQuestions.slice(0, 8).map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
+    }
+    if (serpData.relatedSearches && serpData.relatedSearches.length > 0) {
+      serpContext += `\n\nRELATED SEARCHES (incorporate these keywords naturally):
+${serpData.relatedSearches.slice(0, 10).join(", ")}`;
+    }
+  }
 
   // Determine industry from profile context
   const industry = profileContext?.industryType || "local services";
@@ -220,6 +283,7 @@ BLOG SPECIFICATIONS:
 Your task is to create a structured outline that will guide the content writer. For each section, provide a detailed image prompt that will be used to generate a unique, professional image.
 ${seoContext}
 ${imageThemeContext}
+${serpContext}
 ${profileSection}
 
 IMAGE PROMPT GUIDELINES:
@@ -305,18 +369,37 @@ export async function researchKeywords(params: {
   companyWebsite?: string;
   blogType: string;
   profileContext?: {
+    // Company basics
+    companyName?: string;
+    tagline?: string;
     services?: string[];
     usps?: string[];
     certifications?: string[];
     brandVoice?: string;
+    writingStyle?: string;
     targetAudience?: string;
+    // Industry (may be custom industry name if user selected "custom")
     industryType?: string;
+    customIndustryName?: string;
+    yearsInBusiness?: number;
+    // Location & Service Areas
+    headquarters?: string;
+    state?: string;
+    serviceAreas?: string[];
+    // SEO & Site Identity
     primarySiteKeyword?: string;
     secondarySiteKeywords?: string[];
     siteDescription?: string;
+    // Business Personality
     businessPersonality?: string;
     valueProposition?: string;
+    // Competitor Research
     competitorWebsites?: string[];
+    competitors?: string[];
+    // Contact info for CTAs
+    phone?: string;
+    email?: string;
+    website?: string;
   };
   existingBlogTitles?: string[];
 }): Promise<KeywordResearch> {
@@ -327,6 +410,14 @@ export async function researchKeywords(params: {
   if (profileContext) {
     profileSection = "\n\nCOMPANY PROFILE CONTEXT:";
 
+    // Company basics
+    if (profileContext.companyName) {
+      profileSection += `\n- Company Name: ${profileContext.companyName}`;
+    }
+    if (profileContext.tagline) {
+      profileSection += `\n- Tagline: ${profileContext.tagline}`;
+    }
+
     // Site identity - MOST IMPORTANT
     if (profileContext.primarySiteKeyword) {
       profileSection += `\n- PRIMARY SITE KEYWORD: "${profileContext.primarySiteKeyword}" (ALL content should support this main keyword)`;
@@ -336,6 +427,14 @@ export async function researchKeywords(params: {
     }
     if (profileContext.siteDescription) {
       profileSection += `\n- Site Focus: ${profileContext.siteDescription}`;
+    }
+
+    // Location & Service Areas
+    if (profileContext.headquarters) {
+      profileSection += `\n- Headquarters: ${profileContext.headquarters}${profileContext.state ? `, ${profileContext.state}` : ""}`;
+    }
+    if (profileContext.serviceAreas && profileContext.serviceAreas.length > 0) {
+      profileSection += `\n- Service Areas: ${profileContext.serviceAreas.join(", ")}`;
     }
 
     // Business identity
@@ -351,10 +450,16 @@ export async function researchKeywords(params: {
     if (profileContext.certifications && profileContext.certifications.length > 0) {
       profileSection += `\n- Certifications: ${profileContext.certifications.join(", ")}`;
     }
+    if (profileContext.yearsInBusiness) {
+      profileSection += `\n- Years in Business: ${profileContext.yearsInBusiness}`;
+    }
 
     // Brand personality
     if (profileContext.brandVoice) {
       profileSection += `\n- Brand Voice: ${profileContext.brandVoice}`;
+    }
+    if (profileContext.writingStyle) {
+      profileSection += `\n- Writing Style: ${profileContext.writingStyle}`;
     }
     if (profileContext.businessPersonality) {
       profileSection += `\n- Business Personality: ${profileContext.businessPersonality}`;
@@ -363,12 +468,15 @@ export async function researchKeywords(params: {
       profileSection += `\n- Target Audience: ${profileContext.targetAudience}`;
     }
     if (profileContext.industryType) {
-      profileSection += `\n- Industry: ${profileContext.industryType}`;
+      profileSection += `\n- Industry: ${profileContext.industryType}${profileContext.customIndustryName ? ` (${profileContext.customIndustryName})` : ""}`;
     }
 
     // Competitor info
     if (profileContext.competitorWebsites && profileContext.competitorWebsites.length > 0) {
       profileSection += `\n- Competitors to Research: ${profileContext.competitorWebsites.join(", ")}`;
+    }
+    if (profileContext.competitors && profileContext.competitors.length > 0) {
+      profileSection += `\n- Named Competitors: ${profileContext.competitors.join(", ")}`;
     }
   }
 
@@ -509,7 +617,7 @@ const READING_LEVEL_GUIDELINES: Record<string, string> = {
   "Graduate": "Use advanced vocabulary, technical terms, and nuanced language. Complex analysis and detailed explanations. Professional-level content.",
 };
 
-// Generate blog content using Claude Sonnet 4.5
+// Generate blog content using Claude Sonnet 4
 export async function generateContent(params: {
   outline: BlogOutline;
   topic: string;
@@ -520,14 +628,23 @@ export async function generateContent(params: {
   wordCountRange?: string;
   numberOfImages?: number;
   profileContext?: {
+    // Company basics
+    companyName?: string;
+    tagline?: string;
     services?: string[];
     usps?: string[];
     certifications?: string[];
     brandVoice?: string;
     writingStyle?: string;
     targetAudience?: string;
+    // Industry (may be custom industry name if user selected "custom")
     industryType?: string;
+    customIndustryName?: string;
     yearsInBusiness?: number;
+    // Location & Service Areas
+    headquarters?: string;
+    state?: string;
+    serviceAreas?: string[];
     // SEO & Site Identity
     primarySiteKeyword?: string;
     secondarySiteKeywords?: string[];
@@ -537,6 +654,17 @@ export async function generateContent(params: {
     valueProposition?: string;
     // Competitor Research
     competitorWebsites?: string[];
+    competitors?: string[];
+    // Contact info for CTAs
+    phone?: string;
+    email?: string;
+    website?: string;
+  };
+  // Real SERP data from Bright Data
+  serpData?: {
+    topCompetitors?: string[];
+    paaQuestions?: string[];
+    relatedSearches?: string[];
   };
 }): Promise<string> {
   const {
@@ -549,6 +677,7 @@ export async function generateContent(params: {
     wordCountRange = "1800-2400",
     numberOfImages = 3,
     profileContext,
+    serpData,
   } = params;
 
   const readingGuidelines = READING_LEVEL_GUIDELINES[readingLevel] || READING_LEVEL_GUIDELINES["8th Grade"];
@@ -566,6 +695,13 @@ export async function generateContent(params: {
   let profileSection = "";
   if (profileContext) {
     profileSection = "\n\nCOMPANY DETAILS (incorporate naturally into content):";
+    // Company basics
+    if (profileContext.companyName) {
+      profileSection += `\n- Company Name: ${profileContext.companyName}`;
+    }
+    if (profileContext.tagline) {
+      profileSection += `\n- Tagline to Reference: ${profileContext.tagline}`;
+    }
     // SEO & Site Identity
     if (profileContext.primarySiteKeyword) {
       profileSection += `\n- PRIMARY SITE KEYWORD: "${profileContext.primarySiteKeyword}" (weave into content naturally)`;
@@ -575,6 +711,13 @@ export async function generateContent(params: {
     }
     if (profileContext.siteDescription) {
       profileSection += `\n- Site Focus: ${profileContext.siteDescription}`;
+    }
+    // Location & Service Areas
+    if (profileContext.headquarters) {
+      profileSection += `\n- Based in: ${profileContext.headquarters}${profileContext.state ? `, ${profileContext.state}` : ""}`;
+    }
+    if (profileContext.serviceAreas && profileContext.serviceAreas.length > 0) {
+      profileSection += `\n- Service Areas to Reference: ${profileContext.serviceAreas.join(", ")}`;
     }
     // Business services and strengths
     if (profileContext.services && profileContext.services.length > 0) {
@@ -604,6 +747,38 @@ export async function generateContent(params: {
     }
     if (profileContext.writingStyle) {
       profileSection += `\n- Writing Style: ${profileContext.writingStyle}`;
+    }
+    // Competitor information
+    if (profileContext.competitorWebsites && profileContext.competitorWebsites.length > 0) {
+      profileSection += `\n- Differentiate From: ${profileContext.competitorWebsites.join(", ")}`;
+    }
+    if (profileContext.competitors && profileContext.competitors.length > 0) {
+      profileSection += `\n- Named Competitors: ${profileContext.competitors.join(", ")}`;
+    }
+    // Contact info for CTAs
+    if (profileContext.phone || profileContext.email || profileContext.website) {
+      profileSection += "\n- Contact Info for CTAs:";
+      if (profileContext.phone) profileSection += ` Call ${profileContext.phone}`;
+      if (profileContext.email) profileSection += ` Email ${profileContext.email}`;
+      if (profileContext.website) profileSection += ` Visit ${profileContext.website}`;
+    }
+  }
+
+  // Build SERP research context (real search data from Bright Data)
+  let serpSection = "";
+  if (serpData) {
+    serpSection = "\n\nREAL SEARCH DATA (use this to outrank competitors):";
+    if (serpData.paaQuestions && serpData.paaQuestions.length > 0) {
+      serpSection += `\n\nPEOPLE ALSO ASK - Answer these questions in your content:
+${serpData.paaQuestions.slice(0, 8).map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
+    }
+    if (serpData.relatedSearches && serpData.relatedSearches.length > 0) {
+      serpSection += `\n\nRELATED SEARCHES - Incorporate these keywords naturally:
+${serpData.relatedSearches.slice(0, 10).join(", ")}`;
+    }
+    if (serpData.topCompetitors && serpData.topCompetitors.length > 0) {
+      serpSection += `\n\nCOMPETITOR CONTENT - Differentiate and outperform:
+${serpData.topCompetitors.slice(0, 3).map((c, i) => `${i + 1}. ${c}`).join("\n")}`;
     }
   }
 
@@ -675,6 +850,7 @@ IMAGE REQUIREMENTS (for 90+ image score):
 READING LEVEL GUIDELINES (${readingLevel}):
 ${readingGuidelines}
 ${profileSection}
+${serpSection}
 
 HUMAN-LIKE WRITING STYLE:
 - Write like a knowledgeable friend explaining things, NOT like a corporate brochure
@@ -834,7 +1010,7 @@ Before finishing, confirm EVERY item is complete:
 THIS CHECKLIST IS CRITICAL - missing any item will cause the SEO score to fail!`;
 
   try {
-    console.log("[Craftsman] Generating content with anthropic/claude-sonnet-4.5...");
+    console.log("[Craftsman] Generating content with anthropic/claude-sonnet-4...");
     const result = await generateText({
       model: MODELS.contentWriter,
       system: `You are an elite SEO copywriter and conversion specialist who writes like a real human expert. Your content MUST achieve a 90+ SEO score on the FIRST attempt by following EVERY SEO requirement precisely.
@@ -854,8 +1030,8 @@ Your writing should pass as human-written content - avoid stiff, formulaic langu
     console.log("[Craftsman] Content generated, length:", result.text.length);
     return result.text;
   } catch (error) {
-    console.error("[Craftsman] Error calling anthropic/claude-sonnet-4.5:", error);
-    throw new Error(`Craftsman (anthropic/claude-sonnet-4.5) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    console.error("[Craftsman] Error calling anthropic/claude-sonnet-4:", error);
+    throw new Error(`Craftsman (anthropic/claude-sonnet-4) failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 
@@ -1426,7 +1602,7 @@ OUTPUT: A clean, professional photograph with ABSOLUTELY NO TEXT ELEMENTS. Focus
 
   try {
     console.log(`[Image Gen] Starting image generation for index ${index}...`);
-    console.log(`[Image Gen] Using model: google/imagen-4.0-generate-001`);
+    console.log(`[Image Gen] Using model: google/imagen-4.0-generate`);
     console.log(`[Image Gen] Prompt length: ${enhancedPrompt.length} chars`);
 
     const result = await generateImageAI({

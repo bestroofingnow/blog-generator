@@ -10,7 +10,7 @@ const gateway = createGateway({
 });
 
 // Use Claude for knowledge extraction
-const knowledgeExtractor = gateway("anthropic/claude-sonnet-4.5");
+const knowledgeExtractor = gateway("anthropic/claude-sonnet-4");
 
 interface KnowledgeEntry {
   id: string;

@@ -17,6 +17,7 @@ import {
 } from "../../lib/wordpress";
 import { put } from "@vercel/blob";
 import { loadUserProfile } from "../../lib/database";
+import { BrightData, isBrightDataConfigured, SERPData } from "../../lib/brightdata";
 
 interface SEOData {
   primaryKeyword: string;
@@ -344,14 +345,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Extract profile context for content generation (including branding fields)
     const profileContext = companyProfile ? {
+      // Company basics
+      companyName: companyProfile.name,
+      tagline: companyProfile.tagline,
       services: companyProfile.services || [],
       usps: companyProfile.usps || [],
       certifications: companyProfile.certifications || [],
       brandVoice: companyProfile.brandVoice,
       writingStyle: companyProfile.writingStyle,
       targetAudience: companyProfile.audience,
-      industryType: companyProfile.industryType,
+      // Industry (use custom name if "custom" is selected)
+      industryType: companyProfile.industryType === "custom" && companyProfile.customIndustryName
+        ? companyProfile.customIndustryName
+        : companyProfile.industryType,
+      customIndustryName: companyProfile.customIndustryName,
       yearsInBusiness: companyProfile.yearsInBusiness,
+      // Location & Service Areas
+      headquarters: companyProfile.headquarters,
+      state: companyProfile.state,
+      serviceAreas: companyProfile.cities || [],
       // SEO & Site Identity
       primarySiteKeyword: companyProfile.primarySiteKeyword,
       secondarySiteKeywords: companyProfile.secondarySiteKeywords || [],
@@ -361,6 +373,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       valueProposition: companyProfile.valueProposition,
       // Competitor Research
       competitorWebsites: companyProfile.competitorWebsites || [],
+      competitors: companyProfile.competitors || [],
+      // Contact info for CTAs
+      phone: companyProfile.phone,
+      email: companyProfile.email,
+      website: companyProfile.website,
     } : undefined;
 
     // Use profile data as defaults if not provided in request
@@ -375,7 +392,77 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log("[Profile] Industry type:", profileContext.industryType);
     }
 
-    // STEP 1: Generate outline
+    // STEP 0: SERP Research with Bright Data (if configured)
+    let serpData: SERPData | null = null;
+    let competitorInsights: string[] = [];
+    let paaQuestions: string[] = [];
+    let relatedSearches: string[] = [];
+
+    if (isBrightDataConfigured()) {
+      sendProgress(res, "research", "Analyzing search results and competitors...");
+
+      try {
+        // Build search query from topic and location
+        const searchQuery = primaryKeyword || `${topic} ${location}`;
+        console.log("[SERP Research] Searching for:", searchQuery);
+
+        // Get real SERP data
+        serpData = await BrightData.search(searchQuery, {
+          country: "us",
+          language: "en",
+          numResults: 10,
+        });
+
+        if (serpData && serpData.results.length > 0) {
+          console.log("[SERP Research] Found", serpData.results.length, "organic results");
+
+          // Extract competitor insights from top results
+          competitorInsights = serpData.results.slice(0, 5).map(r =>
+            `${r.domain}: "${r.title}" - ${r.snippet.substring(0, 100)}...`
+          );
+
+          // Extract PAA questions for content ideas
+          paaQuestions = serpData.paaQuestions || [];
+          console.log("[SERP Research] Found", paaQuestions.length, "People Also Ask questions");
+
+          // Extract related searches for keyword ideas
+          relatedSearches = serpData.relatedSearches || [];
+          console.log("[SERP Research] Found", relatedSearches.length, "related searches");
+
+          sendProgress(res, "research", `Found ${serpData.results.length} competitors and ${paaQuestions.length} search questions`);
+        } else {
+          console.log("[SERP Research] No results found, continuing without SERP data");
+        }
+
+        // Scrape competitor websites for deeper analysis (top 3)
+        if (profileContext?.competitorWebsites && profileContext.competitorWebsites.length > 0) {
+          sendProgress(res, "research", "Analyzing competitor websites...");
+          try {
+            const competitorAnalysis = await BrightData.competitors(
+              profileContext.competitorWebsites.slice(0, 3)
+            );
+            if (competitorAnalysis.commonKeywords.length > 0) {
+              console.log("[SERP Research] Found competitor keywords:", competitorAnalysis.commonKeywords.slice(0, 10));
+              // Add competitor keywords to related searches if not already present
+              competitorAnalysis.commonKeywords.forEach(kw => {
+                if (!relatedSearches.includes(kw)) {
+                  relatedSearches.push(kw);
+                }
+              });
+            }
+          } catch (compError) {
+            console.log("[SERP Research] Competitor analysis failed, continuing:", compError);
+          }
+        }
+      } catch (serpError) {
+        console.error("[SERP Research] Failed, continuing without SERP data:", serpError);
+        sendProgress(res, "research", "Continuing with AI-powered research...");
+      }
+    } else {
+      console.log("[SERP Research] Bright Data not configured, skipping SERP analysis");
+    }
+
+    // STEP 1: Generate outline (now enhanced with SERP data)
     sendProgress(res, "outline", "AI is designing your blog structure...");
 
     let outline: BlogOutline;
@@ -387,9 +474,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         numberOfSections,
         tone: effectiveTone,
         primaryKeyword,
-        secondaryKeywords: secondaryKeywords || [],
+        secondaryKeywords: secondaryKeywords || relatedSearches.slice(0, 5),
         imageThemes: imageThemes || [],
         profileContext,
+        // Pass SERP research data for better outlines
+        serpData: serpData ? {
+          topCompetitors: competitorInsights,
+          paaQuestions: paaQuestions.slice(0, 8),
+          relatedSearches: relatedSearches.slice(0, 10),
+        } : undefined,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -509,6 +602,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         wordCountRange,
         numberOfImages,
         profileContext,
+        // Pass SERP research data for better content
+        serpData: serpData ? {
+          topCompetitors: competitorInsights,
+          paaQuestions: paaQuestions.slice(0, 8),
+          relatedSearches: relatedSearches.slice(0, 10),
+        } : undefined,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

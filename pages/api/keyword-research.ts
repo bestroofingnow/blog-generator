@@ -59,7 +59,7 @@ export default async function handler(
   }
 
   try {
-    const model = gateway("google/gemini-2.5-flash");
+    const model = gateway("google/gemini-2.5-flash-preview-09-2025");
 
     const prompt = `You are an expert SEO keyword researcher. Analyze the seed keyword "${keyword}" and provide comprehensive keyword research data.
 

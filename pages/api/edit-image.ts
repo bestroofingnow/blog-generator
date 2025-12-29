@@ -13,9 +13,9 @@ const gateway = createGateway({
 
 // Use Gemini 2.5 Flash for image analysis (more reliable than 3 Pro preview)
 // Falls back to Claude if Gemini fails
-const geminiFlash = gateway("google/gemini-2.5-flash");
-const claudeSonnet = gateway("anthropic/claude-sonnet-4.5");
-const imageGenerator = gateway.imageModel("google/imagen-4.0-generate-001");
+const geminiFlash = gateway("google/gemini-2.5-flash-preview-09-2025");
+const claudeSonnet = gateway("anthropic/claude-sonnet-4");
+const imageGenerator = gateway.imageModel("google/imagen-4.0-generate");
 
 interface EditImageRequest {
   imageUrl: string; // Base64 or URL of the current image
