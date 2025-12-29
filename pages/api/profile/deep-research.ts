@@ -1,5 +1,6 @@
 // pages/api/profile/deep-research.ts
 // Deep company research API - KIMI2 + LLAMA 4 Maverick orchestrate comprehensive research
+// Uses Bright Data for real social media discovery and competitor analysis
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
@@ -7,6 +8,7 @@ import { authOptions } from "../auth/[...nextauth]";
 import { generateText } from "ai";
 import { MODELS } from "../../../lib/ai-gateway";
 import type { CompanyProfile, SocialLinks, AdditionalLink } from "../../../lib/page-types";
+import { BrightData, isBrightDataConfigured, SocialProfileData } from "../../../lib/brightdata";
 
 // AI Models for different research phases
 const AI_MODELS = {
@@ -47,6 +49,19 @@ export interface DeepResearchResult {
   aiTeamNotes?: {
     maverick: string;
     kimi: string;
+  };
+  // NEW: Missing fields detection and user prompts
+  missingFields?: {
+    field: string;
+    label: string;
+    priority: "high" | "medium" | "low";
+    prompt: string; // AI-generated prompt to ask user
+  }[];
+  dataQuality?: {
+    score: number; // 0-100 confidence in data found
+    limitedInfo: boolean; // True if little info was found
+    usedCompetitorResearch: boolean; // True if we fell back to competitor research
+    recommendedActions: string[];
   };
   error?: string;
 }
@@ -89,6 +104,254 @@ const MANUFACTURER_PLATFORMS = [
   { name: "Kohler Registered", domain: "kohler.com", industry: ["plumbing"] },
 ];
 
+// Critical fields that should prompt user if missing
+const CRITICAL_FIELDS = [
+  { field: "name", label: "Company Name", prompt: "What is your company's official name?" },
+  { field: "industryType", label: "Industry", prompt: "What industry does your company operate in?" },
+  { field: "phone", label: "Phone Number", prompt: "What is your business phone number?" },
+  { field: "headquarters", label: "City/Location", prompt: "What city is your business located in?" },
+  { field: "state", label: "State", prompt: "What state is your business located in?" },
+  { field: "services", label: "Services", prompt: "What are the main services you offer?" },
+  { field: "audience", label: "Target Audience", prompt: "Who is your ideal customer? (homeowners, commercial, both)" },
+  { field: "valueProposition", label: "Value Proposition", prompt: "What makes your business unique? Why should customers choose you?" },
+];
+
+// Bright Data-powered social media discovery
+async function discoverSocialWithBrightData(params: {
+  websiteUrl?: string;
+  companyName?: string;
+  location?: string;
+}): Promise<{
+  socialLinks: SocialLinks;
+  socialProfiles: SocialProfileData[];
+  sources: string[];
+}> {
+  const socialLinks: SocialLinks = {};
+  const socialProfiles: SocialProfileData[] = [];
+  const sources: string[] = [];
+
+  if (!isBrightDataConfigured()) {
+    console.log("[Deep Research] Bright Data not configured, skipping social discovery");
+    return { socialLinks, socialProfiles, sources };
+  }
+
+  try {
+    // Step 1: Scrape the company website to extract social links
+    if (params.websiteUrl) {
+      console.log("[Deep Research] Scraping website for social links...");
+      try {
+        const websiteData = await BrightData.scrape(params.websiteUrl);
+        if (websiteData.socialLinks) {
+          Object.assign(socialLinks, websiteData.socialLinks);
+          sources.push(`Website: ${params.websiteUrl}`);
+          console.log("[Deep Research] Found social links from website:", Object.keys(websiteData.socialLinks));
+        }
+      } catch (scrapeError) {
+        console.log("[Deep Research] Website scrape failed:", scrapeError);
+      }
+    }
+
+    // Step 2: Search Google for social profiles if not found from website
+    if (params.companyName) {
+      const searchQueries = [
+        `"${params.companyName}" site:facebook.com`,
+        `"${params.companyName}" site:instagram.com`,
+        `"${params.companyName}" site:linkedin.com/company`,
+        `"${params.companyName}" site:youtube.com`,
+      ];
+
+      for (const query of searchQueries) {
+        try {
+          const searchResult = await BrightData.search(query, { numResults: 3 });
+          if (searchResult.results.length > 0) {
+            const url = searchResult.results[0].url;
+
+            // Extract platform and add to socialLinks
+            if (url.includes("facebook.com") && !socialLinks.facebook) {
+              socialLinks.facebook = url;
+              sources.push(`Google search: ${query}`);
+            } else if (url.includes("instagram.com") && !socialLinks.instagram) {
+              socialLinks.instagram = url;
+              sources.push(`Google search: ${query}`);
+            } else if (url.includes("linkedin.com") && !socialLinks.linkedin) {
+              socialLinks.linkedin = url;
+              sources.push(`Google search: ${query}`);
+            } else if (url.includes("youtube.com") && !socialLinks.youtube) {
+              socialLinks.youtube = url;
+              sources.push(`Google search: ${query}`);
+            }
+          }
+        } catch (searchError) {
+          console.log(`[Deep Research] Search failed for ${query}:`, searchError);
+        }
+      }
+    }
+
+    // Step 3: Get detailed social profile data for found profiles
+    const profilePromises: Promise<SocialProfileData>[] = [];
+
+    if (socialLinks.instagram) {
+      profilePromises.push(BrightData.social.instagram(socialLinks.instagram));
+    }
+    if (socialLinks.linkedin) {
+      profilePromises.push(BrightData.social.linkedin(socialLinks.linkedin));
+    }
+    if (socialLinks.youtube) {
+      profilePromises.push(BrightData.social.youtube(socialLinks.youtube));
+    }
+
+    if (profilePromises.length > 0) {
+      console.log("[Deep Research] Fetching detailed social profile data...");
+      const profiles = await Promise.all(profilePromises);
+      socialProfiles.push(...profiles.filter(p => p.displayName || p.followers));
+    }
+
+    console.log("[Deep Research] Social discovery complete:", {
+      linksFound: Object.keys(socialLinks).length,
+      profilesEnriched: socialProfiles.length,
+    });
+
+  } catch (error) {
+    console.error("[Deep Research] Bright Data social discovery error:", error);
+  }
+
+  return { socialLinks, socialProfiles, sources };
+}
+
+// Competitor research fallback when limited info is available
+async function researchCompetitors(params: {
+  industryType: string;
+  location: string;
+  companyName?: string;
+}): Promise<{
+  competitors: string[];
+  competitorInsights: {
+    commonServices: string[];
+    commonUsps: string[];
+    suggestedKeywords: string[];
+  };
+  sources: string[];
+}> {
+  const result = {
+    competitors: [] as string[],
+    competitorInsights: {
+      commonServices: [] as string[],
+      commonUsps: [] as string[],
+      suggestedKeywords: [] as string[],
+    },
+    sources: [] as string[],
+  };
+
+  try {
+    console.log("[Deep Research] Running competitor research fallback...");
+
+    // Search for competitors in the area
+    const searchQuery = `best ${params.industryType} companies in ${params.location}`;
+
+    if (isBrightDataConfigured()) {
+      const searchResult = await BrightData.search(searchQuery, { numResults: 10 });
+
+      // Extract competitor names and domains
+      for (const item of searchResult.results.slice(0, 5)) {
+        if (item.domain && !item.domain.includes("yelp") && !item.domain.includes("yellowpages")) {
+          result.competitors.push(item.title.split("|")[0].trim());
+          result.sources.push(item.url);
+        }
+      }
+
+      // Get People Also Ask questions for keyword ideas
+      if (searchResult.paaQuestions) {
+        result.competitorInsights.suggestedKeywords = searchResult.paaQuestions.slice(0, 5);
+      }
+
+      // Related searches can help identify common services
+      if (searchResult.relatedSearches) {
+        result.competitorInsights.commonServices = searchResult.relatedSearches
+          .filter(s => s.includes(params.industryType) || s.includes("service"))
+          .slice(0, 5);
+      }
+    }
+
+    // Use AI to analyze and suggest common industry USPs
+    const uspPrompt = `List 5 common unique selling points for ${params.industryType} companies in ${params.location}. Format as JSON array of strings.`;
+
+    try {
+      const uspResult = await generateText({
+        model: AI_MODELS.strategy.model,
+        system: "You are a marketing expert. Respond with valid JSON only.",
+        prompt: uspPrompt,
+        maxOutputTokens: 500,
+        temperature: 0.7,
+      });
+
+      const cleaned = cleanJsonResponse(uspResult.text);
+      const usps = JSON.parse(cleaned);
+      if (Array.isArray(usps)) {
+        result.competitorInsights.commonUsps = usps;
+      }
+    } catch (e) {
+      console.log("[Deep Research] USP generation failed:", e);
+    }
+
+    console.log("[Deep Research] Competitor research complete:", {
+      competitorsFound: result.competitors.length,
+      servicesFound: result.competitorInsights.commonServices.length,
+    });
+
+  } catch (error) {
+    console.error("[Deep Research] Competitor research error:", error);
+  }
+
+  return result;
+}
+
+// Calculate data quality score and detect missing fields
+function analyzeDataQuality(profile: Partial<CompanyProfile>): {
+  score: number;
+  limitedInfo: boolean;
+  missingFields: { field: string; label: string; priority: "high" | "medium" | "low"; prompt: string }[];
+  recommendedActions: string[];
+} {
+  let foundFields = 0;
+  const missingFields: { field: string; label: string; priority: "high" | "medium" | "low"; prompt: string }[] = [];
+  const recommendedActions: string[] = [];
+
+  // Check critical fields
+  for (const { field, label, prompt } of CRITICAL_FIELDS) {
+    const value = profile[field as keyof CompanyProfile];
+    const isMissing = !value || (Array.isArray(value) && value.length === 0);
+
+    if (isMissing) {
+      const priority = ["name", "industryType", "services"].includes(field) ? "high" :
+                       ["phone", "headquarters", "state"].includes(field) ? "medium" : "low";
+      missingFields.push({ field, label, priority, prompt });
+    } else {
+      foundFields++;
+    }
+  }
+
+  // Calculate score
+  const score = Math.round((foundFields / CRITICAL_FIELDS.length) * 100);
+  const limitedInfo = score < 40;
+
+  // Generate recommended actions
+  if (limitedInfo) {
+    recommendedActions.push("Consider researching competitors to understand industry standards");
+    recommendedActions.push("Fill in missing high-priority fields for better content generation");
+  }
+
+  const highPriorityMissing = missingFields.filter(f => f.priority === "high");
+  if (highPriorityMissing.length > 0) {
+    recommendedActions.push(`Complete these critical fields: ${highPriorityMissing.map(f => f.label).join(", ")}`);
+  }
+
+  if (!profile.socialLinks || Object.keys(profile.socialLinks).length === 0) {
+    recommendedActions.push("Add social media links for better brand visibility");
+  }
+
+  return { score, limitedInfo, missingFields, recommendedActions };
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<DeepResearchResult>
@@ -126,6 +389,14 @@ export default async function handler(
       industryType,
     });
 
+    // PHASE 1.5: Bright Data Social Discovery (NEW)
+    console.log("\n📱 PHASE 1.5: Bright Data social media discovery...");
+    const socialDiscovery = await discoverSocialWithBrightData({
+      websiteUrl,
+      companyName: companyName || strategy.suggestedCompanyName,
+      location: location || strategy.suggestedLocation,
+    });
+
     // PHASE 2: Execute deep research
     console.log("\n🔍 PHASE 2: Executing deep research...");
     const researchData = await executeDeepResearch({
@@ -136,13 +407,71 @@ export default async function handler(
       strategy,
     });
 
+    // Merge Bright Data social links with AI-discovered links
+    const mergedSocialProfiles = {
+      ...researchData.socialProfiles,
+      ...socialDiscovery.socialLinks,
+    };
+
     // PHASE 3: Analyze and structure data
     console.log("\n📊 PHASE 3: Analyzing and structuring data...");
     const structuredData = await analyzeAndStructureData({
-      rawResearch: researchData,
+      rawResearch: {
+        ...researchData,
+        socialProfiles: mergedSocialProfiles,
+      },
       websiteUrl,
       companyName: companyName || strategy.suggestedCompanyName,
     });
+
+    // Merge social links from Bright Data into structured data
+    if (Object.keys(socialDiscovery.socialLinks).length > 0) {
+      structuredData.socialLinks = {
+        ...structuredData.socialLinks,
+        ...socialDiscovery.socialLinks,
+      };
+    }
+
+    // PHASE 3.5: Check data quality and run competitor research if needed
+    console.log("\n📈 PHASE 3.5: Analyzing data quality...");
+    const initialQuality = analyzeDataQuality(structuredData.profile);
+    let competitorResearchResult = null;
+    let usedCompetitorFallback = false;
+
+    if (initialQuality.limitedInfo && (industryType || strategy.suggestedIndustry) && (location || strategy.suggestedLocation)) {
+      console.log("\n🔄 PHASE 3.6: Limited info detected - running competitor research...");
+      usedCompetitorFallback = true;
+      competitorResearchResult = await researchCompetitors({
+        industryType: industryType || strategy.suggestedIndustry || "general",
+        location: location || strategy.suggestedLocation || "United States",
+        companyName: companyName || strategy.suggestedCompanyName,
+      });
+
+      // Merge competitor insights into structured data
+      if (competitorResearchResult.competitors.length > 0) {
+        structuredData.competitorAnalysis = {
+          ...structuredData.competitorAnalysis,
+          competitors: [
+            ...(structuredData.competitorAnalysis?.competitors || []),
+            ...competitorResearchResult.competitors,
+          ].slice(0, 10),
+          opportunities: [
+            ...(structuredData.competitorAnalysis?.opportunities || []),
+            ...competitorResearchResult.competitorInsights.suggestedKeywords,
+          ],
+        };
+
+        // Suggest services based on competitor research if missing
+        if (!structuredData.profile.services || structuredData.profile.services.length === 0) {
+          structuredData.profile.services = competitorResearchResult.competitorInsights.commonServices;
+        }
+
+        // Suggest USPs if missing
+        if (!structuredData.profile.usps || structuredData.profile.usps.length === 0) {
+          structuredData.profile.usps = competitorResearchResult.competitorInsights.commonUsps;
+        }
+      }
+    }
 
     // PHASE 4: Generate SEO recommendations
     console.log("\n🎯 PHASE 4: Generating SEO recommendations...");
@@ -151,7 +480,20 @@ export default async function handler(
       competitorData: structuredData.competitorAnalysis,
     });
 
+    // PHASE 5: Final data quality assessment
+    console.log("\n✅ PHASE 5: Final data quality assessment...");
+    const finalQuality = analyzeDataQuality({
+      ...structuredData.profile,
+      socialLinks: structuredData.socialLinks,
+    });
+
     // Combine all research results
+    const allSources = [
+      ...(researchData.sources || []),
+      ...socialDiscovery.sources,
+      ...(competitorResearchResult?.sources || []),
+    ];
+
     const finalResult: DeepResearchResult = {
       success: true,
       profile: {
@@ -163,15 +505,26 @@ export default async function handler(
       competitorAnalysis: structuredData.competitorAnalysis,
       seoInsights: seoRecommendations.seoInsights,
       conversionInsights: structuredData.conversionInsights,
-      researchSources: researchData.sources,
+      researchSources: allSources,
       aiTeamNotes: {
         maverick: strategy.strategyNotes + " | " + seoRecommendations.strategyNotes,
         kimi: structuredData.analysisNotes,
+      },
+      // NEW: Missing fields and data quality
+      missingFields: finalQuality.missingFields,
+      dataQuality: {
+        score: finalQuality.score,
+        limitedInfo: finalQuality.limitedInfo,
+        usedCompetitorResearch: usedCompetitorFallback,
+        recommendedActions: finalQuality.recommendedActions,
       },
     };
 
     console.log("\n========================================");
     console.log("✅ DEEP RESEARCH COMPLETE");
+    console.log(`Data Quality Score: ${finalQuality.score}%`);
+    console.log(`Missing Fields: ${finalQuality.missingFields.length}`);
+    console.log(`Used Competitor Fallback: ${usedCompetitorFallback}`);
     console.log("========================================\n");
 
     return res.status(200).json(finalResult);

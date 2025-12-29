@@ -264,6 +264,45 @@ export default function CompanySettingsPage() {
           </div>
         )}
 
+        {/* Missing Fields Prompt Section - Helps AI generate better content */}
+        {highPriorityMissing.length > 0 && (
+          <MissingFieldsPrompt
+            missingFields={incompleteFields}
+            onFieldClick={(field) => {
+              // Map field to section
+              const sectionMap: Record<string, string> = {
+                name: "basic",
+                website: "basic",
+                phone: "basic",
+                email: "basic",
+                industryType: "basic",
+                state: "basic",
+                headquarters: "basic",
+                services: "services",
+                usps: "services",
+                certifications: "services",
+                cities: "services",
+                audience: "branding",
+                brandVoice: "branding",
+                writingStyle: "branding",
+                valueProposition: "branding",
+                socialLinks: "social",
+                competitors: "competitors",
+              };
+              const section = sectionMap[field] || "basic";
+              setOpenSections((prev) => new Set([...Array.from(prev), section]));
+
+              // Scroll to section after a brief delay
+              setTimeout(() => {
+                const sectionEl = document.getElementById(`section-${section}`);
+                if (sectionEl) {
+                  sectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }, 100);
+            }}
+          />
+        )}
+
         {/* Basic Information */}
         <Section
           id="basic"
@@ -635,7 +674,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className={styles.section}>
+    <div id={`section-${id}`} className={styles.section}>
       <div className={styles.sectionHeader} onClick={onToggle}>
         <div className={styles.sectionLeft}>
           <div className={styles.sectionIcon}>{icon}</div>
@@ -903,5 +942,104 @@ function LinksSection({
         </button>
       </div>
     </>
+  );
+}
+
+// Missing Fields Prompt Component - Shows AI-generated prompts for missing critical fields
+function MissingFieldsPrompt({
+  missingFields,
+  onFieldClick,
+}: {
+  missingFields: { field: string; label: string; priority: "high" | "medium" | "low" }[];
+  onFieldClick: (field: string) => void;
+}) {
+  const highPriority = missingFields.filter((f) => f.priority === "high");
+  const mediumPriority = missingFields.filter((f) => f.priority === "medium");
+
+  // AI-generated prompts for each field
+  const prompts: Record<string, string> = {
+    name: "What is your company's official business name?",
+    website: "What is your company's website URL?",
+    phone: "What phone number should customers call?",
+    email: "What email address do you use for business inquiries?",
+    industryType: "What industry does your business operate in?",
+    state: "What state is your business located in?",
+    headquarters: "What city is your main office or headquarters in?",
+    services: "What services does your company offer? (List your main services)",
+    usps: "What makes your company different from competitors?",
+    certifications: "What certifications or licenses does your company have?",
+    cities: "What cities/areas does your company serve?",
+    audience: "Who is your ideal customer? (Homeowners, businesses, both?)",
+    brandVoice: "How should your content sound? (Professional, friendly, authoritative?)",
+    writingStyle: "What writing style do you prefer for your content?",
+    valueProposition: "Why should customers choose you over competitors?",
+    socialLinks: "What are your social media profile URLs?",
+    competitors: "Who are your main competitors in the area?",
+  };
+
+  if (highPriority.length === 0 && mediumPriority.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className={styles.missingFieldsPrompt}>
+      <div className={styles.promptHeader}>
+        <span className={styles.promptIcon}>💡</span>
+        <div>
+          <div className={styles.promptTitle}>Help AI Generate Better Content</div>
+          <div className={styles.promptSubtitle}>
+            Complete these fields to improve your blog quality and SEO
+          </div>
+        </div>
+      </div>
+
+      {highPriority.length > 0 && (
+        <div className={styles.promptSection}>
+          <div className={styles.promptSectionTitle}>
+            <span className={styles.priorityBadgeHigh}>High Priority</span>
+            Critical for content generation
+          </div>
+          <div className={styles.promptCards}>
+            {highPriority.slice(0, 4).map((field) => (
+              <button
+                key={field.field}
+                className={styles.promptCard}
+                onClick={() => onFieldClick(field.field)}
+              >
+                <div className={styles.promptCardLabel}>{field.label}</div>
+                <div className={styles.promptCardQuestion}>
+                  {prompts[field.field] || `What is your ${field.label.toLowerCase()}?`}
+                </div>
+                <span className={styles.promptCardAction}>Click to fill →</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mediumPriority.length > 0 && highPriority.length < 3 && (
+        <div className={styles.promptSection}>
+          <div className={styles.promptSectionTitle}>
+            <span className={styles.priorityBadgeMedium}>Recommended</span>
+            Improves content quality
+          </div>
+          <div className={styles.promptCards}>
+            {mediumPriority.slice(0, 3).map((field) => (
+              <button
+                key={field.field}
+                className={styles.promptCard}
+                onClick={() => onFieldClick(field.field)}
+              >
+                <div className={styles.promptCardLabel}>{field.label}</div>
+                <div className={styles.promptCardQuestion}>
+                  {prompts[field.field] || `What is your ${field.label.toLowerCase()}?`}
+                </div>
+                <span className={styles.promptCardAction}>Click to fill →</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

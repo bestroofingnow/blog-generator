@@ -12,6 +12,20 @@ export interface ResearchProgress {
   percentage: number;
 }
 
+export interface MissingField {
+  field: string;
+  label: string;
+  priority: "high" | "medium" | "low";
+  prompt: string;
+}
+
+export interface DataQuality {
+  score: number;
+  limitedInfo: boolean;
+  usedCompetitorResearch: boolean;
+  recommendedActions: string[];
+}
+
 export interface ResearchResult {
   profile: Partial<CompanyProfile>;
   socialLinks: SocialLinks;
@@ -37,6 +51,9 @@ export interface ResearchResult {
     kimi: string;
   };
   confidence: Record<string, number>;
+  // NEW: Missing fields and data quality
+  missingFields?: MissingField[];
+  dataQuality?: DataQuality;
 }
 
 // Research phases
@@ -143,6 +160,9 @@ export function useCompanyResearch() {
         conversionInsights: data.conversionInsights,
         aiTeamNotes: data.aiTeamNotes,
         confidence,
+        // NEW: Pass through missing fields and data quality from API
+        missingFields: data.missingFields,
+        dataQuality: data.dataQuality,
       };
 
       setProgress({
