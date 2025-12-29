@@ -2095,23 +2095,28 @@ export default function Home() {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
+          const errorText = await response.text();
+          console.error("[Blog Gen] HTTP error:", response.status, errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
         }
 
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
 
         if (!reader) {
-          throw new Error("No response body");
+          throw new Error("No response body from server");
         }
 
         let buffer = "";
+        let lastProgress = "";
+        let receivedAnyData = false;
         let finalData: { success?: boolean; htmlContent?: string; seoData?: SEOData; featuredImageId?: number; error?: string } = {};
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
+          receivedAnyData = true;
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
           buffer = lines.pop() || "";
@@ -2121,6 +2126,7 @@ export default function Home() {
               try {
                 const data = JSON.parse(line.slice(6));
                 if (data.type === "progress") {
+                  lastProgress = data.message || data.step;
                   setState((prev) => ({
                     ...prev,
                     progress: { step: data.step, message: data.message },
@@ -2128,17 +2134,27 @@ export default function Home() {
                 } else if (data.type === "complete") {
                   finalData = data;
                 } else if (data.type === "error") {
-                  throw new Error(data.error);
+                  console.error("[Blog Gen] Server error:", data.error);
+                  throw new Error(data.error || "Server returned an error");
                 }
               } catch (parseError) {
-                // Ignore parse errors for incomplete data
+                // Only log if it looks like a real error, not incomplete JSON
+                if (parseError instanceof SyntaxError) {
+                  console.debug("[Blog Gen] Incomplete SSE chunk, waiting for more data");
+                } else {
+                  throw parseError;
+                }
               }
             }
           }
         }
 
         if (!finalData.success) {
-          throw new Error(finalData.error || "Failed to generate blog");
+          const errorDetail = finalData.error
+            || (receivedAnyData ? `Stream ended during: ${lastProgress || "processing"}` : "No response from server")
+            || "Failed to generate blog";
+          console.error("[Blog Gen] Generation failed:", errorDetail);
+          throw new Error(errorDetail);
         }
 
         setState({
