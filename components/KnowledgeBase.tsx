@@ -1,5 +1,5 @@
 // components/KnowledgeBase.tsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import styles from "../styles/KnowledgeBase.module.css";
 
 interface KnowledgeEntry {
@@ -45,19 +45,26 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
   const [loading, setLoading] = useState(true);
   const [enriching, setEnriching] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [newEntry, setNewEntry] = useState({
     category: "services",
     title: "",
     content: "",
     tags: "",
   });
+  const [documentText, setDocumentText] = useState("");
+  const [documentTitle, setDocumentTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [profileSuggestions, setProfileSuggestions] = useState<ProfileSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -72,7 +79,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       } else {
         setError(data.error || "Failed to load knowledge base");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to connect to server");
     } finally {
       setLoading(false);
@@ -89,9 +96,11 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       const data = await response.json();
       if (data.success && data.suggestions?.length > 0) {
         setProfileSuggestions(data.suggestions);
+      } else {
+        setProfileSuggestions([]);
       }
-    } catch (err) {
-      // Silent fail - suggestions are optional
+    } catch {
+      // Silent fail
     }
   }, []);
 
@@ -118,11 +127,12 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
 
       if (data.success) {
         setSuccessMessage(`Added ${data.entriesAdded} new entries from your company profile!`);
+        setLastSaved(new Date());
         fetchEntries();
       } else {
         setError(data.error || "Failed to enrich knowledge base");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to connect to server");
     } finally {
       setEnriching(false);
@@ -147,13 +157,81 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
         setSuccessMessage(`Updated ${count} profile field(s) from knowledge base!`);
         setProfileSuggestions([]);
         setShowSuggestions(false);
+        setLastSaved(new Date());
       } else {
         setError(data.error || "Failed to sync to profile");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to connect to server");
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleParseDocument = async () => {
+    if (!documentText.trim()) {
+      setError("Please enter or paste document content");
+      return;
+    }
+
+    setParsing(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch("/api/knowledge-base/parse-and-fill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: documentText,
+          title: documentTitle || "Uploaded Document",
+          source: "document_upload",
+        }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        const messages: string[] = [];
+        if (data.entriesCreated > 0) {
+          messages.push(`Created ${data.entriesCreated} knowledge entries`);
+        }
+        if (data.profileFieldsUpdated?.length > 0) {
+          messages.push(`Updated profile: ${data.profileFieldsUpdated.join(", ")}`);
+        }
+        setSuccessMessage(messages.join(". ") || "Document processed successfully!");
+        setDocumentText("");
+        setDocumentTitle("");
+        setShowDocumentUpload(false);
+        setLastSaved(new Date());
+        fetchEntries();
+        checkProfileSync();
+      } else {
+        setError(data.error || "Failed to parse document");
+      }
+    } catch {
+      setError("Failed to parse document");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setDocumentTitle(file.name);
+
+    // Read file content
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setDocumentText(content);
+    };
+
+    if (file.type === "text/plain" || file.name.endsWith(".txt") || file.name.endsWith(".md")) {
+      reader.readAsText(file);
+    } else {
+      setError("Please upload a text file (.txt or .md)");
     }
   };
 
@@ -163,6 +241,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       return;
     }
 
+    setIsSaving(true);
     try {
       const response = await fetch("/api/knowledge-base", {
         method: "POST",
@@ -175,19 +254,23 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Entry added!");
+        setSuccessMessage("Entry saved!");
         setIsAddingNew(false);
         setNewEntry({ category: "services", title: "", content: "", tags: "" });
+        setLastSaved(new Date());
         fetchEntries();
       } else {
         setError(data.error || "Failed to add entry");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to connect to server");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleUpdate = async (entry: KnowledgeEntry) => {
+    setIsSaving(true);
     try {
       const response = await fetch("/api/knowledge-base", {
         method: "PUT",
@@ -197,18 +280,22 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Updated!");
+        setSuccessMessage("Saved!");
         setEditingEntry(null);
+        setLastSaved(new Date());
         fetchEntries();
       } else {
         setError(data.error || "Failed to update");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to connect to server");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleVerify = async (entry: KnowledgeEntry) => {
+    setIsSaving(true);
     try {
       const response = await fetch("/api/knowledge-base", {
         method: "PUT",
@@ -218,10 +305,13 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       const data = await response.json();
 
       if (data.success) {
+        setLastSaved(new Date());
         fetchEntries();
       }
-    } catch (err) {
+    } catch {
       setError("Failed to verify");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -237,7 +327,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       if (data.success) {
         fetchEntries();
       }
-    } catch (err) {
+    } catch {
       setError("Failed to delete");
     }
   };
@@ -277,6 +367,15 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
           </div>
         </div>
         <div className={styles.headerActions}>
+          {/* Save Status Indicator */}
+          <div className={styles.saveStatus}>
+            {isSaving && <span className={styles.savingIndicator}>Saving...</span>}
+            {lastSaved && !isSaving && (
+              <span className={styles.savedIndicator}>
+                Saved {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
           {profileSuggestions.length > 0 && (
             <button
               className={styles.syncButton}
@@ -285,6 +384,13 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
               {profileSuggestions.length} Profile Updates
             </button>
           )}
+          <button
+            className={styles.uploadButton}
+            onClick={() => setShowDocumentUpload(!showDocumentUpload)}
+            title="Upload document to auto-fill profile"
+          >
+            Upload Doc
+          </button>
           <button
             className={styles.enrichButton}
             onClick={handleEnrich}
@@ -309,6 +415,70 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
           )}
         </div>
       </div>
+
+      {/* Document Upload Section */}
+      {showDocumentUpload && (
+        <div className={styles.documentUpload}>
+          <div className={styles.uploadHeader}>
+            <strong>Add Document</strong>
+            <span className={styles.uploadHint}>
+              AI will read and extract information to fill your profile and create knowledge entries
+            </span>
+          </div>
+          <div className={styles.uploadForm}>
+            <div className={styles.formGroup}>
+              <label>Document Title</label>
+              <input
+                type="text"
+                value={documentTitle}
+                onChange={(e) => setDocumentTitle(e.target.value)}
+                placeholder="e.g., Company Overview, Service Description"
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Content (paste text or upload file)</label>
+              <textarea
+                value={documentText}
+                onChange={(e) => setDocumentText(e.target.value)}
+                placeholder="Paste your document content here... AI will read it and automatically fill in missing profile information and create knowledge entries."
+                rows={6}
+              />
+            </div>
+            <div className={styles.uploadActions}>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".txt,.md"
+                style={{ display: "none" }}
+              />
+              <button
+                className={styles.secondaryButton}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Choose File
+              </button>
+              <button
+                className={styles.cancelButton}
+                onClick={() => {
+                  setShowDocumentUpload(false);
+                  setDocumentText("");
+                  setDocumentTitle("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.saveButton}
+                onClick={handleParseDocument}
+                disabled={parsing || !documentText.trim()}
+              >
+                {parsing ? "Processing..." : "Parse & Fill Profile"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Sync Suggestions */}
       {showSuggestions && profileSuggestions.length > 0 && (
@@ -437,8 +607,8 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
             >
               Cancel
             </button>
-            <button className={styles.saveButton} onClick={handleSaveNew}>
-              Save
+            <button className={styles.saveButton} onClick={handleSaveNew} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save"}
             </button>
           </div>
         </div>
@@ -453,7 +623,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
             <div className={styles.emptyIcon}>KB</div>
             <p>No knowledge entries yet</p>
             <p className={styles.emptyHint}>
-              Click "From Profile" to import data or "Add" to create entries
+              Click &quot;Upload Doc&quot; to add a document, &quot;From Profile&quot; to import data, or &quot;Add&quot; to create entries
             </p>
           </div>
         ) : (
@@ -471,6 +641,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
                 onDelete={() => handleDelete(entry.id)}
                 editingEntry={editingEntry}
                 setEditingEntry={setEditingEntry}
+                isSaving={isSaving}
               />
             ))}
           </div>
@@ -498,6 +669,7 @@ interface EntryCardProps {
   onDelete: () => void;
   editingEntry: KnowledgeEntry | null;
   setEditingEntry: (entry: KnowledgeEntry | null) => void;
+  isSaving?: boolean;
 }
 
 function EntryCard({
@@ -511,6 +683,7 @@ function EntryCard({
   onDelete,
   editingEntry,
   setEditingEntry,
+  isSaving,
 }: EntryCardProps) {
   if (isEditing && editingEntry) {
     return (
@@ -542,8 +715,9 @@ function EntryCard({
           <button
             className={styles.saveButton}
             onClick={() => onSave(editingEntry)}
+            disabled={isSaving}
           >
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

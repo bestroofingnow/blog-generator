@@ -338,9 +338,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
+    console.log("[Orchestrate] Starting blog generation...");
+
     // Load user profile for brand context
     const userId = (session.user as { id?: string }).id || session.user?.email || "";
-    const userProfile = await loadUserProfile(userId);
+    console.log("[Orchestrate] User ID:", userId ? "found" : "missing");
+
+    let userProfile;
+    try {
+      userProfile = await loadUserProfile(userId);
+      console.log("[Orchestrate] User profile loaded:", userProfile ? "yes" : "no");
+    } catch (profileError) {
+      console.error("[Orchestrate] Profile load error:", profileError);
+      userProfile = null;
+    }
     const companyProfile = userProfile?.companyProfile;
 
     // Extract profile context for content generation (including branding fields)
@@ -463,10 +474,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 1: Generate outline (now enhanced with SERP data)
+    console.log("[Orchestrate] Step 1: Generating outline...");
     sendProgress(res, "outline", "AI is designing your blog structure...");
 
     let outline: BlogOutline;
     try {
+      console.log("[Orchestrate] Calling generateOutline with topic:", topic, "location:", location);
       outline = await generateOutline({
         topic,
         location,
@@ -484,9 +497,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           relatedSearches: relatedSearches.slice(0, 10),
         } : undefined,
       });
+      console.log("[Orchestrate] Outline generated successfully:", outline.blogTitle);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error("Outline generation failed:", errorMessage);
+      console.error("[Orchestrate] Outline generation failed:", errorMessage);
 
       // Check if it's an API authentication error
       if (errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("auth")) {
@@ -494,6 +508,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         sendProgress(res, "outline", "AI service temporarily unavailable, using fallback...");
       }
 
+      console.log("[Orchestrate] Using fallback outline");
       outline = createFallbackOutline(topic, location, numberOfSections);
     }
 
@@ -506,6 +521,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // STEP 2: Handle images based on imageMode
+    console.log("[Orchestrate] Step 2: Handling images, mode:", imageMode);
     const generatedImages: GeneratedImage[] = [];
 
     if (imageMode === "manual" && userImages.length > 0) {
@@ -586,9 +602,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 3: Generate content
+    console.log("[Orchestrate] Step 3: Generating content...");
     sendProgress(res, "content", `AI is writing ${wordCountRange} word content...`);
 
-    console.log(`[Content Gen] Generating content with wordCount: ${wordCountRange}, images: ${numberOfImages}`);
+    console.log(`[Orchestrate] Content Gen params: wordCount=${wordCountRange}, images=${numberOfImages}`);
 
     let rawContent: string;
     try {
@@ -609,9 +626,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           relatedSearches: relatedSearches.slice(0, 10),
         } : undefined,
       });
+      console.log("[Orchestrate] Content generated, length:", rawContent.length);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error("[Content Gen] Failed:", errorMessage);
+      console.error("[Orchestrate] Content Gen Failed:", errorMessage);
+      console.error("[Orchestrate] Full error:", error);
 
       // Check if it's an API authentication error
       if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
@@ -628,6 +647,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 4: SEO Validation & Targeted Adjustment Loop (90+ score required)
+    console.log("[Orchestrate] Step 4: SEO Validation...");
     sendProgress(res, "seo", "Analyzing SEO quality...");
 
     const targetWordCount = parseInt(wordCountRange.split("-")[0]) || 1800;
@@ -726,6 +746,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // STEP 5: Format content
+    console.log("[Orchestrate] Step 5: Formatting content and handling images...");
     sendProgress(res, "format", "AI is formatting the HTML...");
 
     // STEP 5: Upload to WordPress (if configured) or use external URLs
@@ -867,8 +888,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Insert images into content
+    console.log("[Orchestrate] Final Step: Inserting images into content...");
     const htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
+    console.log("[Orchestrate] Final HTML content length:", htmlContent.length);
 
+    console.log("[Orchestrate] Sending complete response...");
     sendComplete(res, {
       success: true,
       htmlContent,
@@ -883,10 +907,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
+    console.log("[Orchestrate] Blog generation completed successfully!");
     res.end();
   } catch (error) {
-    console.error("Orchestration error:", error);
-    sendError(res, error instanceof Error ? error.message : "Unknown error");
+    console.error("[Orchestrate] CRITICAL ERROR:", error);
+    console.error("[Orchestrate] Error stack:", error instanceof Error ? error.stack : "no stack");
+    const errorMsg = error instanceof Error ? error.message : "Unknown error occurred";
+    sendError(res, errorMsg);
     res.end();
   }
 }

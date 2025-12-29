@@ -67,6 +67,11 @@ interface KnowledgeSuggestion {
   source: string;
 }
 
+interface QuickResearchResult {
+  suggestions: Record<string, unknown>;
+  fieldsFound: string[];
+}
+
 export default function CompanySettingsPage() {
   const { data: session } = useSession();
   const [profile, setProfile] = useState<Partial<CompanyProfile>>({});
@@ -75,6 +80,8 @@ export default function CompanySettingsPage() {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(["basic", "branding"]));
   const [knowledgeSuggestions, setKnowledgeSuggestions] = useState<KnowledgeSuggestion[]>([]);
   const [isSyncingKnowledge, setIsSyncingKnowledge] = useState(false);
+  const [isQuickResearching, setIsQuickResearching] = useState(false);
+  const [quickResearchResult, setQuickResearchResult] = useState<QuickResearchResult | null>(null);
 
   // Onboarding wizard hook
   const { openWizard, WizardModal } = useOnboardingTrigger();
@@ -231,6 +238,55 @@ export default function CompanySettingsPage() {
     }
   }, [isLoading, userId, checkKnowledgeSuggestions]);
 
+  // One-click quick research using profile context
+  const handleQuickResearch = async () => {
+    setIsQuickResearching(true);
+    setQuickResearchResult(null);
+
+    try {
+      const response = await fetch("/api/profile/quick-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.fieldsFound?.length > 0) {
+        setQuickResearchResult({
+          suggestions: data.suggestions,
+          fieldsFound: data.fieldsFound,
+        });
+      } else if (!data.success) {
+        console.error("Quick research failed:", data.error);
+      }
+    } catch (err) {
+      console.error("Quick research error:", err);
+    } finally {
+      setIsQuickResearching(false);
+    }
+  };
+
+  // Apply quick research suggestions
+  const applyQuickResearchSuggestions = async () => {
+    if (!quickResearchResult) return;
+
+    const updated = { ...profile };
+    for (const [key, value] of Object.entries(quickResearchResult.suggestions)) {
+      if (value !== null && value !== undefined) {
+        (updated as Record<string, unknown>)[key] = value;
+      }
+    }
+
+    setProfile(updated);
+    await saveProfile(updated);
+    setQuickResearchResult(null);
+  };
+
+  // Dismiss quick research suggestions
+  const dismissQuickResearch = () => {
+    setQuickResearchResult(null);
+  };
+
   // Calculate completeness
   const completeness = calculateProfileCompleteness(profile as CompanyProfile);
   const incompleteFields = getIncompleteFields(profile as CompanyProfile);
@@ -282,6 +338,14 @@ export default function CompanySettingsPage() {
                 {isSyncingKnowledge ? "Syncing..." : `KB Updates (${knowledgeSuggestions.length})`}
               </button>
             )}
+            <button
+              className={`${styles.button} ${styles.buttonResearch}`}
+              onClick={handleQuickResearch}
+              disabled={isQuickResearching || (!profile.name && !profile.website)}
+              title="Use AI to find missing profile information"
+            >
+              {isQuickResearching ? "Researching..." : "Quick Research"}
+            </button>
             <button className={`${styles.button} ${styles.buttonOutline}`} onClick={openWizard}>
               Run Setup Wizard
             </button>
@@ -327,6 +391,53 @@ export default function CompanySettingsPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Quick Research Results */}
+        {quickResearchResult && quickResearchResult.fieldsFound.length > 0 && (
+          <div className={styles.researchResults}>
+            <div className={styles.researchResultsHeader}>
+              <span className={styles.researchResultsIcon}>🔍</span>
+              <div>
+                <div className={styles.researchResultsTitle}>
+                  Research Found {quickResearchResult.fieldsFound.length} Suggestions
+                </div>
+                <div className={styles.researchResultsSubtitle}>
+                  Review and apply AI-discovered information
+                </div>
+              </div>
+            </div>
+            <div className={styles.researchResultsList}>
+              {quickResearchResult.fieldsFound.map((field) => {
+                const value = quickResearchResult.suggestions[field];
+                const displayValue = Array.isArray(value)
+                  ? value.slice(0, 3).join(", ") + (value.length > 3 ? "..." : "")
+                  : String(value).slice(0, 100);
+                return (
+                  <div key={field} className={styles.researchResultItem}>
+                    <span className={styles.researchResultField}>
+                      {field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+                    </span>
+                    <span className={styles.researchResultValue}>{displayValue}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className={styles.researchResultsActions}>
+              <button
+                className={`${styles.button} ${styles.buttonOutline}`}
+                onClick={dismissQuickResearch}
+              >
+                Dismiss
+              </button>
+              <button
+                className={`${styles.button} ${styles.buttonPrimary}`}
+                onClick={applyQuickResearchSuggestions}
+              >
+                Apply All Suggestions
+              </button>
             </div>
           </div>
         )}

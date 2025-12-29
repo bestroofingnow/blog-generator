@@ -52,15 +52,18 @@ export default async function handler(
       .where(eq(knowledgeBase.userId, userId));
 
     // Get user's profile
-    const [profile] = await db
+    const profileResults = await db
       .select()
       .from(profiles)
       .where(eq(profiles.userId, userId));
 
+    const profile = profileResults[0];
+
     if (!profile) {
-      return res.status(400).json({
-        success: false,
-        error: "No profile found",
+      // No profile yet - return empty suggestions (profile will be created when user saves settings)
+      return res.status(200).json({
+        success: true,
+        suggestions: [],
       });
     }
 

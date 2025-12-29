@@ -91,6 +91,96 @@
   cursor: not-allowed;
 }
 
+.buttonResearch {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.buttonResearch:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.buttonResearch:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Quick Research Results Panel */
+.researchResults {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border: 1px solid #c4b5fd;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.researchResultsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.researchResultsIcon {
+  font-size: 1.5rem;
+}
+
+.researchResultsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5b21b6;
+}
+
+.researchResultsSubtitle {
+  font-size: 0.85rem;
+  color: #7c3aed;
+}
+
+.researchResultsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.researchResultItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  gap: 1rem;
+}
+
+.researchResultField {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+.researchResultValue {
+  color: #6b7280;
+  font-size: 0.85rem;
+  text-align: right;
+  flex: 1;
+  word-break: break-word;
+}
+
+.researchResultsActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 /* Completeness Banner */
 .completenessBanner {
   background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
