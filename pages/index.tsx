@@ -552,7 +552,7 @@ export default function Home() {
   const [editedContent, setEditedContent] = useState<string>("");
 
   // Sidebar navigation state
-  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "locations" | "knowledge" | "schedule" | "seo-heatmap" | "automation";
+  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "knowledge" | "schedule" | "seo-heatmap" | "automation";
   const [activeSection, setActiveSection] = useState<SidebarSection>("create");
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
     if (typeof window !== "undefined") {
@@ -2734,22 +2734,6 @@ export default function Home() {
             </span>
             <span className={styles.sidebarLabel}>Research</span>
             <span className={styles.tooltip}>Research</span>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.sidebarItem} ${activeSection === "locations" ? styles.active : ""}`}
-            onClick={() => setActiveSection("locations")}
-            title="Location Pages"
-          >
-            <span className={styles.sidebarIcon}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-            </span>
-            <span className={styles.sidebarLabel}>Locations</span>
-            <span className={styles.tooltip}>Locations</span>
           </button>
 
           <button
@@ -5208,18 +5192,6 @@ export default function Home() {
                   )}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Locations Section */}
-          {activeSection === "locations" && (
-            <div className={styles.sectionContent}>
-              <Suspense fallback={<div className={styles.loading}>Loading Location Builder...</div>}>
-                <LocationPageBuilder
-                  services={companyProfile.services}
-                  defaultService={companyProfile.services[0] || ""}
-                />
-              </Suspense>
             </div>
           )}
 

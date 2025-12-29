@@ -16,16 +16,23 @@ interface KnowledgeEntry {
   updatedAt: string;
 }
 
+interface ProfileSuggestion {
+  field: string;
+  currentValue: unknown;
+  suggestedValue: unknown;
+  source: string;
+}
+
 const CATEGORIES = [
-  { value: "services", label: "Services", icon: "🔧" },
-  { value: "usps", label: "Unique Selling Points", icon: "⭐" },
-  { value: "facts", label: "Company Facts", icon: "📋" },
-  { value: "locations", label: "Service Areas", icon: "📍" },
-  { value: "certifications", label: "Certifications", icon: "🏆" },
-  { value: "team", label: "Team & Expertise", icon: "👥" },
-  { value: "faqs", label: "FAQs", icon: "❓" },
-  { value: "testimonials", label: "Testimonials", icon: "💬" },
-  { value: "custom", label: "Custom", icon: "📝" },
+  { value: "services", label: "Services", icon: "S", color: "#3b82f6" },
+  { value: "usps", label: "USPs", icon: "U", color: "#8b5cf6" },
+  { value: "facts", label: "Facts", icon: "F", color: "#06b6d4" },
+  { value: "locations", label: "Areas", icon: "L", color: "#10b981" },
+  { value: "certifications", label: "Certs", icon: "C", color: "#f59e0b" },
+  { value: "team", label: "Team", icon: "T", color: "#ec4899" },
+  { value: "faqs", label: "FAQs", icon: "Q", color: "#6366f1" },
+  { value: "testimonials", label: "Reviews", icon: "R", color: "#14b8a6" },
+  { value: "custom", label: "Other", icon: "+", color: "#6b7280" },
 ];
 
 interface KnowledgeBaseProps {
@@ -37,6 +44,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [enriching, setEnriching] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -48,6 +56,8 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
   });
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [profileSuggestions, setProfileSuggestions] = useState<ProfileSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -69,9 +79,31 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
     }
   }, [activeCategory]);
 
+  const checkProfileSync = useCallback(async () => {
+    try {
+      const response = await fetch("/api/knowledge-base/sync-to-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "suggest" }),
+      });
+      const data = await response.json();
+      if (data.success && data.suggestions?.length > 0) {
+        setProfileSuggestions(data.suggestions);
+      }
+    } catch (err) {
+      // Silent fail - suggestions are optional
+    }
+  }, []);
+
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
+
+  useEffect(() => {
+    if (entries.length > 0) {
+      checkProfileSync();
+    }
+  }, [entries.length, checkProfileSync]);
 
   const handleEnrich = async () => {
     setEnriching(true);
@@ -97,6 +129,34 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
     }
   };
 
+  const handleSyncToProfile = async () => {
+    setSyncing(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch("/api/knowledge-base/sync-to-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "apply" }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        const count = data.updatedFields?.length || 0;
+        setSuccessMessage(`Updated ${count} profile field(s) from knowledge base!`);
+        setProfileSuggestions([]);
+        setShowSuggestions(false);
+      } else {
+        setError(data.error || "Failed to sync to profile");
+      }
+    } catch (err) {
+      setError("Failed to connect to server");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleSaveNew = async () => {
     if (!newEntry.title || !newEntry.content) {
       setError("Title and content are required");
@@ -115,7 +175,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Entry added successfully!");
+        setSuccessMessage("Entry added!");
         setIsAddingNew(false);
         setNewEntry({ category: "services", title: "", content: "", tags: "" });
         fetchEntries();
@@ -137,11 +197,11 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Entry updated!");
+        setSuccessMessage("Updated!");
         setEditingEntry(null);
         fetchEntries();
       } else {
-        setError(data.error || "Failed to update entry");
+        setError(data.error || "Failed to update");
       }
     } catch (err) {
       setError("Failed to connect to server");
@@ -158,18 +218,15 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Entry verified!");
         fetchEntries();
-      } else {
-        setError(data.error || "Failed to verify entry");
       }
     } catch (err) {
-      setError("Failed to connect to server");
+      setError("Failed to verify");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this entry?")) return;
+    if (!confirm("Delete this entry?")) return;
 
     try {
       const response = await fetch(`/api/knowledge-base?id=${id}`, {
@@ -178,13 +235,10 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Entry deleted!");
         fetchEntries();
-      } else {
-        setError(data.error || "Failed to delete entry");
       }
     } catch (err) {
-      setError("Failed to connect to server");
+      setError("Failed to delete");
     }
   };
 
@@ -193,11 +247,17 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
     setSuccessMessage(null);
   };
 
-  const groupedEntries = entries.reduce((acc, entry) => {
-    if (!acc[entry.category]) acc[entry.category] = [];
-    acc[entry.category].push(entry);
+  // Count entries by category
+  const entryCounts = entries.reduce((acc, entry) => {
+    acc[entry.category] = (acc[entry.category] || 0) + 1;
     return acc;
-  }, {} as Record<string, KnowledgeEntry[]>);
+  }, {} as Record<string, number>);
+
+  const filteredEntries = activeCategory
+    ? entries.filter((e) => e.category === activeCategory)
+    : entries;
+
+  const unverifiedCount = entries.filter((e) => !e.isVerified).length;
 
   const containerClass = isModal
     ? `${styles.container} ${styles.modal}`
@@ -205,20 +265,33 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
 
   return (
     <div className={containerClass}>
+      {/* Compact Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2 className={styles.title}>Knowledge Base</h2>
-          <p className={styles.subtitle}>
-            Your company facts that help the AI create better content
-          </p>
+          <div className={styles.stats}>
+            <span>{entries.length} entries</span>
+            {unverifiedCount > 0 && (
+              <span className={styles.unverifiedStat}>{unverifiedCount} need review</span>
+            )}
+          </div>
         </div>
         <div className={styles.headerActions}>
+          {profileSuggestions.length > 0 && (
+            <button
+              className={styles.syncButton}
+              onClick={() => setShowSuggestions(!showSuggestions)}
+            >
+              {profileSuggestions.length} Profile Updates
+            </button>
+          )}
           <button
             className={styles.enrichButton}
             onClick={handleEnrich}
             disabled={enriching}
+            title="Pull data from your company profile"
           >
-            {enriching ? "Analyzing..." : "Auto-Enrich from Profile"}
+            {enriching ? "..." : "From Profile"}
           </button>
           <button
             className={styles.addButton}
@@ -227,46 +300,91 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
               clearMessages();
             }}
           >
-            + Add Entry
+            + Add
           </button>
           {isModal && onClose && (
             <button className={styles.closeButton} onClick={onClose}>
-              ×
+              x
             </button>
           )}
         </div>
       </div>
 
+      {/* Profile Sync Suggestions */}
+      {showSuggestions && profileSuggestions.length > 0 && (
+        <div className={styles.syncPanel}>
+          <div className={styles.syncHeader}>
+            <strong>Sync to Company Profile</strong>
+            <span className={styles.syncInfo}>
+              Knowledge found that could update your profile
+            </span>
+          </div>
+          <div className={styles.syncList}>
+            {profileSuggestions.map((suggestion, idx) => (
+              <div key={idx} className={styles.syncItem}>
+                <span className={styles.syncField}>{suggestion.field}</span>
+                <span className={styles.syncSource}>{suggestion.source}</span>
+              </div>
+            ))}
+          </div>
+          <div className={styles.syncActions}>
+            <button
+              className={styles.cancelButton}
+              onClick={() => setShowSuggestions(false)}
+            >
+              Dismiss
+            </button>
+            <button
+              className={styles.saveButton}
+              onClick={handleSyncToProfile}
+              disabled={syncing}
+            >
+              {syncing ? "Syncing..." : "Apply All Updates"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Messages */}
       {(error || successMessage) && (
         <div className={error ? styles.error : styles.success}>
           {error || successMessage}
           <button onClick={clearMessages} className={styles.dismissButton}>
-            ×
+            x
           </button>
         </div>
       )}
 
+      {/* Category Pills */}
       <div className={styles.categoryTabs}>
         <button
           className={`${styles.categoryTab} ${!activeCategory ? styles.active : ""}`}
           onClick={() => setActiveCategory(null)}
         >
-          All
+          All ({entries.length})
         </button>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.value}
-            className={`${styles.categoryTab} ${activeCategory === cat.value ? styles.active : ""}`}
-            onClick={() => setActiveCategory(cat.value)}
-          >
-            {cat.icon} {cat.label}
-          </button>
-        ))}
+        {CATEGORIES.map((cat) => {
+          const count = entryCounts[cat.value] || 0;
+          if (count === 0 && !activeCategory) return null;
+          return (
+            <button
+              key={cat.value}
+              className={`${styles.categoryTab} ${activeCategory === cat.value ? styles.active : ""}`}
+              onClick={() => setActiveCategory(cat.value)}
+              style={{
+                "--cat-color": cat.color,
+              } as React.CSSProperties}
+            >
+              <span className={styles.catIcon}>{cat.icon}</span>
+              {cat.label} ({count})
+            </button>
+          );
+        })}
       </div>
 
+      {/* Add New Form */}
       {isAddingNew && (
         <div className={styles.addForm}>
-          <h3>Add New Entry</h3>
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
               <label>Category</label>
@@ -276,7 +394,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
-                    {cat.icon} {cat.label}
+                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -287,7 +405,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
                 type="text"
                 value={newEntry.title}
                 onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                placeholder="e.g., 24/7 Emergency Service"
+                placeholder="Brief title"
               />
             </div>
           </div>
@@ -296,8 +414,8 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
             <textarea
               value={newEntry.content}
               onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
-              placeholder="Detailed description that can be used in blog posts..."
-              rows={3}
+              placeholder="Details for AI to use in content..."
+              rows={2}
             />
           </div>
           <div className={styles.formGroup}>
@@ -306,7 +424,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
               type="text"
               value={newEntry.tags}
               onChange={(e) => setNewEntry({ ...newEntry, tags: e.target.value })}
-              placeholder="e.g., emergency, 24/7, service"
+              placeholder="tag1, tag2"
             />
           </div>
           <div className={styles.formActions}>
@@ -320,25 +438,31 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
               Cancel
             </button>
             <button className={styles.saveButton} onClick={handleSaveNew}>
-              Save Entry
+              Save
             </button>
           </div>
         </div>
       )}
 
+      {/* Content */}
       <div className={styles.content}>
         {loading ? (
-          <div className={styles.loading}>Loading knowledge base...</div>
+          <div className={styles.loading}>Loading...</div>
         ) : entries.length === 0 ? (
           <div className={styles.empty}>
-            <p>No entries yet. Add your first entry or auto-enrich from your company profile!</p>
+            <div className={styles.emptyIcon}>KB</div>
+            <p>No knowledge entries yet</p>
+            <p className={styles.emptyHint}>
+              Click "From Profile" to import data or "Add" to create entries
+            </p>
           </div>
-        ) : activeCategory ? (
+        ) : (
           <div className={styles.entriesList}>
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <EntryCard
                 key={entry.id}
                 entry={entry}
+                category={CATEGORIES.find((c) => c.value === entry.category)}
                 isEditing={editingEntry?.id === entry.id}
                 onEdit={() => setEditingEntry(entry)}
                 onSave={handleUpdate}
@@ -350,42 +474,22 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
               />
             ))}
           </div>
-        ) : (
-          Object.entries(groupedEntries).map(([category, categoryEntries]) => {
-            const categoryInfo = CATEGORIES.find((c) => c.value === category);
-            return (
-              <div key={category} className={styles.categorySection}>
-                <h3 className={styles.categoryHeader}>
-                  {categoryInfo?.icon} {categoryInfo?.label || category}
-                  <span className={styles.count}>{categoryEntries.length}</span>
-                </h3>
-                <div className={styles.entriesList}>
-                  {categoryEntries.map((entry) => (
-                    <EntryCard
-                      key={entry.id}
-                      entry={entry}
-                      isEditing={editingEntry?.id === entry.id}
-                      onEdit={() => setEditingEntry(entry)}
-                      onSave={handleUpdate}
-                      onCancel={() => setEditingEntry(null)}
-                      onVerify={() => handleVerify(entry)}
-                      onDelete={() => handleDelete(entry.id)}
-                      editingEntry={editingEntry}
-                      setEditingEntry={setEditingEntry}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })
         )}
       </div>
     </div>
   );
 }
 
+interface CategoryInfo {
+  value: string;
+  label: string;
+  icon: string;
+  color: string;
+}
+
 interface EntryCardProps {
   entry: KnowledgeEntry;
+  category?: CategoryInfo;
   isEditing: boolean;
   onEdit: () => void;
   onSave: (entry: KnowledgeEntry) => void;
@@ -398,6 +502,7 @@ interface EntryCardProps {
 
 function EntryCard({
   entry,
+  category,
   isEditing,
   onEdit,
   onSave,
@@ -427,7 +532,7 @@ function EntryCard({
             onChange={(e) =>
               setEditingEntry({ ...editingEntry, content: e.target.value })
             }
-            rows={3}
+            rows={2}
           />
         </div>
         <div className={styles.entryActions}>
@@ -446,34 +551,50 @@ function EntryCard({
   }
 
   return (
-    <div className={styles.entryCard}>
+    <div
+      className={`${styles.entryCard} ${!entry.isVerified ? styles.unverified : ""}`}
+      style={{
+        "--entry-color": category?.color || "#6b7280",
+      } as React.CSSProperties}
+    >
       <div className={styles.entryHeader}>
-        <h4 className={styles.entryTitle}>{entry.title}</h4>
+        <div className={styles.entryLeft}>
+          <span
+            className={styles.entryCatBadge}
+            style={{ background: category?.color || "#6b7280" }}
+          >
+            {category?.icon || "?"}
+          </span>
+          <h4 className={styles.entryTitle}>{entry.title}</h4>
+        </div>
         <div className={styles.entryBadges}>
           {entry.isAiGenerated && (
-            <span className={styles.aiBadge}>AI Generated</span>
+            <span className={styles.aiBadge}>AI</span>
           )}
           {!entry.isVerified && (
-            <span className={styles.unverifiedBadge}>Needs Review</span>
+            <span className={styles.unverifiedBadge}>Review</span>
           )}
           {entry.usageCount > 0 && (
-            <span className={styles.usageBadge}>Used {entry.usageCount}x</span>
+            <span className={styles.usageBadge}>{entry.usageCount}x</span>
           )}
         </div>
       </div>
       <p className={styles.entryContent}>{entry.content}</p>
       {entry.tags.length > 0 && (
         <div className={styles.entryTags}>
-          {entry.tags.map((tag, i) => (
+          {entry.tags.slice(0, 4).map((tag, i) => (
             <span key={i} className={styles.tag}>
               {tag}
             </span>
           ))}
+          {entry.tags.length > 4 && (
+            <span className={styles.tagMore}>+{entry.tags.length - 4}</span>
+          )}
         </div>
       )}
       <div className={styles.entryActions}>
         {!entry.isVerified && (
-          <button className={styles.verifyButton} onClick={onVerify}>
+          <button className={styles.verifyButton} onClick={onVerify} title="Mark as verified">
             Verify
           </button>
         )}
@@ -481,7 +602,7 @@ function EntryCard({
           Edit
         </button>
         <button className={styles.deleteButton} onClick={onDelete}>
-          Delete
+          Del
         </button>
       </div>
     </div>

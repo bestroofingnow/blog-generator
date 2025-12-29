@@ -62,12 +62,19 @@ const LINK_CATEGORIES = [
   { value: "custom", label: "Other" },
 ];
 
+interface KnowledgeSuggestion {
+  field: string;
+  source: string;
+}
+
 export default function CompanySettingsPage() {
   const { data: session } = useSession();
   const [profile, setProfile] = useState<Partial<CompanyProfile>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(["basic", "branding"]));
+  const [knowledgeSuggestions, setKnowledgeSuggestions] = useState<KnowledgeSuggestion[]>([]);
+  const [isSyncingKnowledge, setIsSyncingKnowledge] = useState(false);
 
   // Onboarding wizard hook
   const { openWizard, WizardModal } = useOnboardingTrigger();
@@ -174,6 +181,56 @@ export default function CompanySettingsPage() {
     }
   };
 
+  // Check for knowledge base suggestions
+  const checkKnowledgeSuggestions = useCallback(async () => {
+    try {
+      const response = await fetch("/api/knowledge-base/sync-to-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "suggest" }),
+      });
+      const data = await response.json();
+      if (data.success && data.suggestions?.length > 0) {
+        setKnowledgeSuggestions(data.suggestions.map((s: { field: string; source: string }) => ({
+          field: s.field,
+          source: s.source,
+        })));
+      } else {
+        setKnowledgeSuggestions([]);
+      }
+    } catch (err) {
+      // Silent fail
+    }
+  }, []);
+
+  // Apply knowledge base suggestions
+  const applyKnowledgeSuggestions = async () => {
+    setIsSyncingKnowledge(true);
+    try {
+      const response = await fetch("/api/knowledge-base/sync-to-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "apply" }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        await loadProfile(); // Reload profile with updated data
+        setKnowledgeSuggestions([]);
+      }
+    } catch (err) {
+      console.error("Failed to sync knowledge:", err);
+    } finally {
+      setIsSyncingKnowledge(false);
+    }
+  };
+
+  // Check knowledge suggestions when profile loads
+  useEffect(() => {
+    if (!isLoading && userId) {
+      checkKnowledgeSuggestions();
+    }
+  }, [isLoading, userId, checkKnowledgeSuggestions]);
+
   // Calculate completeness
   const completeness = calculateProfileCompleteness(profile as CompanyProfile);
   const incompleteFields = getIncompleteFields(profile as CompanyProfile);
@@ -214,6 +271,16 @@ export default function CompanySettingsPage() {
               <span className={`${styles.saveIndicator} ${styles.saved}`}>
                 Saved
               </span>
+            )}
+            {knowledgeSuggestions.length > 0 && (
+              <button
+                className={`${styles.button} ${styles.buttonKnowledge}`}
+                onClick={applyKnowledgeSuggestions}
+                disabled={isSyncingKnowledge}
+                title={`Update ${knowledgeSuggestions.map(s => s.field).join(', ')} from Knowledge Base`}
+              >
+                {isSyncingKnowledge ? "Syncing..." : `KB Updates (${knowledgeSuggestions.length})`}
+              </button>
             )}
             <button className={`${styles.button} ${styles.buttonOutline}`} onClick={openWizard}>
               Run Setup Wizard
