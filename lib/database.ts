@@ -469,8 +469,34 @@ export async function loadPublishedContent(
 export async function getUsedTopicsAndKeywords(
   userId: string
 ): Promise<{ titles: string[]; keywords: string[]; topics: string[] }> {
+  // Collect unique values
+  const titlesSet = new Set<string>();
+  const keywordsSet = new Set<string>();
+  const topicsSet = new Set<string>();
+
+  // Get from drafts first (this table always exists)
   try {
-    // Get from published content history
+    const draftsList = await db
+      .select({
+        title: drafts.title,
+        seoData: drafts.seoData,
+      })
+      .from(drafts)
+      .where(eq(drafts.userId, userId));
+
+    console.log(`[getUsedTopicsAndKeywords] Found ${draftsList.length} drafts for user`);
+
+    for (const d of draftsList) {
+      if (d.title) titlesSet.add(d.title.toLowerCase());
+      const seo = d.seoData as { primaryKeyword?: string } | null;
+      if (seo?.primaryKeyword) keywordsSet.add(seo.primaryKeyword.toLowerCase());
+    }
+  } catch (error) {
+    console.error("[getUsedTopicsAndKeywords] Error loading drafts:", error);
+  }
+
+  // Get from published content history (table may not exist yet)
+  try {
     const published = await db
       .select({
         title: publishedContent.title,
@@ -480,43 +506,28 @@ export async function getUsedTopicsAndKeywords(
       .from(publishedContent)
       .where(eq(publishedContent.userId, userId));
 
-    // Get from drafts (including unpublished)
-    const draftsList = await db
-      .select({
-        title: drafts.title,
-        seoData: drafts.seoData,
-      })
-      .from(drafts)
-      .where(eq(drafts.userId, userId));
+    console.log(`[getUsedTopicsAndKeywords] Found ${published.length} published items for user`);
 
-    // Collect unique values
-    const titlesSet = new Set<string>();
-    const keywordsSet = new Set<string>();
-    const topicsSet = new Set<string>();
-
-    // From published content
     for (const p of published) {
       if (p.title) titlesSet.add(p.title.toLowerCase());
       if (p.primaryKeyword) keywordsSet.add(p.primaryKeyword.toLowerCase());
       if (p.topic) topicsSet.add(p.topic.toLowerCase());
     }
-
-    // From drafts
-    for (const d of draftsList) {
-      if (d.title) titlesSet.add(d.title.toLowerCase());
-      const seo = d.seoData as { primaryKeyword?: string } | null;
-      if (seo?.primaryKeyword) keywordsSet.add(seo.primaryKeyword.toLowerCase());
-    }
-
-    return {
-      titles: Array.from(titlesSet),
-      keywords: Array.from(keywordsSet),
-      topics: Array.from(topicsSet),
-    };
   } catch (error) {
-    console.error("Error getting used topics and keywords:", error);
-    return { titles: [], keywords: [], topics: [] };
+    // Table might not exist yet - this is expected before first migration
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("does not exist") || errorMessage.includes("relation")) {
+      console.log("[getUsedTopicsAndKeywords] published_content table does not exist yet - run /api/setup/create-published-content-table");
+    } else {
+      console.error("[getUsedTopicsAndKeywords] Error loading published content:", error);
+    }
   }
+
+  return {
+    titles: Array.from(titlesSet),
+    keywords: Array.from(keywordsSet),
+    topics: Array.from(topicsSet),
+  };
 }
 
 /**

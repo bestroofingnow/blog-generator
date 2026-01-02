@@ -187,7 +187,15 @@ export default async function handler(
     const allUsedKeywords = usedContent.keywords;
     const allUsedTopics = usedContent.topics;
 
-    console.log(`[Topic Research] User has ${allUsedTitles.length} used titles, ${allUsedKeywords.length} used keywords, ${allUsedTopics.length} used topics`);
+    console.log(`[Topic Research] User ${userId} deduplication data:`);
+    console.log(`[Topic Research] - Draft titles: ${existingBlogTitles.length}`);
+    console.log(`[Topic Research] - Published titles: ${usedContent.titles.length}`);
+    console.log(`[Topic Research] - Published keywords: ${usedContent.keywords.length}`);
+    console.log(`[Topic Research] - Published topics: ${usedContent.topics.length}`);
+    console.log(`[Topic Research] - Combined unique titles: ${allUsedTitles.length}`);
+    if (allUsedKeywords.length > 0) {
+      console.log(`[Topic Research] - Keywords to avoid: ${allUsedKeywords.slice(0, 5).join(", ")}...`);
+    }
 
     // Use custom industry name when industryType is "custom"
     const industry = companyProfile.industryType === "custom" && companyProfile.customIndustryName

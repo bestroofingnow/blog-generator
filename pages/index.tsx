@@ -2217,16 +2217,43 @@ export default function Home() {
         });
         showToast("success", "Blog Generated!", "Your content is ready for review and publishing.");
 
-        // Auto-save to Library
+        // Auto-save to Library (localStorage)
         const seoData = finalData.seoData as SEOData | undefined;
+        const blogTitle = seoData?.metaTitle || formData.topic;
+        const blogPrimaryKeyword = seoData?.primaryKeyword || formData.primaryKeyword;
+        const blogSecondaryKeywords = seoData?.secondaryKeywords || formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean);
+
         addPageToLibrary({
           type: "blog_post",
-          title: seoData?.metaTitle || formData.topic,
-          primaryKeyword: seoData?.primaryKeyword || formData.primaryKeyword,
-          secondaryKeywords: seoData?.secondaryKeywords || formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean),
+          title: blogTitle,
+          primaryKeyword: blogPrimaryKeyword,
+          secondaryKeywords: blogSecondaryKeywords,
           metaTitle: seoData?.metaTitle || formData.metaTitle,
           metaDescription: seoData?.metaDescription || formData.metaDescription,
         });
+
+        // Also save to database for topic deduplication
+        try {
+          await fetch("/api/drafts/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: blogTitle,
+              type: "blog_post",
+              content: finalData.htmlContent,
+              seoData: {
+                primaryKeyword: blogPrimaryKeyword,
+                secondaryKeywords: blogSecondaryKeywords,
+                metaTitle: seoData?.metaTitle || formData.metaTitle,
+                metaDescription: seoData?.metaDescription || formData.metaDescription,
+              },
+              status: "draft",
+            }),
+          });
+        } catch (saveError) {
+          console.error("Failed to save draft to database:", saveError);
+          // Non-critical, don't fail the generation
+        }
       } else {
         const response = await fetch("/api/generate-blog", {
           method: "POST",
@@ -2260,16 +2287,43 @@ export default function Home() {
         });
         showToast("success", "Blog Generated!", "Your content is ready for review and publishing.");
 
-        // Auto-save to Library
+        // Auto-save to Library (localStorage)
         const seoDataNonStreaming = data.seoData as SEOData | undefined;
+        const blogTitleNonStreaming = seoDataNonStreaming?.metaTitle || formData.topic;
+        const blogPrimaryKeywordNonStreaming = seoDataNonStreaming?.primaryKeyword || formData.primaryKeyword;
+        const blogSecondaryKeywordsNonStreaming = seoDataNonStreaming?.secondaryKeywords || formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean);
+
         addPageToLibrary({
           type: "blog_post",
-          title: seoDataNonStreaming?.metaTitle || formData.topic,
-          primaryKeyword: seoDataNonStreaming?.primaryKeyword || formData.primaryKeyword,
-          secondaryKeywords: seoDataNonStreaming?.secondaryKeywords || formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean),
+          title: blogTitleNonStreaming,
+          primaryKeyword: blogPrimaryKeywordNonStreaming,
+          secondaryKeywords: blogSecondaryKeywordsNonStreaming,
           metaTitle: seoDataNonStreaming?.metaTitle || formData.metaTitle,
           metaDescription: seoDataNonStreaming?.metaDescription || formData.metaDescription,
         });
+
+        // Also save to database for topic deduplication
+        try {
+          await fetch("/api/drafts/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: blogTitleNonStreaming,
+              type: "blog_post",
+              content: data.htmlContent,
+              seoData: {
+                primaryKeyword: blogPrimaryKeywordNonStreaming,
+                secondaryKeywords: blogSecondaryKeywordsNonStreaming,
+                metaTitle: seoDataNonStreaming?.metaTitle || formData.metaTitle,
+                metaDescription: seoDataNonStreaming?.metaDescription || formData.metaDescription,
+              },
+              status: "draft",
+            }),
+          });
+        } catch (saveError) {
+          console.error("Failed to save draft to database:", saveError);
+          // Non-critical, don't fail the generation
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
