@@ -310,12 +310,17 @@ Generate exactly 5 blog topics as JSON array:
     "primaryKeyword": "actual search term people use (2-5 words, include location if local)",
     "blogType": "How-To Guide | Expert Tips | Neighborhood Guide | Cost Guide | Comparison | FAQ",
     "wordCount": "1000-1400 | 1400-1800 | 1800-2400",
-    "location": "${location}",
+    "location": "SPECIFIC location used in this topic/keyword (e.g., if topic mentions Lake Norman, return Lake Norman, not ${location})",
     "reason": "Why this topic will rank and convert",
     "searchIntent": "informational | transactional | local",
     "estimatedDifficulty": "easy | medium | hard"
   }
 ]
+
+IMPORTANT: The "location" field must match the SPECIFIC location mentioned in the topic/keyword.
+- If the topic is "Top Roofing Contractors Near Lake Norman" → location should be "Lake Norman"
+- If the topic is "Charlotte Home Buying Guide" → location should be "Charlotte"
+- Use the exact location from the topic, not the general service area
 
 Return ONLY the JSON array, no other text.`;
 
