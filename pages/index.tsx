@@ -2232,9 +2232,9 @@ export default function Home() {
           metaDescription: seoData?.metaDescription || formData.metaDescription,
         });
 
-        // Also save to database for topic deduplication
+        // Also save to database for topic deduplication and scheduling
         try {
-          await fetch("/api/drafts/save", {
+          const saveResponse = await fetch("/api/drafts/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -2250,6 +2250,10 @@ export default function Home() {
               status: "draft",
             }),
           });
+          if (saveResponse.ok) {
+            // Refresh schedule data so the new blog appears in "To Be Scheduled"
+            await loadScheduleData();
+          }
         } catch (saveError) {
           console.error("Failed to save draft to database:", saveError);
           // Non-critical, don't fail the generation
@@ -2302,9 +2306,9 @@ export default function Home() {
           metaDescription: seoDataNonStreaming?.metaDescription || formData.metaDescription,
         });
 
-        // Also save to database for topic deduplication
+        // Also save to database for topic deduplication and scheduling
         try {
-          await fetch("/api/drafts/save", {
+          const saveResponse = await fetch("/api/drafts/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -2320,6 +2324,10 @@ export default function Home() {
               status: "draft",
             }),
           });
+          if (saveResponse.ok) {
+            // Refresh schedule data so the new blog appears in "To Be Scheduled"
+            await loadScheduleData();
+          }
         } catch (saveError) {
           console.error("Failed to save draft to database:", saveError);
           // Non-critical, don't fail the generation
