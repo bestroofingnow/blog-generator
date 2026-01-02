@@ -790,224 +790,124 @@ ${serpData.topCompetitors.slice(0, 3).map((c, i) => `${i + 1}. ${c}`).join("\n")
   const maxKeywordMentions = Math.floor((targetWordCount / 122) * 2); // No more than 2 per 122 words
   const targetKeywordMentions = Math.round((minKeywordMentions + maxKeywordMentions) / 2);
 
-  const prompt = `You are an ELITE SEO content writer who creates engaging, human-like content that achieves 90+ SEO scores on the FIRST attempt. Write a comprehensive, SEO-optimized blog post based on this outline.
+  const prompt = `You are an ELITE SEO content writer. Write a blog post that MUST achieve 90+ SEO score on the FIRST attempt.
 
-CRITICAL: All content MUST be written in American English only. Do not use any other languages, characters, or scripts.
-
-CRITICAL INDUSTRY CONSTRAINT: This content is EXCLUSIVELY for a ${industry.toUpperCase()} business. ALL content, examples, and references MUST be specific to the ${industry} industry. Do NOT reference or include content from other industries.
+CRITICAL: American English only. No other languages.
+INDUSTRY: ${industry.toUpperCase()} (stay within this industry only)
 
 BLOG OUTLINE:
 ${JSON.stringify(outline, null, 2)}
 
-================================================================
-SEO REQUIREMENTS FOR 90+ SCORE (FOLLOW EXACTLY - THIS IS CRITICAL)
-================================================================
+=================================================================
+🎯 SEO SCORING SYSTEM - YOU MUST HIT THESE EXACT TARGETS 🎯
+=================================================================
+
+The automated SEO scorer uses these EXACT weights:
+• Keyword Usage: 30% weight
+• Content Length: 25% weight
+• Readability: 20% weight
+• Heading Structure: 15% weight
+• Image Optimization: 10% weight
 
 PRIMARY KEYWORD: "${outline.seo.primaryKeyword}"
-TARGET KEYWORD DENSITY: 0.8% - 2.0% (approximately ${minKeywordMentions}-${maxKeywordMentions} mentions for ${targetWordCount} words)
 
-MANDATORY KEYWORD PLACEMENTS (the scorer checks these locations):
-1. ✅ H1 HEADING: Primary keyword MUST appear in the first 3-4 words of the H1 title
-2. ✅ FIRST 100 WORDS: Primary keyword MUST appear in the very first sentence of the introduction
-3. ✅ H2 HEADINGS: Primary keyword MUST appear in at least 3 of your H2 section headings
-4. ✅ CONCLUSION: Primary keyword MUST appear in the final paragraph/conclusion
-5. ✅ IMAGE ALT TEXT: Primary keyword MUST appear in at least 1 image alt attribute
+📊 KEYWORD REQUIREMENTS (30% of score):
+Target density: 0.8% - 2.0% = approximately ${minKeywordMentions}-${maxKeywordMentions} mentions for ${targetWordCount} words
+✅ MUST: Place "${outline.seo.primaryKeyword}" in the FIRST 4 WORDS of your H1 title
+✅ MUST: Include "${outline.seo.primaryKeyword}" in your FIRST SENTENCE
+✅ SHOULD: Use keyword naturally throughout (~1 per 100-120 words)
 
 SECONDARY KEYWORDS: ${outline.seo.secondaryKeywords?.join(", ") || "related terms"}
-- Each secondary keyword should appear 2-4 times naturally throughout
+- Use at least 50% of secondary keywords at least once
 
-HEADING STRUCTURE (scorer requires this):
-- Exactly 1 H1 tag (your main title)
-- 6-8 H2 tags (section headings - include keyword in at least 3)
-- 3+ H3 tags (subsection headings under H2s)
+📏 CONTENT LENGTH REQUIREMENTS (25% of score):
+Target: ${targetWordCount} words (scorer gives 100% for 95-140% of target)
+✅ MUST: Write between ${Math.floor(targetWordCount * 0.95)} and ${Math.floor(targetWordCount * 1.4)} words
+Count carefully - being too short KILLS your score!
+
+📖 READABILITY REQUIREMENTS (20% of score):
+Target: Flesch Reading Ease score of 60+ (scorer gives 100% for 60+)
+✅ MUST: Use SHORT SENTENCES - average 12-18 words per sentence
+✅ MUST: Use SIMPLE WORDS - prefer 1-2 syllable words over complex ones
+✅ MUST: Keep paragraphs to 2-3 sentences max
+✅ MUST: Include bullet lists in every major section
+
+🏗️ HEADING STRUCTURE (15% of score):
+Scorer checks: Exactly 1 H1, 3-8 H2s
+✅ MUST: Use exactly 1 <h1> tag (your main title with keyword in first 4 words)
+✅ MUST: Use 5-7 <h2> tags for sections
+✅ SHOULD: Use H3 tags for subsections
+
+🖼️ IMAGE OPTIMIZATION (10% of score):
+Scorer checks: All images have alt text, at least 1 contains primary keyword
+✅ MUST: Every <img> must have alt="..." attribute
+✅ MUST: At least 1 image alt must contain "${outline.seo.primaryKeyword}"
+Use this format: <img src="[IMAGE:X]" alt="${outline.seo.primaryKeyword} - description" title="${topic}" width="800" height="600" loading="lazy" />
 
 CONTENT REQUIREMENTS:
-- Industry: ${industry} (IMPORTANT - stay within this industry only)
-- Topic: ${topic}
-- Location: ${location}
-- Tone: ${tone}
+- Topic: ${topic} | Location: ${location} | Tone: ${tone}
 - Company: ${companyName || "our team"}
 - Reading Level: ${readingLevel}
-- Language: American English ONLY (no other languages or special characters)
-- WORD COUNT: Write EXACTLY ${targetWordCount} words (±5%). The scorer checks this!
-- Make content locally relevant to ${location}
-- Include a strong call-to-action in the conclusion
-- DO NOT include <header> or <footer> elements
-- DO NOT include navigation elements
-
-READABILITY REQUIREMENTS (for 90+ readability score):
-- Short paragraphs: Maximum 3-4 sentences per paragraph
-- Bullet points: Include at least 1 bulleted list per major section
-- Short sentences: Mix of short (5-10 words) and medium (15-25 words) sentences
-- Simple words: Use 8th grade vocabulary, avoid complex jargon
-- Target Flesch Reading Ease: 60+ (easy to fairly easy)
-
-IMAGE REQUIREMENTS (for 90+ image score):
-- ALL images MUST have descriptive alt text containing the primary keyword
-- ALL images MUST have a title attribute
-- Use this exact format: <img src="[IMAGE:X]" alt="${outline.seo.primaryKeyword} - descriptive context" title="${outline.seo.primaryKeyword} | ${topic}" width="800" height="600" loading="lazy" />
+- DO NOT include <header>, <footer>, or navigation elements
 
 READING LEVEL GUIDELINES (${readingLevel}):
 ${readingGuidelines}
 ${profileSection}
 ${serpSection}
 
-HUMAN-LIKE WRITING STYLE:
-- Write like a knowledgeable friend explaining things, NOT like a corporate brochure
-- Use contractions (you're, we're, it's, don't) to sound natural
-- Vary sentence length - mix short punchy sentences with longer explanatory ones
-- Start some sentences with "And" or "But" for a conversational flow
-- Include rhetorical questions to engage readers ("Sound familiar?" "What does this mean for you?")
-- Use "you" and "your" frequently to speak directly to the reader
-- Add occasional personal touches ("Here's what we've learned..." or "The truth is...")
-- Avoid buzzwords and corporate jargon - use plain language
-- Include specific examples and real-world scenarios
-- Make transitions feel natural, not formulaic
-- Show personality - it's okay to have opinions and preferences
-- Avoid starting paragraphs with "In conclusion" or "Furthermore" - these sound robotic
+✍️ WRITING STYLE:
+- Write conversationally - use contractions (you're, we're, it's)
+- Mix short sentences (8-12 words) with medium ones (15-20 words)
+- Use "you" and "your" frequently to speak directly to reader
+- Include specific examples and local references to ${location}
+- Add rhetorical questions to engage readers
 
-CONVERSION OPTIMIZATION (Critical for lead generation):
-1. TRUST SIGNALS - Weave these throughout:
-   - Reference years of experience, certifications, or customer count
-   - Include specific numbers (97% satisfaction, 500+ projects completed)
-   - Mention guarantees, warranties, or risk-free offers
-   - Reference industry standards or regulations followed
+💼 CONVERSION ELEMENTS:
+- Include 2-3 calls-to-action throughout (mid-content + conclusion)
+- Add trust signals: years experience, certifications, guarantees
+- Use urgency when appropriate: "limited appointments", "seasonal demand"
 
-2. STRATEGIC CTAs - Include EXACTLY 4 calls-to-action:
-   - SOFT CTA (after introduction): "Learn more about..." or "Download our free guide"
-   - MID-CONTENT CTA (after 3rd section): "Schedule a free consultation" or "Get your free estimate"
-   - SOCIAL PROOF CTA (after case study): "See more success stories" or "Read our reviews"
-   - STRONG CTA (conclusion): "Call now", "Get started today", "Request your free quote"
+📋 HTML STRUCTURE TO USE:
 
-3. PSYCHOLOGICAL TRIGGERS to include:
-   - Urgency: "limited availability", "seasonal demand", "before prices increase"
-   - Scarcity: "only X appointments left this month"
-   - Social proof: "thousands of satisfied customers", "top-rated"
-   - Authority: "industry experts", "certified professionals"
-   - Fear of missing out: "don't let problems get worse"
+<h1>${outline.seo.primaryKeyword} - Your Title Here</h1>
 
-4. BENEFIT-FOCUSED LANGUAGE:
-   - Lead with benefits, not features
-   - Use "you get" and "you'll enjoy" instead of "we offer"
-   - Paint the after picture: "Imagine your home..."
-   - Address objections proactively
+<p><img src="[IMAGE:0]" alt="${outline.seo.primaryKeyword} featured image" title="${topic}" width="800" height="600" /></p>
 
-E-E-A-T SIGNALS (for Google ranking):
-- EXPERIENCE: Reference real projects, specific scenarios, lessons learned
-- EXPERTISE: Include technical details explained simply, industry terminology
-- AUTHORITATIVENESS: Cite industry standards, regulations, best practices
-- TRUSTWORTHINESS: Mention credentials, guarantees, transparent pricing
+<p>First paragraph with "${outline.seo.primaryKeyword}" in the first sentence. Keep it engaging and relevant to ${location}.</p>
 
-BLOGGING BEST PRACTICES:
-- Hook readers in the first sentence with a bold statement or question
-- Use the "Problem-Agitate-Solution" framework in introductions
-- Break up text with visual elements every 300-400 words
-- Include at least one data point or statistic per major section
-- Use power words: Ultimate, Proven, Essential, Complete, Expert, Professional
-- Create scannable content with bold key phrases
-- End each section with a mini-conclusion or transition
-- Add a "Quick Tip" or "Pro Tip" box in at least 2 sections
+<h2>Section Heading (include keyword in 2-3 of these)</h2>
+<p>Short paragraph 1. Keep sentences brief.</p>
+<p>Short paragraph 2. Add value for the reader.</p>
+<ul>
+  <li>Key point one</li>
+  <li>Key point two</li>
+</ul>
 
-USE THIS EXACT HTML STRUCTURE (no header, no footer, no navigation):
+<h2>Another Section</h2>
+<p>Content here...</p>
+<p><img src="[IMAGE:1]" alt="${outline.seo.primaryKeyword} - descriptive text" title="${topic}" width="800" height="600" loading="lazy" /></p>
 
-<section class="hero">
-  <div class="hero-content">
-    <p><img class="featured-image" src="[IMAGE:0]" alt="${outline.seo.primaryKeyword} - featured" width="800" height="600" /></p>
-    <p>Introduction paragraph 1...</p>
-    <p>Introduction paragraph 2...</p>
-  </div>
-</section>
+<!-- Continue with ${outline.sections?.length || 5} sections total -->
 
-<div class="toc">
-  <h2>What You'll Learn</h2>
-  <ul>
-    <li>Section 1 Title</li>
-    <li>Section 2 Title</li>
-    <!-- etc -->
-  </ul>
-</div>
+<h2>Frequently Asked Questions</h2>
+<h3>Question about ${topic}?</h3>
+<p>Answer here...</p>
+<!-- Add 4-6 FAQ items -->
 
-<article id="section-slug" class="content-section">
-  <h2>Section Title</h2>
-  <p>Content paragraphs...</p>
-  <h3>Subsection if needed</h3>
-  <p>More content...</p>
-  <ul>
-    <li><strong>Point:</strong> explanation</li>
-  </ul>
-  <div class="pro-tip">
-    <strong>Pro Tip:</strong> Add a valuable insider tip here that demonstrates expertise.
-  </div>
-  <p><img class="content-image" src="[IMAGE:1]" alt="${outline.seo.primaryKeyword} description" title="${outline.seo.primaryKeyword} | Section Topic" width="800" height="600" loading="lazy" /></p>
-</article>
+<h2>Get Started with ${outline.seo.primaryKeyword} Today</h2>
+<p>Strong conclusion paragraph with "${outline.seo.primaryKeyword}" mentioned. Include call-to-action.</p>
 
-<!-- Repeat for each section with appropriate image placeholders -->
-
-<!-- Include a mid-content CTA after the 3rd section -->
-<div class="inline-cta">
-  <h3>Ready to Get Started?</h3>
-  <p>Benefit-focused CTA text here.</p>
-  <a class="cta-button secondary" href="/contact">Schedule Your Free Consultation</a>
-</div>
-
-<div class="key-takeaways">
-  <h2>Key Takeaways</h2>
-  <ul>
-    <li>Takeaway 1</li>
-    <li>Takeaway 2</li>
-  </ul>
-</div>
-
-<div class="cta-section">
-  <h2>Get Expert ${outline.seo.primaryKeyword} Help Today</h2>
-  <p><strong>Don't wait until small problems become expensive emergencies.</strong> Our certified team has helped thousands of ${location} customers achieve outstanding results.</p>
-  <ul class="cta-benefits">
-    <li>Free, no-obligation consultation</li>
-    <li>Transparent pricing with no hidden fees</li>
-    <li>100% satisfaction guarantee</li>
-  </ul>
-  <p class="urgency-text">Limited appointments available this month - secure your spot today!</p>
-  <p><a class="cta-button primary" href="/contact">Get Your Free Quote Now</a></p>
-</div>
-
-<section class="faq-section">
-  <h2>Frequently Asked Questions</h2>
-  <div class="faq-item">
-    <div class="faq-question">Question here?</div>
-    <div class="faq-answer">
-      <p>Answer here...</p>
-    </div>
-  </div>
-  <!-- Add 5-8 FAQs -->
-</section>
-
-IMAGE PLACEMENT (${numberOfImages} images total):
+IMAGE PLACEMENT: Use exactly ${numberOfImages} images: [IMAGE:0] through [IMAGE:${numberOfImages - 1}]
 ${imageInstructions}
 
-IMPORTANT:
-- Use exactly ${numberOfImages} image placeholders: [IMAGE:0] through [IMAGE:${numberOfImages - 1}]
-- Include 5-8 relevant FAQ items
-- Do NOT wrap in any header or footer tags
-- WORD COUNT REMINDER: Write ${minWords}-${maxWords} words!
-
-=== FINAL SEO CHECKLIST (VERIFY ALL BEFORE COMPLETING) ===
-Before finishing, confirm EVERY item is complete:
-✓ Primary keyword "${outline.seo.primaryKeyword}" in H1 title (first 3-4 words)
-✓ Primary keyword in FIRST SENTENCE of introduction
-✓ Primary keyword in at least 3 H2 headings
-✓ Primary keyword in conclusion paragraph
-✓ Primary keyword in at least 1 image alt text
-✓ 6-8 H2 headings total
-✓ H3 subheadings under major sections
-✓ Bullet lists in every major section
-✓ Paragraphs max 3-4 sentences
-✓ 4 strategic CTAs placed throughout
-✓ Pro tips in at least 2 sections
-✓ FAQ section with 5-8 questions
-✓ Word count ${minWords}-${maxWords}
-✓ All images have alt AND title attributes
-
-THIS CHECKLIST IS CRITICAL - missing any item will cause the SEO score to fail!`;
+⚡ QUICK SCORE CHECKLIST:
+□ H1 has keyword in first 4 words
+□ First sentence contains keyword
+□ Word count: ${minWords}-${maxWords} words
+□ Short sentences (avg 12-18 words)
+□ Short paragraphs (2-3 sentences)
+□ Bullet lists in each section
+□ All images have alt text with keyword in at least one`;
 
   try {
     console.log("[Craftsman] Generating content with anthropic/claude-sonnet-4...");

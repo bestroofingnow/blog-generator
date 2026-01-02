@@ -1,7 +1,7 @@
 // lib/database.ts
 // Database CRUD operations for Neon DB with Drizzle ORM
 
-import { db, profiles, drafts, draftImages, dailyUsage, automationSettings, generationQueue, siteStructureProposals, workflowRuns, workflowTasks, imageQaLogs, conversations, conversationMessages, eq, desc, and } from "./db";
+import { db, profiles, drafts, draftImages, publishedContent, dailyUsage, automationSettings, generationQueue, siteStructureProposals, workflowRuns, workflowTasks, imageQaLogs, conversations, conversationMessages, eq, desc, and } from "./db";
 import type { CompanyProfile } from "./page-types";
 import type {
   ScheduleStatus,
@@ -26,6 +26,7 @@ import type {
   ConversationMessage,
   ConversationStatus,
   MessageRole,
+  PublishedContent,
 } from "./db";
 
 // ============ PROFILE OPERATIONS ============
@@ -374,6 +375,216 @@ export async function deleteImage(
   } catch (error) {
     console.error("Error deleting image:", error);
     return { error: error as Error };
+  }
+}
+
+// ============ PUBLISHED CONTENT OPERATIONS ============
+
+export interface PublishedContentData {
+  id?: string;
+  draftId?: string;
+  title: string;
+  primaryKeyword?: string;
+  secondaryKeywords?: string[];
+  topic?: string;
+  blogType?: string;
+  featuredImageUrl?: string;
+  featuredImageAlt?: string;
+  publishedUrl?: string;
+  publishedPlatform?: "wordpress" | "ghl";
+  wordCount?: number;
+  location?: string;
+  publishedAt?: Date;
+}
+
+/**
+ * Record published content for topic deduplication and history tracking
+ * This is called after a successful publish to WordPress or GHL
+ */
+export async function recordPublishedContent(
+  userId: string,
+  data: PublishedContentData
+): Promise<{ success: boolean; id: string | null; error: Error | null }> {
+  try {
+    const result = await db
+      .insert(publishedContent)
+      .values({
+        userId,
+        draftId: data.draftId || null,
+        title: data.title,
+        primaryKeyword: data.primaryKeyword || null,
+        secondaryKeywords: data.secondaryKeywords || null,
+        topic: data.topic || null,
+        blogType: data.blogType || null,
+        featuredImageUrl: data.featuredImageUrl || null,
+        featuredImageAlt: data.featuredImageAlt || null,
+        publishedUrl: data.publishedUrl || null,
+        publishedPlatform: data.publishedPlatform || null,
+        wordCount: data.wordCount || null,
+        location: data.location || null,
+        publishedAt: data.publishedAt || new Date(),
+      })
+      .returning({ id: publishedContent.id });
+
+    if (result.length === 0) {
+      return { success: false, id: null, error: new Error("Failed to record published content") };
+    }
+
+    return { success: true, id: result[0].id, error: null };
+  } catch (error) {
+    console.error("Error recording published content:", error);
+    return { success: false, id: null, error: error as Error };
+  }
+}
+
+/**
+ * Load all published content for a user (for history view and deduplication)
+ */
+export async function loadPublishedContent(
+  userId: string,
+  limit?: number
+): Promise<PublishedContent[]> {
+  try {
+    let result = await db
+      .select()
+      .from(publishedContent)
+      .where(eq(publishedContent.userId, userId))
+      .orderBy(desc(publishedContent.publishedAt));
+
+    if (limit) {
+      result = result.slice(0, limit);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error loading published content:", error);
+    return [];
+  }
+}
+
+/**
+ * Get all used topics and keywords for topic research deduplication
+ * Returns unique lists of titles, keywords, and topics that have been used
+ */
+export async function getUsedTopicsAndKeywords(
+  userId: string
+): Promise<{ titles: string[]; keywords: string[]; topics: string[] }> {
+  try {
+    // Get from published content history
+    const published = await db
+      .select({
+        title: publishedContent.title,
+        primaryKeyword: publishedContent.primaryKeyword,
+        topic: publishedContent.topic,
+      })
+      .from(publishedContent)
+      .where(eq(publishedContent.userId, userId));
+
+    // Get from drafts (including unpublished)
+    const draftsList = await db
+      .select({
+        title: drafts.title,
+        seoData: drafts.seoData,
+      })
+      .from(drafts)
+      .where(eq(drafts.userId, userId));
+
+    // Collect unique values
+    const titlesSet = new Set<string>();
+    const keywordsSet = new Set<string>();
+    const topicsSet = new Set<string>();
+
+    // From published content
+    for (const p of published) {
+      if (p.title) titlesSet.add(p.title.toLowerCase());
+      if (p.primaryKeyword) keywordsSet.add(p.primaryKeyword.toLowerCase());
+      if (p.topic) topicsSet.add(p.topic.toLowerCase());
+    }
+
+    // From drafts
+    for (const d of draftsList) {
+      if (d.title) titlesSet.add(d.title.toLowerCase());
+      const seo = d.seoData as { primaryKeyword?: string } | null;
+      if (seo?.primaryKeyword) keywordsSet.add(seo.primaryKeyword.toLowerCase());
+    }
+
+    return {
+      titles: Array.from(titlesSet),
+      keywords: Array.from(keywordsSet),
+      topics: Array.from(topicsSet),
+    };
+  } catch (error) {
+    console.error("Error getting used topics and keywords:", error);
+    return { titles: [], keywords: [], topics: [] };
+  }
+}
+
+/**
+ * Backfill published content from existing drafts
+ * Used to populate the publishedContent table from drafts with scheduleStatus='published'
+ */
+export async function backfillPublishedContent(
+  userId: string
+): Promise<{ success: boolean; count: number; error: Error | null }> {
+  try {
+    // Get all published drafts for this user
+    const publishedDrafts = await db
+      .select()
+      .from(drafts)
+      .where(and(eq(drafts.userId, userId), eq(drafts.scheduleStatus, "published")));
+
+    let count = 0;
+
+    for (const draft of publishedDrafts) {
+      // Check if already recorded
+      const existing = await db
+        .select({ id: publishedContent.id })
+        .from(publishedContent)
+        .where(and(eq(publishedContent.userId, userId), eq(publishedContent.draftId, draft.id)))
+        .limit(1);
+
+      if (existing.length > 0) {
+        continue; // Already recorded
+      }
+
+      // Get featured image for this draft
+      const featuredImg = await db
+        .select({
+          storagePath: draftImages.storagePath,
+          altText: draftImages.altText,
+        })
+        .from(draftImages)
+        .where(and(eq(draftImages.draftId, draft.id), eq(draftImages.userId, userId), eq(draftImages.isFeatured, true)))
+        .limit(1);
+
+      const seoData = draft.seoData as {
+        primaryKeyword?: string;
+        secondaryKeywords?: string[];
+      } | null;
+
+      // Record to published content
+      await db.insert(publishedContent).values({
+        userId,
+        draftId: draft.id,
+        title: draft.title,
+        primaryKeyword: seoData?.primaryKeyword || null,
+        secondaryKeywords: seoData?.secondaryKeywords || null,
+        topic: null, // Not stored in drafts
+        blogType: draft.type,
+        featuredImageUrl: featuredImg[0]?.storagePath || null,
+        featuredImageAlt: featuredImg[0]?.altText || null,
+        publishedUrl: draft.publishedUrl || null,
+        publishedPlatform: null, // Not stored in drafts
+        publishedAt: draft.publishedAt || draft.updatedAt || new Date(),
+      });
+
+      count++;
+    }
+
+    return { success: true, count, error: null };
+  } catch (error) {
+    console.error("Error backfilling published content:", error);
+    return { success: false, count: 0, error: error as Error };
   }
 }
 

@@ -132,6 +132,36 @@ export const draftImages = pgTable("draft_images", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Published content history - tracks all published blogs for topic deduplication
+export const publishedContent = pgTable("published_content", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  draftId: uuid("draft_id"), // Reference to original draft (nullable if deleted)
+
+  // Content identification
+  title: text("title").notNull(),
+  primaryKeyword: text("primary_keyword"),
+  secondaryKeywords: jsonb("secondary_keywords").$type<string[]>(),
+  topic: text("topic"), // Original topic used to generate
+  blogType: text("blog_type"),
+
+  // Featured image snapshot
+  featuredImageUrl: text("featured_image_url"),
+  featuredImageAlt: text("featured_image_alt"),
+
+  // Publishing info
+  publishedUrl: text("published_url"),
+  publishedPlatform: text("published_platform"), // wordpress | ghl
+  publishedAt: timestamp("published_at").defaultNow(),
+
+  // Metadata
+  wordCount: integer("word_count"),
+  location: text("location"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Security questions for password reset
 export const securityQuestions = pgTable("security_questions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -388,6 +418,8 @@ export type NewUser = typeof users.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type Draft = typeof drafts.$inferSelect;
 export type DraftImage = typeof draftImages.$inferSelect;
+export type PublishedContent = typeof publishedContent.$inferSelect;
+export type NewPublishedContent = typeof publishedContent.$inferInsert;
 export type SecurityQuestion = typeof securityQuestions.$inferSelect;
 export type PasswordResetAttempt = typeof passwordResetAttempts.$inferSelect;
 export type KnowledgeBaseEntry = typeof knowledgeBase.$inferSelect;

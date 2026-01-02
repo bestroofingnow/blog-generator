@@ -5,7 +5,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
-import { loadUserProfile, loadDrafts } from "../../lib/database";
+import { loadUserProfile, loadDrafts, getUsedTopicsAndKeywords } from "../../lib/database";
 import { generateText } from "ai";
 import { createGateway } from "@ai-sdk/gateway";
 
@@ -178,6 +178,17 @@ export default async function handler(
       });
     }
 
+    // Get comprehensive list of used topics, keywords, and titles for deduplication
+    const usedContent = await getUsedTopicsAndKeywords(userId);
+    const existingBlogTitles = pastBlogs.map(blog => blog.title);
+
+    // Combine for comprehensive deduplication
+    const allUsedTitles = Array.from(new Set([...existingBlogTitles, ...usedContent.titles]));
+    const allUsedKeywords = usedContent.keywords;
+    const allUsedTopics = usedContent.topics;
+
+    console.log(`[Topic Research] User has ${allUsedTitles.length} used titles, ${allUsedKeywords.length} used keywords, ${allUsedTopics.length} used topics`);
+
     // Use custom industry name when industryType is "custom"
     const industry = companyProfile.industryType === "custom" && companyProfile.customIndustryName
       ? companyProfile.customIndustryName
@@ -185,7 +196,6 @@ export default async function handler(
     const industryForKeywords = companyProfile.industryType || "general"; // For seed keyword lookup
     const location = companyProfile.headquarters || req.body.location || "United States";
     const services = companyProfile.services || [];
-    const existingBlogTitles = pastBlogs.map(blog => blog.title);
 
     // Get seed keywords for this industry (use dropdown value for keyword lookup, not custom name)
     const seedKeywords = INDUSTRY_SEED_KEYWORDS[industryForKeywords] || INDUSTRY_SEED_KEYWORDS.general;
@@ -257,8 +267,21 @@ Related Searches:
 ${uniqueRelated.map(s => `- ${s}`).join("\n")}
 ` : ""}
 
-EXISTING CONTENT TO AVOID (don't suggest similar topics):
-${existingBlogTitles.slice(0, 10).map(t => `- ${t}`).join("\n") || "None yet"}
+🚫 CONTENT ALREADY USED - NEVER SUGGEST THESE AGAIN:
+
+Previously Used Titles (AVOID similar topics):
+${allUsedTitles.slice(0, 15).map(t => `- ${t}`).join("\n") || "None yet"}
+
+Previously Used Primary Keywords (NEVER repeat these exact keywords):
+${allUsedKeywords.slice(0, 15).map(k => `- "${k}"`).join("\n") || "None yet"}
+
+Previously Used Topics (AVOID these topic areas):
+${allUsedTopics.slice(0, 10).map(t => `- ${t}`).join("\n") || "None yet"}
+
+CRITICAL: You MUST check every suggestion against the lists above.
+- Do NOT suggest topics with similar titles to those already used
+- Do NOT use the same primary keywords - find NEW keyword variations
+- Do NOT repeat topic themes that have been covered
 
 CRITICAL SEO RULES:
 1. PRIMARY KEYWORDS must be actual search terms people type into Google

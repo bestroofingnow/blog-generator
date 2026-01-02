@@ -653,7 +653,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const targetWordCount = parseInt(wordCountRange.split("-")[0]) || 1800;
     let seoScore: SEOScoreResult;
     let seoAttempts = 0;
-    const maxSEOAttempts = 3;
+    const maxSEOAttempts = 1; // Reduced from 3 - enhanced prompt should hit 90+ on first run
     let originalContentLength = rawContent.length;
 
     seoScore = scoreContent({

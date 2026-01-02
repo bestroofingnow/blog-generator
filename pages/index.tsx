@@ -1989,6 +1989,29 @@ export default function Home() {
           progress: { step: "complete", message: "Published to WordPress!" },
         }));
 
+        // Record to published content history for topic deduplication
+        if (data.post.status === "publish" || data.post.status === "future") {
+          try {
+            await fetch("/api/content/record-publish", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title,
+                primaryKeyword: state.seoData?.primaryKeyword,
+                secondaryKeywords: state.seoData?.secondaryKeywords,
+                blogType: formData.blogType,
+                publishedUrl: data.post.link,
+                publishedPlatform: "wordpress",
+                topic: formData.topic,
+                location: formData.location,
+              }),
+            });
+          } catch (recordError) {
+            console.error("Failed to record published content:", recordError);
+            // Non-critical, don't fail the publish
+          }
+        }
+
         const statusMessage = data.post.status === "future"
           ? "Post scheduled successfully!"
           : data.post.status === "draft"
@@ -2048,6 +2071,29 @@ export default function Home() {
           },
           progress: { step: "complete", message: "Published to GoHighLevel!" },
         }));
+
+        // Record to published content history for topic deduplication
+        if (data.post.status !== "draft") {
+          try {
+            await fetch("/api/content/record-publish", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title,
+                primaryKeyword: state.seoData?.primaryKeyword,
+                secondaryKeywords: state.seoData?.secondaryKeywords,
+                blogType: formData.blogType,
+                publishedUrl: data.post.url,
+                publishedPlatform: "ghl",
+                topic: formData.topic,
+                location: formData.location,
+              }),
+            });
+          } catch (recordError) {
+            console.error("Failed to record published content:", recordError);
+            // Non-critical, don't fail the publish
+          }
+        }
 
         const statusMessage = data.post.status === "draft"
           ? "Draft saved successfully!"
