@@ -1474,8 +1474,9 @@ export default function Home() {
       const data = await response.json();
 
       if (data.success) {
-        setWordpress((prev) => ({ ...prev, isConnected: true }));
-        saveWordPressSettings();
+        const updatedWordpress = { ...wordpress, isConnected: true };
+        setWordpress(updatedWordpress);
+        localStorage.setItem("wordpressSettings", JSON.stringify(updatedWordpress));
         showToast("success", "WordPress Connected", `Connected to ${data.siteName || wordpress.siteUrl}`);
       } else {
         showToast("error", "Connection Failed", data.error);
@@ -1510,9 +1511,10 @@ export default function Home() {
       const data = await response.json();
 
       if (data.success) {
-        setGoHighLevel((prev) => ({ ...prev, isConnected: true }));
+        const updatedGHL = { ...gohighlevel, isConnected: true };
+        setGoHighLevel(updatedGHL);
         setGhlBlogs(data.blogs || []);
-        saveGHLSettings();
+        localStorage.setItem("gohighlevelSettings", JSON.stringify(updatedGHL));
         showToast("success", "GoHighLevel Connected", `Found ${data.blogs?.length || 0} blog(s)`);
       } else {
         showToast("error", "Connection Failed", data.error);
@@ -2214,6 +2216,17 @@ export default function Home() {
           publishedPost: null,
         });
         showToast("success", "Blog Generated!", "Your content is ready for review and publishing.");
+
+        // Auto-save to Library
+        const seoData = finalData.seoData as SEOData | undefined;
+        addPageToLibrary({
+          type: "blog_post",
+          title: seoData?.metaTitle || formData.topic,
+          primaryKeyword: seoData?.primaryKeyword || formData.primaryKeyword,
+          secondaryKeywords: seoData?.secondaryKeywords || formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean),
+          metaTitle: seoData?.metaTitle || formData.metaTitle,
+          metaDescription: seoData?.metaDescription || formData.metaDescription,
+        });
       } else {
         const response = await fetch("/api/generate-blog", {
           method: "POST",
@@ -2246,6 +2259,17 @@ export default function Home() {
           publishedPost: null,
         });
         showToast("success", "Blog Generated!", "Your content is ready for review and publishing.");
+
+        // Auto-save to Library
+        const seoDataNonStreaming = data.seoData as SEOData | undefined;
+        addPageToLibrary({
+          type: "blog_post",
+          title: seoDataNonStreaming?.metaTitle || formData.topic,
+          primaryKeyword: seoDataNonStreaming?.primaryKeyword || formData.primaryKeyword,
+          secondaryKeywords: seoDataNonStreaming?.secondaryKeywords || formData.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean),
+          metaTitle: seoDataNonStreaming?.metaTitle || formData.metaTitle,
+          metaDescription: seoDataNonStreaming?.metaDescription || formData.metaDescription,
+        });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
