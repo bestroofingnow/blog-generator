@@ -1,9 +1,9 @@
 // pages/api/setup/create-published-content-table.ts
 // One-time setup endpoint to create the published_content table
+// SECURITY: Only admin/superadmin users can run this
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]";
+import { requireAdmin } from "../../../lib/admin-guard";
 import { sql } from "@vercel/postgres";
 
 export default async function handler(
@@ -14,11 +14,9 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Auth check - only authenticated users can run this
-  const session = await getServerSession(req, res, authOptions);
-  if (!session?.user) {
-    return res.status(401).json({ success: false, error: "Unauthorized" });
-  }
+  // SECURITY: Only admin or superadmin can run database setup
+  const { authorized } = await requireAdmin(req, res);
+  if (!authorized) return; // Guard already sends 401/403 response
 
   try {
     // Create the published_content table if it doesn't exist
