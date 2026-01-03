@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import CalendarDayCell from "./CalendarDayCell";
 import { DragProvider } from "./DragContext";
 import UnscheduledBlogsPanel from "./UnscheduledBlogsPanel";
+import ScheduleTimeModal from "./ScheduleTimeModal";
 import styles from "../../styles/Schedule.module.css";
 
 interface ScheduledBlog {
@@ -49,6 +50,15 @@ export default function ScheduleCalendar({
 }: ScheduleCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Time picker modal state
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [pendingSchedule, setPendingSchedule] = useState<{
+    blogId: string;
+    blogTitle: string;
+    date: string;
+    featuredImageUrl?: string;
+  } | null>(null);
 
   const today = useMemo(() => {
     const d = new Date();
@@ -115,15 +125,40 @@ export default function ScheduleCalendar({
     setCurrentDate(new Date());
   };
 
-  // Handle scheduling
-  const handleSchedule = useCallback(async (blogId: string, date: string) => {
+  // Show time picker modal before scheduling
+  const handleShowTimeModal = useCallback((blogId: string, date: string) => {
+    // Find the blog to get its title and featured image
+    const blog = unscheduledBlogs.find(b => b.id === blogId);
+    if (blog) {
+      setPendingSchedule({
+        blogId,
+        blogTitle: blog.title,
+        date,
+        featuredImageUrl: blog.featuredImageUrl,
+      });
+      setShowTimeModal(true);
+    }
+  }, [unscheduledBlogs]);
+
+  // Handle confirming schedule with selected time
+  const handleConfirmSchedule = useCallback(async (dateTime: Date) => {
+    if (!pendingSchedule) return;
+
+    setShowTimeModal(false);
     setIsUpdating(true);
     try {
-      await onSchedule(blogId, date);
+      await onSchedule(pendingSchedule.blogId, dateTime.toISOString());
     } finally {
       setIsUpdating(false);
+      setPendingSchedule(null);
     }
-  }, [onSchedule]);
+  }, [pendingSchedule, onSchedule]);
+
+  // Close modal without scheduling
+  const handleCloseModal = useCallback(() => {
+    setShowTimeModal(false);
+    setPendingSchedule(null);
+  }, []);
 
   // Handle unscheduling
   const handleUnschedule = useCallback(async (blogId: string) => {
@@ -141,7 +176,7 @@ export default function ScheduleCalendar({
         {/* Left panel - Unscheduled blogs */}
         <UnscheduledBlogsPanel
           blogs={unscheduledBlogs}
-          onSchedule={handleSchedule}
+          onSchedule={handleShowTimeModal}
           isLoading={isLoading}
         />
 
@@ -241,6 +276,16 @@ export default function ScheduleCalendar({
             </div>
           </div>
         </div>
+
+        {/* Time picker modal */}
+        <ScheduleTimeModal
+          isOpen={showTimeModal}
+          onClose={handleCloseModal}
+          onConfirm={handleConfirmSchedule}
+          blogTitle={pendingSchedule?.blogTitle || ""}
+          selectedDate={pendingSchedule?.date || ""}
+          featuredImageUrl={pendingSchedule?.featuredImageUrl}
+        />
       </div>
     </DragProvider>
   );
