@@ -14,7 +14,7 @@ import {
   integer,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, or, isNull, ne } from "drizzle-orm";
 
 // Get the database URL from environment
 const sql = neon(process.env.DATABASE_URL!);
@@ -671,4 +671,4 @@ export interface TaskOutput {
 }
 
 // Re-export drizzle operators
-export { eq, desc, and };
+export { eq, desc, and, or, isNull, ne };

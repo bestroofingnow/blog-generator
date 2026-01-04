@@ -1,7 +1,7 @@
 // lib/database.ts
 // Database CRUD operations for Neon DB with Drizzle ORM
 
-import { db, profiles, drafts, draftImages, publishedContent, dailyUsage, automationSettings, generationQueue, siteStructureProposals, workflowRuns, workflowTasks, imageQaLogs, conversations, conversationMessages, eq, desc, and } from "./db";
+import { db, profiles, drafts, draftImages, publishedContent, dailyUsage, automationSettings, generationQueue, siteStructureProposals, workflowRuns, workflowTasks, imageQaLogs, conversations, conversationMessages, eq, desc, and, or, isNull, ne } from "./db";
 import type { CompanyProfile } from "./page-types";
 import type {
   ScheduleStatus,
@@ -875,6 +875,7 @@ export async function loadScheduledBlogs(
         id: drafts.id,
         title: drafts.title,
         type: drafts.type,
+        content: drafts.content,
         scheduledPublishAt: drafts.scheduledPublishAt,
         scheduleStatus: drafts.scheduleStatus,
       })
@@ -917,14 +918,22 @@ export async function loadScheduledBlogs(
       }
     });
 
-    return filteredResults.map((blog) => ({
-      id: blog.id,
-      title: blog.title,
-      type: blog.type,
-      scheduledPublishAt: blog.scheduledPublishAt,
-      scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
-      featuredImageUrl: imageMap.get(blog.id),
-    }));
+    return filteredResults.map((blog) => {
+      // Try to get featured image from draftImages, fallback to extracting from content
+      let featuredImageUrl = imageMap.get(blog.id);
+      if (!featuredImageUrl) {
+        featuredImageUrl = extractFirstImageUrl(blog.content);
+      }
+
+      return {
+        id: blog.id,
+        title: blog.title,
+        type: blog.type,
+        scheduledPublishAt: blog.scheduledPublishAt,
+        scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
+        featuredImageUrl,
+      };
+    });
   } catch (error) {
     console.error("Error loading scheduled blogs:", error);
     return [];
@@ -932,7 +941,28 @@ export async function loadScheduledBlogs(
 }
 
 /**
+ * Extract first image URL from HTML content
+ */
+function extractFirstImageUrl(content: string | null): string | undefined {
+  if (!content) return undefined;
+
+  // Match img tags with src attribute
+  const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (imgMatch && imgMatch[1]) {
+    const url = imgMatch[1];
+    // Skip placeholder images
+    if (url.includes('placehold.co') || url.includes('placeholder')) {
+      return undefined;
+    }
+    return url;
+  }
+  return undefined;
+}
+
+/**
  * Load all unscheduled blogs (for the "to be scheduled" panel)
+ * Includes blogs with NULL scheduleStatus, "unscheduled" status, and draft/ready status
+ * Excludes scheduled and published blogs
  */
 export async function loadUnscheduledBlogs(
   userId: string
@@ -943,6 +973,7 @@ export async function loadUnscheduledBlogs(
         id: drafts.id,
         title: drafts.title,
         type: drafts.type,
+        content: drafts.content,
         scheduledPublishAt: drafts.scheduledPublishAt,
         scheduleStatus: drafts.scheduleStatus,
       })
@@ -950,7 +981,12 @@ export async function loadUnscheduledBlogs(
       .where(
         and(
           eq(drafts.userId, userId),
-          eq(drafts.scheduleStatus, "unscheduled")
+          // Include blogs where scheduleStatus is NULL, "unscheduled", or missing
+          // Exclude "scheduled" and "published" blogs
+          or(
+            isNull(drafts.scheduleStatus),
+            eq(drafts.scheduleStatus, "unscheduled")
+          )
         )
       )
       .orderBy(desc(drafts.updatedAt));
@@ -975,14 +1011,22 @@ export async function loadUnscheduledBlogs(
       }
     });
 
-    return result.map((blog) => ({
-      id: blog.id,
-      title: blog.title,
-      type: blog.type,
-      scheduledPublishAt: blog.scheduledPublishAt,
-      scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
-      featuredImageUrl: imageMap.get(blog.id),
-    }));
+    return result.map((blog) => {
+      // Try to get featured image from draftImages, fallback to extracting from content
+      let featuredImageUrl = imageMap.get(blog.id);
+      if (!featuredImageUrl) {
+        featuredImageUrl = extractFirstImageUrl(blog.content);
+      }
+
+      return {
+        id: blog.id,
+        title: blog.title,
+        type: blog.type,
+        scheduledPublishAt: blog.scheduledPublishAt,
+        scheduleStatus: (blog.scheduleStatus as ScheduleStatus) || "unscheduled",
+        featuredImageUrl,
+      };
+    });
   } catch (error) {
     console.error("Error loading unscheduled blogs:", error);
     return [];
