@@ -54,8 +54,8 @@ export default function CalendarDayCell({
     }
   };
 
-  // Show more blogs in weekly view since cells are taller
-  const maxVisibleBlogs = isWeeklyView ? 6 : 3;
+  // Show more blogs in weekly view since cells use wrapping squares
+  const maxVisibleBlogs = isWeeklyView ? 20 : 3;
 
   return (
     <div
@@ -92,7 +92,7 @@ export default function CalendarDayCell({
             <motion.div
               key={blog.id}
               className={styles.scheduledBlogChip}
-              style={{ borderLeftColor: getTypeColor(blog.type) }}
+              style={{ "--chip-color": getTypeColor(blog.type) } as React.CSSProperties}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
@@ -100,14 +100,22 @@ export default function CalendarDayCell({
                 e.stopPropagation();
                 onBlogClick?.(blog.id);
               }}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.05 }}
             >
-              {blog.featuredImageUrl && (
+              {blog.featuredImageUrl ? (
                 <img
                   src={blog.featuredImageUrl}
                   alt=""
                   className={styles.chipThumbnail}
                 />
+              ) : (
+                <div className={styles.chipPlaceholder}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                </div>
               )}
               <span className={styles.chipTitle}>{blog.title}</span>
               {onUnschedule && (
@@ -119,7 +127,7 @@ export default function CalendarDayCell({
                   }}
                   title="Unschedule"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
