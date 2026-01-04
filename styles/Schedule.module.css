@@ -269,9 +269,24 @@
   transition: all 0.2s;
 }
 
-.todayButton:hover {
+.todayButton:hover:not(:disabled) {
   background: var(--primary-color, #3b82f6);
   color: white;
+}
+
+.todayButton:disabled,
+.todayButtonDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.navButtonDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.navButtonDisabled:hover {
+  background: transparent;
 }
 
 /* ============ Week Header ============ */
@@ -296,6 +311,75 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   flex: 1;
+}
+
+/* ============ Weekly View Header ============ */
+.weekHeaderWeekly {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-secondary, #f9fafb);
+}
+
+.weekDayWeekly {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  gap: 4px;
+  border-right: 1px solid var(--border-color, #e5e7eb);
+}
+
+.weekDayWeekly:last-child {
+  border-right: none;
+}
+
+.weekDayWeekly.weekDayToday {
+  background: var(--primary-light, #eff6ff);
+}
+
+.weekDayWeekly.weekDayToday .weekDayDate {
+  background: var(--primary-color, #3b82f6);
+  color: white;
+}
+
+.weekDayName {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.weekDayDate {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+/* ============ Weekly Grid ============ */
+.weeklyGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  flex: 1;
+  min-height: 400px;
+}
+
+/* ============ Day Cell Weekly ============ */
+.dayCellWeekly {
+  min-height: 350px;
+  padding: 12px;
+}
+
+.dayCellWeekly .scheduledBlogsWeekly {
+  gap: 8px;
 }
 
 /* ============ Day Cell ============ */
@@ -564,6 +648,29 @@
   .dayCell {
     min-height: 80px;
     padding: 4px;
+  }
+
+  .dayCellWeekly {
+    min-height: 200px;
+    padding: 8px;
+  }
+
+  .weeklyGrid {
+    min-height: 250px;
+  }
+
+  .weekDayWeekly {
+    padding: 8px 4px;
+  }
+
+  .weekDayName {
+    font-size: 10px;
+  }
+
+  .weekDayDate {
+    font-size: 14px;
+    width: 28px;
+    height: 28px;
   }
 
   .dateNumber {

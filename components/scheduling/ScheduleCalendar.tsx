@@ -1,5 +1,5 @@
 // components/scheduling/ScheduleCalendar.tsx
-// Main calendar component for blog scheduling
+// Weekly calendar component for blog scheduling
 
 import React, { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
@@ -35,10 +35,39 @@ interface ScheduleCalendarProps {
 }
 
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS_OF_WEEK_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
+
+// Get the start of the week (Sunday) for a given date
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+// Format date range for header (e.g., "Jan 5 - Jan 11, 2026")
+function formatWeekRange(weekStart: Date): string {
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const startMonth = MONTHS[weekStart.getMonth()];
+  const endMonth = MONTHS[weekEnd.getMonth()];
+  const startDay = weekStart.getDate();
+  const endDay = weekEnd.getDate();
+  const year = weekEnd.getFullYear();
+
+  if (weekStart.getMonth() === weekEnd.getMonth()) {
+    return `${startMonth} ${startDay} - ${endDay}, ${year}`;
+  } else if (weekStart.getFullYear() !== weekEnd.getFullYear()) {
+    return `${startMonth} ${startDay}, ${weekStart.getFullYear()} - ${endMonth} ${endDay}, ${year}`;
+  } else {
+    return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+  }
+}
 
 export default function ScheduleCalendar({
   scheduledBlogs,
@@ -48,7 +77,8 @@ export default function ScheduleCalendar({
   onBlogClick,
   isLoading = false,
 }: ScheduleCalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Track the current week by its start date (Sunday)
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Time picker modal state
@@ -66,34 +96,25 @@ export default function ScheduleCalendar({
     return d;
   }, []);
 
-  // Get calendar days for current month view
-  const calendarDays = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  const thisWeekStart = useMemo(() => getWeekStart(new Date()), []);
 
-    // First day of the month
-    const firstDay = new Date(year, month, 1);
-    // Last day of the month
-    const lastDay = new Date(year, month + 1, 0);
+  // Calculate the maximum allowed week (52 weeks from now)
+  const maxWeekStart = useMemo(() => {
+    const max = new Date(thisWeekStart);
+    max.setDate(max.getDate() + 52 * 7); // 52 weeks
+    return max;
+  }, [thisWeekStart]);
 
-    // Start from the beginning of the week containing the first day
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - startDate.getDay());
-
-    // End at the end of the week containing the last day
-    const endDate = new Date(lastDay);
-    endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
-
+  // Get the 7 days of the current week
+  const weekDays = useMemo(() => {
     const days: Date[] = [];
-    const current = new Date(startDate);
-
-    while (current <= endDate) {
-      days.push(new Date(current));
-      current.setDate(current.getDate() + 1);
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(currentWeekStart);
+      day.setDate(day.getDate() + i);
+      days.push(day);
     }
-
     return days;
-  }, [currentDate]);
+  }, [currentWeekStart]);
 
   // Group scheduled blogs by date
   const blogsByDate = useMemo(() => {
@@ -112,22 +133,40 @@ export default function ScheduleCalendar({
     return grouped;
   }, [scheduledBlogs]);
 
+  // Check if we can navigate
+  const canGoPrevious = currentWeekStart > thisWeekStart;
+  const canGoNext = currentWeekStart < maxWeekStart;
+
   // Navigation handlers
-  const goToPreviousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const goToPreviousWeek = () => {
+    if (!canGoPrevious) return;
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(newWeekStart.getDate() - 7);
+    // Don't go before current week
+    if (newWeekStart >= thisWeekStart) {
+      setCurrentWeekStart(newWeekStart);
+    }
   };
 
-  const goToNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  const goToNextWeek = () => {
+    if (!canGoNext) return;
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(newWeekStart.getDate() + 7);
+    // Don't go more than 52 weeks ahead
+    if (newWeekStart <= maxWeekStart) {
+      setCurrentWeekStart(newWeekStart);
+    }
   };
 
-  const goToToday = () => {
-    setCurrentDate(new Date());
+  const goToThisWeek = () => {
+    setCurrentWeekStart(getWeekStart(new Date()));
   };
+
+  // Check if current week is this week
+  const isThisWeek = currentWeekStart.getTime() === thisWeekStart.getTime();
 
   // Show time picker modal before scheduling
   const handleShowTimeModal = useCallback((blogId: string, date: string) => {
-    // Find the blog to get its title and featured image
     const blog = unscheduledBlogs.find(b => b.id === blogId);
     if (blog) {
       setPendingSchedule({
@@ -180,15 +219,16 @@ export default function ScheduleCalendar({
           isLoading={isLoading}
         />
 
-        {/* Right panel - Calendar */}
+        {/* Right panel - Weekly Calendar */}
         <div className={styles.calendarContainer}>
           {/* Calendar header */}
           <div className={styles.calendarHeader}>
             <div className={styles.monthNavigation}>
               <button
-                className={styles.navButton}
-                onClick={goToPreviousMonth}
-                aria-label="Previous month"
+                className={`${styles.navButton} ${!canGoPrevious ? styles.navButtonDisabled : ""}`}
+                onClick={goToPreviousWeek}
+                disabled={!canGoPrevious}
+                aria-label="Previous week"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="15 18 9 12 15 6" />
@@ -196,13 +236,14 @@ export default function ScheduleCalendar({
               </button>
 
               <h2 className={styles.monthTitle}>
-                {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
+                {formatWeekRange(currentWeekStart)}
               </h2>
 
               <button
-                className={styles.navButton}
-                onClick={goToNextMonth}
-                aria-label="Next month"
+                className={`${styles.navButton} ${!canGoNext ? styles.navButtonDisabled : ""}`}
+                onClick={goToNextWeek}
+                disabled={!canGoNext}
+                aria-label="Next week"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6" />
@@ -210,8 +251,12 @@ export default function ScheduleCalendar({
               </button>
             </div>
 
-            <button className={styles.todayButton} onClick={goToToday}>
-              Today
+            <button
+              className={`${styles.todayButton} ${isThisWeek ? styles.todayButtonDisabled : ""}`}
+              onClick={goToThisWeek}
+              disabled={isThisWeek}
+            >
+              This Week
             </button>
           </div>
 
@@ -227,20 +272,26 @@ export default function ScheduleCalendar({
             </motion.div>
           )}
 
-          {/* Days of week header */}
-          <div className={styles.weekHeader}>
-            {DAYS_OF_WEEK.map((day) => (
-              <div key={day} className={styles.weekDay}>
-                {day}
-              </div>
-            ))}
+          {/* Days of week header with dates */}
+          <div className={styles.weekHeaderWeekly}>
+            {weekDays.map((date, index) => {
+              const isToday = date.getTime() === today.getTime();
+              return (
+                <div
+                  key={index}
+                  className={`${styles.weekDayWeekly} ${isToday ? styles.weekDayToday : ""}`}
+                >
+                  <span className={styles.weekDayName}>{DAYS_OF_WEEK[index]}</span>
+                  <span className={styles.weekDayDate}>{date.getDate()}</span>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Calendar grid */}
-          <div className={styles.calendarGrid}>
-            {calendarDays.map((date) => {
+          {/* Weekly calendar grid */}
+          <div className={styles.weeklyGrid}>
+            {weekDays.map((date) => {
               const dateString = date.toISOString().split("T")[0];
-              const isCurrentMonth = date.getMonth() === currentDate.getMonth();
               const isToday = date.getTime() === today.getTime();
               const isPast = date < today;
               const blogsForDay = blogsByDate[dateString] || [];
@@ -249,12 +300,13 @@ export default function ScheduleCalendar({
                 <CalendarDayCell
                   key={dateString}
                   date={date}
-                  isCurrentMonth={isCurrentMonth}
+                  isCurrentMonth={true}
                   isToday={isToday}
                   isPast={isPast}
                   scheduledBlogs={blogsForDay}
                   onBlogClick={onBlogClick}
                   onUnschedule={handleUnschedule}
+                  isWeeklyView={true}
                 />
               );
             })}

@@ -21,6 +21,7 @@ interface CalendarDayCellProps {
   scheduledBlogs: ScheduledBlog[];
   onBlogClick?: (blogId: string) => void;
   onUnschedule?: (blogId: string) => void;
+  isWeeklyView?: boolean;
 }
 
 export default function CalendarDayCell({
@@ -31,6 +32,7 @@ export default function CalendarDayCell({
   scheduledBlogs,
   onBlogClick,
   onUnschedule,
+  isWeeklyView = false,
 }: CalendarDayCellProps) {
   const { isDragging, setHoveredDate, hoveredDate } = useDrag();
   const [isHovered, setIsHovered] = useState(false);
@@ -52,9 +54,12 @@ export default function CalendarDayCell({
     }
   };
 
+  // Show more blogs in weekly view since cells are taller
+  const maxVisibleBlogs = isWeeklyView ? 6 : 3;
+
   return (
     <div
-      className={`${styles.dayCell} ${!isCurrentMonth ? styles.otherMonth : ""} ${
+      className={`${styles.dayCell} ${isWeeklyView ? styles.dayCellWeekly : ""} ${!isCurrentMonth ? styles.otherMonth : ""} ${
         isToday ? styles.today : ""
       } ${isPast ? styles.pastDay : ""} ${isDropTarget || isHoveredDate ? styles.dropTarget : ""}`}
       data-date={dateString}
@@ -69,19 +74,21 @@ export default function CalendarDayCell({
         setHoveredDate(null);
       }}
     >
-      {/* Date number */}
-      <div className={styles.dateNumber}>
-        {isToday ? (
-          <span className={styles.todayBadge}>{date.getDate()}</span>
-        ) : (
-          date.getDate()
-        )}
-      </div>
+      {/* Date number - only show in monthly view */}
+      {!isWeeklyView && (
+        <div className={styles.dateNumber}>
+          {isToday ? (
+            <span className={styles.todayBadge}>{date.getDate()}</span>
+          ) : (
+            date.getDate()
+          )}
+        </div>
+      )}
 
       {/* Scheduled blogs */}
-      <div className={styles.scheduledBlogs}>
+      <div className={`${styles.scheduledBlogs} ${isWeeklyView ? styles.scheduledBlogsWeekly : ""}`}>
         <AnimatePresence>
-          {scheduledBlogs.slice(0, 3).map((blog) => (
+          {scheduledBlogs.slice(0, maxVisibleBlogs).map((blog) => (
             <motion.div
               key={blog.id}
               className={styles.scheduledBlogChip}
@@ -122,9 +129,9 @@ export default function CalendarDayCell({
           ))}
         </AnimatePresence>
 
-        {scheduledBlogs.length > 3 && (
+        {scheduledBlogs.length > maxVisibleBlogs && (
           <div className={styles.moreIndicator}>
-            +{scheduledBlogs.length - 3} more
+            +{scheduledBlogs.length - maxVisibleBlogs} more
           </div>
         )}
       </div>
