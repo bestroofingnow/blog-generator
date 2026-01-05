@@ -133,6 +133,23 @@ interface ResearchData {
   competitorInsights: string[];
   contentAngles: string[];
   imageThemes: string[];
+  // Enhanced data from BrightData and Knowledge Base
+  serpData?: {
+    topRankingPages: Array<{ title: string; url: string; snippet: string }>;
+    paaQuestions: string[];
+    relatedSearches: string[];
+    featuredSnippet?: string;
+  };
+  knowledgeBaseInsights?: {
+    relevantServices: string[];
+    uspsToHighlight: string[];
+    factsToInclude: string[];
+  };
+  localSEOData?: {
+    targetCity: string;
+    nearbyAreas: string[];
+    localKeywords: string[];
+  };
 }
 
 interface SuggestedContent {
@@ -4193,24 +4210,119 @@ export default function Home() {
 
                 {researchData && (
                   <div className={styles.researchInsights}>
-                    <h4>AI Research Insights:</h4>
+                    <h4>🔍 AI Research Insights:</h4>
                     <div className={styles.insightsList}>
-                      <div>
-                        <strong>Competitor Insights:</strong>
-                        <ul>
-                          {researchData.competitorInsights.map((insight, i) => (
-                            <li key={i}>{insight}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <strong>Content Angles:</strong>
-                        <ul>
-                          {researchData.contentAngles.map((angle, i) => (
-                            <li key={i}>{angle}</li>
-                          ))}
-                        </ul>
-                      </div>
+                      {/* Competitor Insights */}
+                      {researchData.competitorInsights.length > 0 && (
+                        <div>
+                          <strong>📊 Competitor Analysis:</strong>
+                          <ul>
+                            {researchData.competitorInsights.map((insight, i) => (
+                              <li key={i}>{insight}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Content Angles */}
+                      {researchData.contentAngles.length > 0 && (
+                        <div>
+                          <strong>💡 Content Angles:</strong>
+                          <ul>
+                            {researchData.contentAngles.map((angle, i) => (
+                              <li key={i}>{angle}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* SERP Data - People Also Ask */}
+                      {researchData.serpData?.paaQuestions && researchData.serpData.paaQuestions.length > 0 && (
+                        <div>
+                          <strong>❓ People Also Ask (from Google):</strong>
+                          <ul>
+                            {researchData.serpData.paaQuestions.slice(0, 5).map((question, i) => (
+                              <li key={i}>{question}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Related Searches */}
+                      {researchData.serpData?.relatedSearches && researchData.serpData.relatedSearches.length > 0 && (
+                        <div>
+                          <strong>🔗 Related Searches:</strong>
+                          <div className={styles.tagList}>
+                            {researchData.serpData.relatedSearches.slice(0, 8).map((search, i) => (
+                              <span key={i} className={styles.tag}>{search}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Featured Snippet */}
+                      {researchData.serpData?.featuredSnippet && (
+                        <div>
+                          <strong>⭐ Featured Snippet Opportunity:</strong>
+                          <p className={styles.snippetPreview}>{researchData.serpData.featuredSnippet}</p>
+                        </div>
+                      )}
+
+                      {/* Knowledge Base Insights */}
+                      {researchData.knowledgeBaseInsights && (
+                        <div>
+                          <strong>📚 From Your Knowledge Base:</strong>
+                          {researchData.knowledgeBaseInsights.uspsToHighlight.length > 0 && (
+                            <div>
+                              <small>USPs to highlight:</small>
+                              <ul>
+                                {researchData.knowledgeBaseInsights.uspsToHighlight.slice(0, 3).map((usp, i) => (
+                                  <li key={i}>{usp}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {researchData.knowledgeBaseInsights.factsToInclude.length > 0 && (
+                            <div>
+                              <small>Facts to include:</small>
+                              <ul>
+                                {researchData.knowledgeBaseInsights.factsToInclude.slice(0, 3).map((fact, i) => (
+                                  <li key={i}>{fact}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Local SEO Keywords */}
+                      {researchData.localSEOData && (
+                        <div>
+                          <strong>📍 Local SEO Keywords for {researchData.localSEOData.targetCity}:</strong>
+                          <div className={styles.tagList}>
+                            {researchData.localSEOData.localKeywords.slice(0, 5).map((kw, i) => (
+                              <span key={i} className={styles.tag}>{kw}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Top Ranking Pages */}
+                      {researchData.serpData?.topRankingPages && researchData.serpData.topRankingPages.length > 0 && (
+                        <div>
+                          <strong>🏆 Top Ranking Competitors:</strong>
+                          <ul className={styles.competitorList}>
+                            {researchData.serpData.topRankingPages.slice(0, 3).map((page, i) => (
+                              <li key={i}>
+                                <span className={styles.competitorRank}>#{i + 1}</span>
+                                <a href={page.url} target="_blank" rel="noopener noreferrer" className={styles.competitorLink}>
+                                  {page.title.substring(0, 60)}{page.title.length > 60 ? "..." : ""}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
