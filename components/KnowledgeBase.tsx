@@ -40,6 +40,16 @@ interface KnowledgeBaseProps {
   isModal?: boolean;
 }
 
+// Quick-add templates for common entries
+const QUICK_ADD_TEMPLATES = [
+  { category: "services", title: "Service", placeholder: "Describe the service you offer...", icon: "S" },
+  { category: "usps", title: "USP", placeholder: "What makes you different from competitors?", icon: "U" },
+  { category: "facts", title: "Company Fact", placeholder: "e.g., Founded in 2010, 500+ projects completed...", icon: "F" },
+  { category: "faqs", title: "FAQ", placeholder: "Q: [Question]\nA: [Answer]", icon: "Q" },
+  { category: "locations", title: "Service Area", placeholder: "City/area you serve with any specific details...", icon: "L" },
+  { category: "testimonials", title: "Review", placeholder: "Customer quote or review...", icon: "R" },
+];
+
 export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBaseProps) {
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +60,8 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
   const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [newEntry, setNewEntry] = useState({
     category: "services",
     title: "",
@@ -65,6 +77,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -337,15 +350,39 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
     setSuccessMessage(null);
   };
 
+  // Quick add handler - opens form with template pre-filled
+  const handleQuickAdd = (template: typeof QUICK_ADD_TEMPLATES[0]) => {
+    setNewEntry({
+      category: template.category,
+      title: "",
+      content: "",
+      tags: "",
+    });
+    setIsAddingNew(true);
+    setShowQuickAdd(false);
+    clearMessages();
+  };
+
   // Count entries by category
   const entryCounts = entries.reduce((acc, entry) => {
     acc[entry.category] = (acc[entry.category] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const filteredEntries = activeCategory
-    ? entries.filter((e) => e.category === activeCategory)
-    : entries;
+  // Filter entries by category and search query
+  const filteredEntries = entries.filter((e) => {
+    const matchesCategory = !activeCategory || e.category === activeCategory;
+    if (!matchesCategory) return false;
+
+    if (!searchQuery.trim()) return true;
+
+    const query = searchQuery.toLowerCase();
+    return (
+      e.title.toLowerCase().includes(query) ||
+      e.content.toLowerCase().includes(query) ||
+      e.tags.some(tag => tag.toLowerCase().includes(query))
+    );
+  });
 
   const unverifiedCount = entries.filter((e) => !e.isVerified).length;
 
@@ -399,6 +436,29 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
           >
             {enriching ? "..." : "From Profile"}
           </button>
+          <div className={styles.quickAddWrapper}>
+            <button
+              className={styles.quickAddButton}
+              onClick={() => setShowQuickAdd(!showQuickAdd)}
+              title="Quick add common entries"
+            >
+              + Quick Add
+            </button>
+            {showQuickAdd && (
+              <div className={styles.quickAddDropdown}>
+                {QUICK_ADD_TEMPLATES.map((template) => (
+                  <button
+                    key={template.category}
+                    className={styles.quickAddItem}
+                    onClick={() => handleQuickAdd(template)}
+                  >
+                    <span className={styles.quickAddIcon}>{template.icon}</span>
+                    <span>{template.title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             className={styles.addButton}
             onClick={() => {
@@ -406,7 +466,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
               clearMessages();
             }}
           >
-            + Add
+            + Custom
           </button>
           {isModal && onClose && (
             <button className={styles.closeButton} onClick={onClose}>
@@ -414,6 +474,30 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
             </button>
           )}
         </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className={styles.searchBar}>
+        <input
+          ref={searchInputRef}
+          type="text"
+          placeholder="Search entries by title, content, or tags..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className={styles.searchInput}
+        />
+        {searchQuery && (
+          <button
+            className={styles.clearSearch}
+            onClick={() => setSearchQuery("")}
+            title="Clear search"
+          >
+            x
+          </button>
+        )}
+        <span className={styles.searchResults}>
+          {searchQuery && `${filteredEntries.length} result${filteredEntries.length !== 1 ? "s" : ""}`}
+        </span>
       </div>
 
       {/* Document Upload Section */}
@@ -555,6 +639,12 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
       {/* Add New Form */}
       {isAddingNew && (
         <div className={styles.addForm}>
+          <div className={styles.addFormHeader}>
+            <span>Add New Entry</span>
+            <span className={styles.addFormHint}>
+              {QUICK_ADD_TEMPLATES.find(t => t.category === newEntry.category)?.placeholder || "Add details for AI to use..."}
+            </span>
+          </div>
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
               <label>Category</label>
@@ -575,7 +665,15 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
                 type="text"
                 value={newEntry.title}
                 onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                placeholder="Brief title"
+                placeholder={
+                  newEntry.category === "services" ? "e.g., Roof Repair" :
+                  newEntry.category === "usps" ? "e.g., Licensed & Insured" :
+                  newEntry.category === "facts" ? "e.g., Years in Business" :
+                  newEntry.category === "faqs" ? "e.g., How long does it take?" :
+                  newEntry.category === "locations" ? "e.g., Dallas, TX" :
+                  newEntry.category === "testimonials" ? "e.g., John D. - 5 Stars" :
+                  "Brief title"
+                }
               />
             </div>
           </div>
@@ -584,17 +682,24 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
             <textarea
               value={newEntry.content}
               onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
-              placeholder="Details for AI to use in content..."
-              rows={2}
+              placeholder={
+                QUICK_ADD_TEMPLATES.find(t => t.category === newEntry.category)?.placeholder ||
+                "Details for AI to use in content..."
+              }
+              rows={3}
             />
           </div>
           <div className={styles.formGroup}>
-            <label>Tags (comma-separated)</label>
+            <label>Tags (comma-separated, optional)</label>
             <input
               type="text"
               value={newEntry.tags}
               onChange={(e) => setNewEntry({ ...newEntry, tags: e.target.value })}
-              placeholder="tag1, tag2"
+              placeholder={
+                newEntry.category === "services" ? "residential, commercial, emergency" :
+                newEntry.category === "locations" ? "north, metro, suburbs" :
+                "tag1, tag2"
+              }
             />
           </div>
           <div className={styles.formActions}>
@@ -608,7 +713,7 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
               Cancel
             </button>
             <button className={styles.saveButton} onClick={handleSaveNew} disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save"}
+              {isSaving ? "Saving..." : "Save Entry"}
             </button>
           </div>
         </div>
@@ -623,8 +728,58 @@ export default function KnowledgeBase({ onClose, isModal = false }: KnowledgeBas
             <div className={styles.emptyIcon}>KB</div>
             <p>No knowledge entries yet</p>
             <p className={styles.emptyHint}>
-              Click &quot;Upload Doc&quot; to add a document, &quot;From Profile&quot; to import data, or &quot;Add&quot; to create entries
+              Build your knowledge base to help AI write better content
             </p>
+            <div className={styles.emptyActions}>
+              <button
+                className={styles.emptyActionButton}
+                onClick={() => setShowDocumentUpload(true)}
+              >
+                Upload Doc
+              </button>
+              <button
+                className={styles.emptyActionButton}
+                onClick={handleEnrich}
+                disabled={enriching}
+              >
+                {enriching ? "..." : "From Profile"}
+              </button>
+              <button
+                className={styles.emptyActionButtonPrimary}
+                onClick={() => setShowQuickAdd(true)}
+              >
+                + Quick Add
+              </button>
+            </div>
+            <div className={styles.emptyQuickStart}>
+              <p className={styles.quickStartTitle}>Quick start - add your first entries:</p>
+              <div className={styles.quickStartGrid}>
+                {QUICK_ADD_TEMPLATES.slice(0, 4).map((template) => (
+                  <button
+                    key={template.category}
+                    className={styles.quickStartItem}
+                    onClick={() => handleQuickAdd(template)}
+                  >
+                    <span className={styles.quickStartIcon}>{template.icon}</span>
+                    <span className={styles.quickStartLabel}>{template.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : filteredEntries.length === 0 && searchQuery ? (
+          <div className={styles.empty}>
+            <div className={styles.emptyIcon}>?</div>
+            <p>No entries match &quot;{searchQuery}&quot;</p>
+            <p className={styles.emptyHint}>
+              Try a different search term or clear the search
+            </p>
+            <button
+              className={styles.emptyActionButton}
+              onClick={() => setSearchQuery("")}
+            >
+              Clear Search
+            </button>
           </div>
         ) : (
           <div className={styles.entriesList}>

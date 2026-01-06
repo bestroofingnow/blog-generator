@@ -878,3 +878,325 @@
 :global([data-theme="dark"]) .secondaryButton:hover {
   background: rgba(14, 165, 233, 0.15);
 }
+
+/* Search Bar */
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  padding-right: 2rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  background: var(--card-bg, #fff);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary-color, #667eea);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.searchInput::placeholder {
+  color: var(--text-secondary, #999);
+}
+
+.clearSearch {
+  position: absolute;
+  right: 4.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #999);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.clearSearch:hover {
+  background: var(--hover-bg, #f3f4f6);
+  color: var(--text-primary, #333);
+}
+
+.searchResults {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+/* Quick Add Dropdown */
+.quickAddWrapper {
+  position: relative;
+}
+
+.quickAddButton {
+  padding: 0.4rem 0.75rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quickAddButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.quickAddDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.35rem;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.quickAddItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.quickAddItem:hover {
+  background: var(--hover-bg, #f3f4f6);
+}
+
+.quickAddIcon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Add Form Header */
+.addFormHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.addFormHeader > span:first-child {
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.addFormHint {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  font-style: italic;
+}
+
+/* Enhanced Empty State */
+.emptyActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.emptyActionButton {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emptyActionButton:hover:not(:disabled) {
+  background: var(--hover-bg, #f3f4f6);
+  border-color: var(--primary-color, #667eea);
+  color: var(--primary-color, #667eea);
+}
+
+.emptyActionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.emptyActionButtonPrimary {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emptyActionButtonPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.emptyQuickStart {
+  background: var(--hover-bg, #f9fafb);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.quickStartTitle {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary, #666);
+  margin: 0 0 0.75rem 0;
+}
+
+.quickStartGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+@media (min-width: 500px) {
+  .quickStartGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.quickStartItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem 0.5rem;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quickStartItem:hover {
+  border-color: var(--primary-color, #667eea);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.quickStartIcon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.quickStartLabel {
+  font-size: 0.75rem;
+  color: var(--text-primary, #333);
+  font-weight: 500;
+}
+
+/* Dark Mode for New Elements */
+:global([data-theme="dark"]) .searchInput {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .searchInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+:global([data-theme="dark"]) .clearSearch {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .clearSearch:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .quickAddDropdown {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .quickAddItem {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .quickAddItem:hover {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .addFormHeader > span:first-child {
+  color: var(--text-primary);
+}
+
+:global([data-theme="dark"]) .addFormHint {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .emptyActionButton {
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .emptyActionButton:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .emptyQuickStart {
+  background: var(--bg-tertiary);
+}
+
+:global([data-theme="dark"]) .quickStartItem {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+:global([data-theme="dark"]) .quickStartItem:hover {
+  border-color: var(--primary-color, #667eea);
+}
+
+:global([data-theme="dark"]) .quickStartLabel {
+  color: var(--text-primary);
+}
