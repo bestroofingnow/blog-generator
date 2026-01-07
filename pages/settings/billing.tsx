@@ -51,17 +51,23 @@ export default function BillingPage() {
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [buyingOverage, setBuyingOverage] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const fetchCreditInfo = useCallback(async () => {
     try {
+      setApiError(null);
       const res = await fetch("/api/billing/credits?history=true");
       const data = await res.json();
       if (data.success) {
         setCreditInfo(data.data);
         setTransactions(data.data.history || []);
+      } else {
+        console.error("API error:", data.error, "Status:", res.status);
+        setApiError(data.error || `API returned status ${res.status}`);
       }
     } catch (error) {
       console.error("Failed to fetch credit info:", error);
+      setApiError("Failed to connect to billing service");
     } finally {
       setLoading(false);
     }
@@ -177,6 +183,18 @@ export default function BillingPage() {
         {router.query.success && (
           <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
             <p className="text-green-800">Your subscription has been updated successfully!</p>
+          </div>
+        )}
+
+        {/* API Error */}
+        {apiError && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800">
+              <strong>Error:</strong> {apiError}
+            </p>
+            <p className="text-red-600 text-sm mt-1">
+              Try logging out and back in, or refreshing the page.
+            </p>
           </div>
         )}
 
