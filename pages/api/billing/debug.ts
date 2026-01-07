@@ -2,12 +2,36 @@
 // Debug endpoint to check Stripe configuration (remove in production)
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { SUBSCRIPTION_TIERS } from "../../../lib/stripe";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]";
+import { SUBSCRIPTION_TIERS, stripe } from "../../../lib/stripe";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // Test session
+  let sessionInfo = { hasSession: false, userId: "", error: "" };
+  try {
+    const session = await getServerSession(req, res, authOptions);
+    sessionInfo = {
+      hasSession: !!session,
+      userId: session?.user?.id || "NO_ID",
+      error: "",
+    };
+  } catch (err) {
+    sessionInfo.error = err instanceof Error ? err.message : "Unknown error";
+  }
+
+  // Test Stripe API
+  let stripeApiTest = { working: false, error: "" };
+  try {
+    const customers = await stripe.customers.list({ limit: 1 });
+    stripeApiTest = { working: true, error: "" };
+  } catch (err) {
+    stripeApiTest.error = err instanceof Error ? err.message : "Unknown Stripe error";
+  }
+
   const config = {
     stripeKeyConfigured: !!process.env.STRIPE_SECRET_KEY,
     stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 7) || "NOT_SET",
@@ -36,5 +60,9 @@ export default async function handler(
     },
   };
 
-  return res.status(200).json(config);
+  return res.status(200).json({
+    session: sessionInfo,
+    stripeApiTest,
+    ...config,
+  });
 }
