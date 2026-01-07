@@ -4,6 +4,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
+import Stripe from "stripe";
 import {
   db,
   users,
@@ -15,6 +16,7 @@ import {
   SUBSCRIPTION_TIERS,
   getOrCreateCustomer,
   TierKey,
+  BillingPeriod,
 } from "../../../lib/stripe";
 
 interface CheckoutResponse {
@@ -36,15 +38,21 @@ export default async function handler(
     return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
-  const { tier } = req.body as { tier: TierKey };
+  const { tier, billingPeriod = "monthly", promoCode } = req.body as {
+    tier: TierKey;
+    billingPeriod?: BillingPeriod;
+    promoCode?: string;
+  };
 
   if (!tier || !SUBSCRIPTION_TIERS[tier]) {
     return res.status(400).json({ success: false, error: "Invalid subscription tier" });
   }
 
   const tierConfig = SUBSCRIPTION_TIERS[tier];
+  const isAnnual = billingPeriod === "annual";
+  const priceId = isAnnual ? tierConfig.stripeAnnualPriceId : tierConfig.stripePriceId;
 
-  if (!tierConfig.stripePriceId) {
+  if (!priceId) {
     return res.status(500).json({
       success: false,
       error: "Stripe price not configured for this tier. Please contact support.",
@@ -132,13 +140,15 @@ export default async function handler(
 
     // Create checkout session
     const baseUrl = process.env.NEXTAUTH_URL?.trim() || "http://localhost:3000";
-    const checkoutSession = await stripe.checkout.sessions.create({
+
+    // Build checkout session options
+    const checkoutOptions: Stripe.Checkout.SessionCreateParams = {
       customer: customer.id,
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [
         {
-          price: tierConfig.stripePriceId,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -148,17 +158,39 @@ export default async function handler(
         organizationId: org.id,
         userId: userId,
         tier: tier,
+        billingPeriod: billingPeriod,
       },
       subscription_data: {
         metadata: {
           organizationId: org.id,
           userId: userId,
           tier: tier,
+          billingPeriod: billingPeriod,
         },
       },
-    });
+      allow_promotion_codes: true, // Allow users to enter promo codes at checkout
+    };
 
-    console.log(`[Checkout] Created session for user ${userId}, tier: ${tier}`);
+    // If a promo code was provided, validate and apply it
+    if (promoCode) {
+      try {
+        const promoCodes = await stripe.promotionCodes.list({
+          code: promoCode,
+          active: true,
+          limit: 1,
+        });
+        if (promoCodes.data.length > 0) {
+          checkoutOptions.discounts = [{ promotion_code: promoCodes.data[0].id }];
+          delete checkoutOptions.allow_promotion_codes; // Can't use both
+        }
+      } catch (promoError) {
+        console.log(`[Checkout] Promo code ${promoCode} not found, allowing manual entry`);
+      }
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create(checkoutOptions);
+
+    console.log(`[Checkout] Created session for user ${userId}, tier: ${tier}, billing: ${billingPeriod}`);
 
     return res.status(200).json({
       success: true,

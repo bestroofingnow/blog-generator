@@ -34,11 +34,13 @@ interface Transaction {
 }
 
 const TIER_DETAILS = {
-  free: { name: "Free", price: 0, credits: 0 },
-  starter: { name: "Starter", price: 39, credits: 200 },
-  pro: { name: "Pro", price: 99, credits: 600 },
-  agency: { name: "Agency", price: 299, credits: 2000 },
+  free: { name: "Free", priceMonthly: 0, priceAnnual: 0, credits: 0 },
+  starter: { name: "Starter", priceMonthly: 39, priceAnnual: 390, credits: 200 },
+  pro: { name: "Pro", priceMonthly: 99, priceAnnual: 990, credits: 600 },
+  agency: { name: "Agency", priceMonthly: 299, priceAnnual: 2990, credits: 2000 },
 };
+
+type BillingPeriod = "monthly" | "annual";
 
 export default function BillingPage() {
   const { data: session, status } = useSession();
@@ -48,6 +50,7 @@ export default function BillingPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [buyingOverage, setBuyingOverage] = useState<string | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
 
   const fetchCreditInfo = useCallback(async () => {
     try {
@@ -87,7 +90,7 @@ export default function BillingPage() {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, billingPeriod }),
       });
       const data = await res.json();
       if (data.success && data.checkoutUrl) {
@@ -152,6 +155,7 @@ export default function BillingPage() {
 
   const currentTier = creditInfo?.subscription.tier || "free";
   const tierDetails = TIER_DETAILS[currentTier as keyof typeof TIER_DETAILS] || TIER_DETAILS.free;
+  const isAnnual = billingPeriod === "annual";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -194,7 +198,7 @@ export default function BillingPage() {
               <div>
                 <p className="text-2xl font-bold text-gray-900">{tierDetails.name}</p>
                 <p className="text-gray-500">
-                  {tierDetails.price > 0 ? `$${tierDetails.price}/month` : "No active subscription"}
+                  {tierDetails.priceMonthly > 0 ? `$${tierDetails.priceMonthly}/month` : "No active subscription"}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
                   Status: <span className={`capitalize ${
@@ -281,36 +285,86 @@ export default function BillingPage() {
 
           {/* Upgrade Plans */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Upgrade Plan</h2>
-            <div className="space-y-4">
-              {Object.entries(TIER_DETAILS).filter(([key]) => key !== "free").map(([key, tier]) => (
-                <div
-                  key={key}
-                  className={`border rounded-lg p-4 ${
-                    currentTier === key ? "border-indigo-500 bg-indigo-50" : "hover:border-gray-300"
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Choose Plan</h2>
+              {/* Billing Period Toggle */}
+              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setBillingPeriod("monthly")}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    billingPeriod === "monthly"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-medium text-gray-900">{tier.name}</p>
-                      <p className="text-2xl font-bold text-gray-900">${tier.price}<span className="text-sm font-normal text-gray-500">/mo</span></p>
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingPeriod("annual")}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    billingPeriod === "annual"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Annual
+                  <span className="ml-1 text-xs text-green-600 font-semibold">Save 17%</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Promo Code Banner */}
+            <div className="mb-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-3 text-white text-sm">
+              <span className="font-semibold">Early Adopter Special:</span> Use code <code className="bg-white/20 px-1.5 py-0.5 rounded font-mono">EARLY50</code> for 50% off forever!
+            </div>
+
+            <div className="space-y-4">
+              {Object.entries(TIER_DETAILS).filter(([key]) => key !== "free").map(([key, tier]) => {
+                const displayPrice = isAnnual ? tier.priceAnnual : tier.priceMonthly;
+                const monthlyEquivalent = isAnnual ? Math.round(tier.priceAnnual / 12) : tier.priceMonthly;
+                const savings = isAnnual ? (tier.priceMonthly * 12) - tier.priceAnnual : 0;
+
+                return (
+                  <div
+                    key={key}
+                    className={`border rounded-lg p-4 ${
+                      currentTier === key ? "border-indigo-500 bg-indigo-50" : "hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-medium text-gray-900">{tier.name}</p>
+                        <div className="flex items-baseline gap-1">
+                          <p className="text-2xl font-bold text-gray-900">
+                            ${displayPrice}
+                          </p>
+                          <span className="text-sm font-normal text-gray-500">
+                            /{isAnnual ? "year" : "mo"}
+                          </span>
+                        </div>
+                        {isAnnual && (
+                          <p className="text-xs text-green-600 font-medium">
+                            ${monthlyEquivalent}/mo · Save ${savings}/year
+                          </p>
+                        )}
+                      </div>
+                      {currentTier === key && (
+                        <span className="text-xs bg-indigo-600 text-white px-2 py-1 rounded">Current</span>
+                      )}
                     </div>
-                    {currentTier === key && (
-                      <span className="text-xs bg-indigo-600 text-white px-2 py-1 rounded">Current</span>
+                    <p className="text-sm text-gray-500 mb-3">{tier.credits} credits/month</p>
+                    {currentTier !== key && (
+                      <button
+                        onClick={() => handleUpgrade(key)}
+                        disabled={upgrading === key}
+                        className="w-full py-2 text-sm font-medium text-indigo-600 border border-indigo-600 rounded-md hover:bg-indigo-50 disabled:opacity-50"
+                      >
+                        {upgrading === key ? "Loading..." : currentTier === "free" ? "Subscribe" : "Switch Plan"}
+                      </button>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 mb-3">{tier.credits} credits/month</p>
-                  {currentTier !== key && (
-                    <button
-                      onClick={() => handleUpgrade(key)}
-                      disabled={upgrading === key}
-                      className="w-full py-2 text-sm font-medium text-indigo-600 border border-indigo-600 rounded-md hover:bg-indigo-50 disabled:opacity-50"
-                    >
-                      {upgrading === key ? "Loading..." : currentTier === "free" ? "Subscribe" : "Switch Plan"}
-                    </button>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

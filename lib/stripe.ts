@@ -15,8 +15,10 @@ export const SUBSCRIPTION_TIERS = {
     name: "Starter",
     monthlyCredits: 200,
     priceMonthly: 3900, // $39.00 in cents
+    priceAnnual: 39000, // $390.00 in cents (2 months free)
     maxTeamMembers: 3,
     stripePriceId: process.env.STRIPE_STARTER_PRICE_ID || "",
+    stripeAnnualPriceId: process.env.STRIPE_STARTER_ANNUAL_PRICE_ID || "",
     features: [
       "200 credits per month",
       "Blog generation",
@@ -30,8 +32,10 @@ export const SUBSCRIPTION_TIERS = {
     name: "Pro",
     monthlyCredits: 600,
     priceMonthly: 9900, // $99.00 in cents
+    priceAnnual: 99000, // $990.00 in cents (2 months free)
     maxTeamMembers: 3,
     stripePriceId: process.env.STRIPE_PRO_PRICE_ID || "",
+    stripeAnnualPriceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || "",
     features: [
       "600 credits per month",
       "Everything in Starter",
@@ -45,8 +49,10 @@ export const SUBSCRIPTION_TIERS = {
     name: "Agency",
     monthlyCredits: 2000,
     priceMonthly: 29900, // $299.00 in cents
+    priceAnnual: 299000, // $2,990.00 in cents (2 months free)
     maxTeamMembers: -1, // Unlimited
     stripePriceId: process.env.STRIPE_AGENCY_PRICE_ID || "",
+    stripeAnnualPriceId: process.env.STRIPE_AGENCY_ANNUAL_PRICE_ID || "",
     features: [
       "2,000 credits per month",
       "Everything in Pro",
@@ -57,6 +63,8 @@ export const SUBSCRIPTION_TIERS = {
     ],
   },
 } as const;
+
+export type BillingPeriod = "monthly" | "annual";
 
 // Overage credit packages
 export const OVERAGE_PACKAGES = {
