@@ -518,10 +518,10 @@ export async function getPageSpeedInsights(
     apiUrl.searchParams.set("url", url);
     apiUrl.searchParams.set("key", apiKey);
     apiUrl.searchParams.set("strategy", strategy);
-    apiUrl.searchParams.set("category", "performance");
-    apiUrl.searchParams.set("category", "accessibility");
-    apiUrl.searchParams.set("category", "best-practices");
-    apiUrl.searchParams.set("category", "seo");
+    apiUrl.searchParams.append("category", "performance");
+    apiUrl.searchParams.append("category", "accessibility");
+    apiUrl.searchParams.append("category", "best-practices");
+    apiUrl.searchParams.append("category", "seo");
 
     const response = await fetch(apiUrl.toString());
 
