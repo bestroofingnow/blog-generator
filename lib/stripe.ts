@@ -3,8 +3,8 @@
 
 import Stripe from "stripe";
 
-// Initialize Stripe
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+// Initialize Stripe (trim key to remove any whitespace/newlines from env vars)
+export const stripe = new Stripe((process.env.STRIPE_SECRET_KEY || "").trim(), {
   apiVersion: "2025-12-15.clover",
   typescript: true,
 });
