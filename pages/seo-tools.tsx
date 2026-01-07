@@ -45,6 +45,7 @@ export default function SEOToolsPage() {
   // PageSpeed state
   const [pagespeedUrl, setPagespeedUrl] = useState("");
   const [pagespeedResult, setPagespeedResult] = useState<PageSpeedResult | null>(null);
+  const [pagespeedError, setPagespeedError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [strategy, setStrategy] = useState<"mobile" | "desktop">("mobile");
 
@@ -144,17 +145,20 @@ export default function SEOToolsPage() {
 
     setIsAnalyzing(true);
     setPagespeedResult(null);
+    setPagespeedError(null);
 
     try {
       const response = await fetch(`/api/seo/pagespeed?url=${encodeURIComponent(pagespeedUrl)}&strategy=${strategy}`);
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         setPagespeedResult(data.data);
       } else {
+        setPagespeedError(data.error || "Failed to analyze page. Please check the URL and try again.");
         console.error("PageSpeed analysis failed:", data.error);
       }
     } catch (error) {
+      setPagespeedError("Network error. Please try again.");
       console.error("Failed to analyze:", error);
     } finally {
       setIsAnalyzing(false);
@@ -522,6 +526,17 @@ export default function SEOToolsPage() {
                     )}
                   </button>
                 </div>
+
+                {pagespeedError && (
+                  <div className={styles.errorBanner}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    {pagespeedError}
+                  </div>
+                )}
 
                 {pagespeedResult && (
                   <div className={styles.pagespeedResults}>
