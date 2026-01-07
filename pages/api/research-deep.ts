@@ -9,6 +9,7 @@ import { BrightData } from "../../lib/brightdata";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
 import { loadUserProfile, loadDrafts } from "../../lib/database";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 
 export const maxDuration = 180;
 
@@ -103,6 +104,20 @@ export default async function handler(
     return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
+  const userId = (session.user as { id?: string }).id;
+  if (!userId) {
+    return res.status(401).json({ success: false, error: "User ID not found" });
+  }
+
+  // Credit check
+  const canResearch = await hasEnoughCredits(userId, "deep_research");
+  if (!canResearch) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
+  }
+
   const {
     topic,
     industry,
@@ -124,7 +139,6 @@ export default async function handler(
 
   try {
     // Load user profile and past blogs for context
-    const userId = (session.user as { id?: string }).id || session.user?.email || "";
     const userProfile = await loadUserProfile(userId);
     const pastBlogs = await loadDrafts(userId);
 
@@ -385,6 +399,16 @@ Analyze and provide strategic recommendations that align with the company's serv
       aiResearch.competitors.forEach((c: { gaps?: string[] }) => {
         if (c.gaps) insights.contentGaps.push(...c.gaps);
       });
+    }
+
+    // Deduct credit after successful research
+    const creditResult = await deductCredits(
+      userId,
+      "deep_research",
+      `Deep research: ${topic} in ${industry}`
+    );
+    if (!creditResult.success) {
+      console.error("[Deep Research] Credit deduction failed:", creditResult.error);
     }
 
     return res.status(200).json({

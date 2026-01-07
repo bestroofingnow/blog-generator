@@ -6,6 +6,7 @@ import { authOptions } from "../auth/[...nextauth]";
 import { db, knowledgeBase, knowledgeBaseHistory, profiles, eq } from "../../../lib/db";
 import { generateText } from "ai";
 import { MODELS } from "../../../lib/ai-gateway";
+import { hasEnoughCredits, deductCredits } from "../../../lib/credits";
 
 interface EnrichResponse {
   success: boolean;
@@ -33,6 +34,15 @@ export default async function handler(
   }
 
   const userId = (session.user as { id: string }).id;
+
+  // Credit check
+  const canEnrich = await hasEnoughCredits(userId, "kb_enrichment");
+  if (!canEnrich) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
+  }
 
   try {
     // Get the user's company profile
@@ -178,6 +188,16 @@ Return a JSON array of entries like:
         content: entry.content,
       });
       existingTitles.add(entry.title.toLowerCase());
+    }
+
+    // Deduct credit after successful enrichment
+    const creditResult = await deductCredits(
+      userId,
+      "kb_enrichment",
+      `Knowledge base enrichment: ${entriesAdded} entries added`
+    );
+    if (!creditResult.success) {
+      console.error("[KB Enrich] Credit deduction failed:", creditResult.error);
     }
 
     return res.status(200).json({

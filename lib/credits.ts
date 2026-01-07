@@ -16,15 +16,35 @@ import { SUBSCRIPTION_TIERS, getTierConfig } from "./stripe";
 // Credit operation types
 export type CreditOperation =
   | "blog_generation"
+  | "location_page_generation"
   | "image_generation"
-  | "ai_research";
+  | "image_editing"
+  | "keyword_research"
+  | "deep_research"
+  | "seo_plan"
+  | "site_builder_research"
+  | "kb_enrichment"
+  | "chat_response";
 
-// Credit costs per operation (all cost 1 credit as per spec)
+// Credit costs per operation
+// Fractional credits are supported (e.g., 0.5 credits)
 const CREDIT_COSTS: Record<CreditOperation, number> = {
   blog_generation: 1,
+  location_page_generation: 1,
   image_generation: 1,
-  ai_research: 1,
+  image_editing: 0.5,
+  keyword_research: 1,
+  deep_research: 1,
+  seo_plan: 2,
+  site_builder_research: 1,
+  kb_enrichment: 1,
+  chat_response: 0.5,
 };
+
+// Get credit cost for an operation (exported for UI display)
+export function getCreditCost(operation: CreditOperation): number {
+  return CREDIT_COSTS[operation];
+}
 
 // Get user's organization
 export async function getUserOrganization(userId: string): Promise<Organization | null> {

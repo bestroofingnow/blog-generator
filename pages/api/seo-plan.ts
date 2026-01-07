@@ -14,6 +14,7 @@ import {
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
 import { loadDrafts } from "../../lib/database";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 
 interface SEOPlanRequest {
   companyProfile: CompanyProfile;
@@ -31,6 +32,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user) {
     return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const userId = (session.user as { id?: string }).id;
+  if (!userId) {
+    return res.status(401).json({ error: "User ID not found" });
+  }
+
+  // Credit check (SEO plan uses 2 credits)
+  const canGenerate = await hasEnoughCredits(userId, "seo_plan");
+  if (!canGenerate) {
+    return res.status(402).json({
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
   }
 
   try {
@@ -100,6 +114,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recommendations,
       generatedAt: new Date().toISOString(),
     };
+
+    // Deduct credit after successful plan generation
+    const creditResult = await deductCredits(
+      userId,
+      "seo_plan",
+      `SEO Plan for ${companyProfile.name}`
+    );
+    if (!creditResult.success) {
+      console.error("[SEO Plan] Credit deduction failed:", creditResult.error);
+    }
 
     return res.status(200).json({
       success: true,

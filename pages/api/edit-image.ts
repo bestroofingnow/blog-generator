@@ -6,6 +6,7 @@ import { createGateway } from "@ai-sdk/gateway";
 import { generateText, experimental_generateImage as generateImageAI } from "ai";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 
 const gateway = createGateway({
   apiKey: process.env.AI_GATEWAY_API_KEY ?? "",
@@ -44,6 +45,20 @@ export default async function handler(
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user) {
     return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
+
+  const userId = (session.user as { id?: string }).id;
+  if (!userId) {
+    return res.status(401).json({ success: false, error: "User ID not found" });
+  }
+
+  // Credit check (image editing uses 0.5 credits)
+  const canEdit = await hasEnoughCredits(userId, "image_editing");
+  if (!canEdit) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
   }
 
   if (!process.env.AI_GATEWAY_API_KEY) {
@@ -176,6 +191,12 @@ CRITICAL: ABSOLUTELY NO TEXT, WORDS, LETTERS, OR NUMBERS anywhere in the image. 
 
       console.log("[Image Edit] Image generated successfully");
       console.log("[Image Edit] Output size:", base64Data?.length || 0);
+
+      // Deduct credit after successful edit
+      const creditResult = await deductCredits(userId, "image_editing", "Image edit");
+      if (!creditResult.success) {
+        console.error("[Image Edit] Credit deduction failed:", creditResult.error);
+      }
 
       return res.status(200).json({
         success: true,

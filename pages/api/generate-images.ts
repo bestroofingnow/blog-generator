@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { generateBlogImage, remakeBlogImage, reviewImageQuality, GeneratedImage } from "../../lib/ai-gateway";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 
 interface ImageGenerationRequest {
   prompts: string[];
@@ -13,6 +14,7 @@ interface ImageGenerationRequest {
 interface ImageGenerationResponse {
   success: boolean;
   images?: GeneratedImage[];
+  creditsRemaining?: number;
   error?: string;
 }
 
@@ -28,6 +30,20 @@ export default async function handler(
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user) {
     return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
+
+  const userId = (session.user as { id?: string }).id;
+  if (!userId) {
+    return res.status(401).json({ success: false, error: "User ID not found" });
+  }
+
+  // Credit check
+  const canGenerate = await hasEnoughCredits(userId, "image_generation");
+  if (!canGenerate) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
   }
 
   if (!process.env.AI_GATEWAY_API_KEY) {
@@ -97,9 +113,20 @@ export default async function handler(
       }
     }
 
+    // Deduct credit after successful generation
+    const creditResult = await deductCredits(
+      userId,
+      "image_generation",
+      `Generated ${images.length} image(s)`
+    );
+    if (!creditResult.success) {
+      console.error("[Image Gen] Credit deduction failed:", creditResult.error);
+    }
+
     return res.status(200).json({
       success: true,
       images,
+      creditsRemaining: creditResult.remainingCredits,
     });
   } catch (error) {
     console.error("Image generation error:", error);

@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 import { createSiteProposal, loadUserProfile } from "../../../lib/database";
 import type { ProposedSiteStructure } from "../../../lib/db";
+import { hasEnoughCredits, deductCredits } from "../../../lib/credits";
 
 interface DeepResearchData {
   research?: {
@@ -68,6 +69,16 @@ export default async function handler(
   }
 
   const userId = (session.user as { id: string }).id;
+
+  // Credit check
+  const canResearch = await hasEnoughCredits(userId, "site_builder_research");
+  if (!canResearch) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
+  }
+
   const { industry: requestedIndustry, targetCities, services, deepResearch } = req.body as ResearchRequest;
 
   try {
@@ -120,6 +131,16 @@ export default async function handler(
         success: false,
         error: "Failed to create proposal",
       });
+    }
+
+    // Deduct credit after successful research
+    const creditResult = await deductCredits(
+      userId,
+      "site_builder_research",
+      `Site structure research: ${industry}`
+    );
+    if (!creditResult.success) {
+      console.error("[Site Builder] Credit deduction failed:", creditResult.error);
     }
 
     return res.status(200).json({

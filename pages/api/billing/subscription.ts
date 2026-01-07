@@ -95,7 +95,21 @@ export default async function handler(
     const stripeSubscription = await stripe.subscriptions.retrieve(
       org[0].stripeSubscriptionId,
       { expand: ["default_payment_method"] }
-    );
+    ) as unknown as {
+      status: string;
+      current_period_end: number;
+      cancel_at_period_end: boolean;
+      items: { data: Array<{ price?: { id?: string } }> };
+      default_payment_method?: {
+        type?: string;
+        card?: {
+          brand?: string;
+          last4?: string;
+          exp_month?: number;
+          exp_year?: number;
+        };
+      };
+    };
 
     // Get invoices
     const stripeInvoices = await stripe.invoices.list({
@@ -106,7 +120,7 @@ export default async function handler(
     // Determine billing period from price
     const priceId = stripeSubscription.items.data[0]?.price?.id;
     let billingPeriod: "monthly" | "annual" = "monthly";
-    let detectedTier = org[0].subscriptionTier;
+    let detectedTier: string = org[0].subscriptionTier || "starter";
 
     // Check which tier and period this price belongs to
     for (const [tierKey, tierConfig] of Object.entries(SUBSCRIPTION_TIERS)) {
@@ -142,7 +156,7 @@ export default async function handler(
       amount: inv.amount_paid / 100,
       status: inv.status || "unknown",
       date: new Date(inv.created * 1000).toISOString(),
-      pdfUrl: inv.invoice_pdf,
+      pdfUrl: inv.invoice_pdf ?? null,
     }));
 
     const subscription: SubscriptionDetails = {

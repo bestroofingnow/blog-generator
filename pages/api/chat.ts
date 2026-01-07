@@ -7,6 +7,7 @@ import { authOptions } from "./auth/[...nextauth]";
 import { streamText } from "ai";
 import { z } from "zod";
 import { MODELS } from "../../lib/ai-gateway";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 import {
   createConversation,
   getConversation,
@@ -54,7 +55,18 @@ export default async function handler(
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const userId = (session.user as { id?: string }).id || session.user?.email || "";
+  const userId = (session.user as { id?: string }).id;
+  if (!userId) {
+    return res.status(401).json({ error: "User ID not found" });
+  }
+
+  // Credit check (chat uses 0.5 credits per response)
+  const canChat = await hasEnoughCredits(userId, "chat_response");
+  if (!canChat) {
+    return res.status(402).json({
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
+  }
 
   try {
     const { message, conversationId: inputConversationId } = req.body;
@@ -155,6 +167,12 @@ export default async function handler(
 
       // Signal completion
       res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
+
+      // Deduct credit after successful chat response
+      const creditResult = await deductCredits(userId, "chat_response", "Chat conversation");
+      if (!creditResult.success) {
+        console.error("[Chat] Credit deduction failed:", creditResult.error);
+      }
     } catch (streamError) {
       console.error("[Chat] Stream error:", streamError);
       res.write(`data: ${JSON.stringify({ type: "error", error: "Stream interrupted" })}\n\n`);

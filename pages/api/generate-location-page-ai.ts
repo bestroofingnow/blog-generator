@@ -12,6 +12,7 @@ import {
   MODELS,
 } from "../../lib/ai-gateway";
 import { generateText } from "ai";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 
 interface GenerateRequest {
   cities: string[];
@@ -47,6 +48,15 @@ export default async function handler(
   }
 
   const userId = (session.user as { id: string }).id;
+
+  // Credit check
+  const canGenerate = await hasEnoughCredits(userId, "location_page_generation");
+  if (!canGenerate) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
+  }
 
   // Set up streaming response
   res.setHeader("Content-Type", "text/event-stream");
@@ -206,6 +216,16 @@ export default async function handler(
           error: error instanceof Error ? error.message : "Failed to generate page",
         });
       }
+    }
+
+    // Deduct credit after successful generation
+    const creditResult = await deductCredits(
+      userId,
+      "location_page_generation",
+      `Location pages: ${cities.join(", ")}`
+    );
+    if (!creditResult.success) {
+      console.error("[Location Page] Credit deduction failed:", creditResult.error);
     }
 
     sendProgress({

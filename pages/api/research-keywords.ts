@@ -11,6 +11,7 @@ import { db, knowledgeBase } from "../../lib/db";
 import { eq } from "drizzle-orm";
 import { generateText } from "ai";
 import { createGateway } from "@ai-sdk/gateway";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 
 // Create gateway instance for enhanced research
 const gateway = createGateway({
@@ -50,6 +51,7 @@ interface EnhancedKeywordResearch extends KeywordResearch {
 interface ResearchResponse {
   success: boolean;
   suggestions?: EnhancedKeywordResearch;
+  creditsRemaining?: number;
   error?: string;
 }
 
@@ -318,6 +320,20 @@ export default async function handler(
     return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
+  const userId = (session.user as { id?: string }).id;
+  if (!userId) {
+    return res.status(401).json({ success: false, error: "User ID not found" });
+  }
+
+  // Credit check
+  const canResearch = await hasEnoughCredits(userId, "keyword_research");
+  if (!canResearch) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
+  }
+
   if (!process.env.AI_GATEWAY_API_KEY) {
     return res.status(500).json({
       success: false,
@@ -336,7 +352,6 @@ export default async function handler(
     }
 
     // Load user profile and past blogs for context
-    const userId = (session.user as { id?: string }).id || session.user?.email || "";
     const userProfile = await loadUserProfile(userId);
     const pastBlogs = await loadDrafts(userId);
 
@@ -397,9 +412,20 @@ export default async function handler(
 
     console.log(`[SEO Research] Enhanced research complete`);
 
+    // Deduct credit after successful research
+    const creditResult = await deductCredits(
+      userId,
+      "keyword_research",
+      `Keyword research: ${request.topic} in ${request.location}`
+    );
+    if (!creditResult.success) {
+      console.error("[SEO Research] Credit deduction failed:", creditResult.error);
+    }
+
     return res.status(200).json({
       success: true,
       suggestions: enhancedSuggestions,
+      creditsRemaining: creditResult.remainingCredits,
     });
   } catch (error) {
     console.error("[SEO Research] Error:", error);
