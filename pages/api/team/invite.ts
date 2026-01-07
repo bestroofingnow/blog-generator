@@ -14,6 +14,7 @@ import {
   eq,
   and,
 } from "../../../lib/db";
+import { sendTeamInvitationEmail } from "../../../lib/email";
 
 interface InviteResponse {
   success: boolean;
@@ -186,10 +187,24 @@ export default async function handler(
 
     console.log(`[Team] Invitation sent to ${email} for org ${org[0].id}`);
 
-    // TODO: Send email with invitation link
-    // For now, we'll just return the token - you can integrate with an email service
+    // Send invitation email
     const inviteUrl = `${process.env.NEXTAUTH_URL}/invite/${token}`;
     console.log(`[Team] Invite URL: ${inviteUrl}`);
+
+    const emailResult = await sendTeamInvitationEmail({
+      to: email.toLowerCase(),
+      inviterName: session.user.name || session.user.email || "A team member",
+      organizationName: org[0].name,
+      role,
+      inviteUrl,
+      expiresAt,
+    });
+
+    if (!emailResult.success) {
+      console.warn(`[Team] Email failed to send: ${emailResult.error}`);
+      // Don't fail the invite - the invitation is still valid
+      // They can share the link manually if email fails
+    }
 
     return res.status(200).json({
       success: true,
