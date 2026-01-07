@@ -1,5 +1,5 @@
 // pages/settings/billing.tsx
-// Premium pricing and billing management page
+// Billing dashboard and subscription management
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
@@ -25,12 +25,29 @@ interface CreditInfo {
   lowCreditWarning: boolean;
 }
 
-interface Transaction {
+interface Invoice {
   id: string;
   amount: number;
-  type: string;
-  description: string | null;
-  createdAt: string | null;
+  status: string;
+  date: string;
+  pdfUrl: string | null;
+}
+
+interface SubscriptionDetails {
+  tier: string;
+  tierName: string;
+  status: string;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  monthlyPrice: number;
+  billingPeriod: "monthly" | "annual";
+  paymentMethod: {
+    brand: string;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+  } | null;
+  invoices: Invoice[];
 }
 
 const PLANS = [
@@ -103,12 +120,12 @@ export default function BillingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [creditInfo, setCreditInfo] = useState<CreditInfo | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null);
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [buyingOverage, setBuyingOverage] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
   const [apiError, setApiError] = useState<string | null>(null);
-  const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const fetchCreditInfo = useCallback(async () => {
     try {
@@ -117,14 +134,24 @@ export default function BillingPage() {
       const data = await res.json();
       if (data.success) {
         setCreditInfo(data.data);
-        setTransactions(data.data.history || []);
       } else {
-        console.error("API error:", data.error, "Status:", res.status);
         setApiError(data.error || `API returned status ${res.status}`);
       }
     } catch (error) {
       console.error("Failed to fetch credit info:", error);
       setApiError("Failed to connect to billing service");
+    }
+  }, []);
+
+  const fetchSubscriptionDetails = useCallback(async () => {
+    try {
+      const res = await fetch("/api/billing/subscription");
+      const data = await res.json();
+      if (data.subscription) {
+        setSubscriptionDetails(data.subscription);
+      }
+    } catch (error) {
+      console.error("Failed to fetch subscription details:", error);
     } finally {
       setLoading(false);
     }
@@ -137,14 +164,16 @@ export default function BillingPage() {
     }
     if (status === "authenticated") {
       fetchCreditInfo();
+      fetchSubscriptionDetails();
     }
-  }, [status, router, fetchCreditInfo]);
+  }, [status, router, fetchCreditInfo, fetchSubscriptionDetails]);
 
   useEffect(() => {
     if (router.query.success) {
       fetchCreditInfo();
+      fetchSubscriptionDetails();
     }
-  }, [router.query, fetchCreditInfo]);
+  }, [router.query, fetchCreditInfo, fetchSubscriptionDetails]);
 
   const handleUpgrade = async (tier: string) => {
     setUpgrading(tier);
@@ -191,6 +220,7 @@ export default function BillingPage() {
   };
 
   const handleManageBilling = async () => {
+    setPortalLoading(true);
     try {
       const res = await fetch("/api/billing/portal", { method: "POST" });
       const data = await res.json();
@@ -202,36 +232,34 @@ export default function BillingPage() {
     } catch (error) {
       console.error("Portal error:", error);
       alert("Failed to open billing portal");
+    } finally {
+      setPortalLoading(false);
     }
   };
 
   if (loading || status === "loading") {
     return (
-      <div className="pricing-page">
+      <div style={{
+        minHeight: "100vh",
+        background: "#f8fafc",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
         <Head>
           <title>Loading... | Kynex AI</title>
         </Head>
-        <style jsx global>{`
-          .pricing-page {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .loader {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #8b5cf6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-          }
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
+        <div style={{
+          width: 48,
+          height: 48,
+          border: "3px solid #e2e8f0",
+          borderTopColor: "#6366f1",
+          borderRadius: "50%",
+          animation: "spin 1s linear infinite",
+        }} />
+        <style jsx>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
         `}</style>
-        <div className="loader" />
       </div>
     );
   }
@@ -240,642 +268,139 @@ export default function BillingPage() {
   const hasActiveSubscription = currentTier !== "free" && creditInfo?.subscription.status === "active";
   const isAnnual = billingPeriod === "annual";
 
-  // Show premium pricing page for new users
+  // Show pricing page for users without subscription
   if (!hasActiveSubscription) {
     return (
       <div className="pricing-page">
         <Head>
           <title>Choose Your Plan | Kynex AI</title>
-          <meta name="description" content="AI-powered SEO content generation. Choose the plan that fits your needs." />
         </Head>
-
         <style jsx global>{`
-          * {
-            box-sizing: border-box;
-          }
-
           .pricing-page {
             min-height: 100vh;
             background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
             color: white;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            overflow-x: hidden;
           }
-
           .pricing-page::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background:
               radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-              radial-gradient(circle at 40% 60%, rgba(236, 72, 153, 0.1) 0%, transparent 40%);
+              radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
             pointer-events: none;
-            z-index: 0;
           }
-
-          .pricing-container {
-            position: relative;
-            z-index: 1;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-          }
-
-          .pricing-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 24px 0;
-          }
-
-          .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-          }
-
-          .logo-icon {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
-          }
-
-          .logo-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-          }
-
-          .sign-out-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.7);
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
-          }
-
-          .sign-out-btn:hover {
-            background: rgba(255,255,255,0.15);
-            color: white;
-          }
-
-          .hero-section {
-            text-align: center;
-            padding: 60px 0 40px;
-          }
-
-          .promo-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
-            border: 1px solid rgba(251, 191, 36, 0.4);
-            border-radius: 100px;
-            margin-bottom: 32px;
-            animation: pulse-glow 2s ease-in-out infinite;
-          }
-
-          @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); }
-            50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.4); }
-          }
-
-          .promo-dot {
-            width: 8px;
-            height: 8px;
-            background: #fbbf24;
-            border-radius: 50%;
-            animation: blink 1.5s ease-in-out infinite;
-          }
-
-          @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-          }
-
-          .promo-text {
-            color: #fcd34d;
-            font-size: 0.9rem;
-            font-weight: 500;
-          }
-
-          .promo-code {
-            background: rgba(251, 191, 36, 0.3);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-weight: 700;
-          }
-
-          .hero-title {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #fff 0%, #c7d2fe 50%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-          }
-
-          .hero-subtitle {
-            font-size: 1.25rem;
-            color: rgba(255,255,255,0.6);
-            max-width: 600px;
-            margin: 0 auto 48px;
-            line-height: 1.6;
-          }
-
-          .billing-toggle {
-            display: inline-flex;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 6px;
-            gap: 4px;
-          }
-
-          .toggle-btn {
-            padding: 14px 32px;
-            border-radius: 12px;
-            border: none;
-            background: transparent;
-            color: rgba(255,255,255,0.6);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .toggle-btn.active {
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-            color: white;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
-          }
-
-          .toggle-btn:hover:not(.active) {
-            color: white;
-            background: rgba(255,255,255,0.1);
-          }
-
-          .save-badge {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            padding: 4px 10px;
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-
-          .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 24px;
-            padding: 60px 0;
-            max-width: 1200px;
-            margin: 0 auto;
-          }
-
-          .pricing-card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 24px;
-            padding: 40px 32px;
-            position: relative;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-          }
-
-          .pricing-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          }
-
-          .pricing-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(139, 92, 246, 0.3);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 60px rgba(139, 92, 246, 0.1);
-          }
-
-          .pricing-card:hover::before {
-            opacity: 1;
-          }
-
-          .pricing-card.popular {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
-            border-color: rgba(139, 92, 246, 0.4);
-            transform: scale(1.02);
-          }
-
-          .pricing-card.popular:hover {
-            transform: scale(1.02) translateY(-8px);
-          }
-
-          .popular-badge {
-            position: absolute;
-            top: -1px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-            padding: 8px 24px;
-            border-radius: 0 0 12px 12px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
-          }
-
-          .plan-header {
-            margin-bottom: 32px;
-          }
-
-          .plan-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-          }
-
-          .plan-description {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.95rem;
-          }
-
-          .plan-price {
-            margin-bottom: 8px;
-          }
-
-          .price-amount {
-            font-size: 4rem;
-            font-weight: 800;
-            line-height: 1;
-            background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-          }
-
-          .price-period {
-            font-size: 1.1rem;
-            color: rgba(255,255,255,0.5);
-            margin-left: 4px;
-          }
-
-          .price-annual {
-            color: #10b981;
-            font-size: 0.9rem;
-            margin-top: 4px;
-          }
-
-          .credits-info {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(139, 92, 246, 0.15);
-            padding: 10px 16px;
-            border-radius: 10px;
-            margin-bottom: 32px;
-            font-weight: 600;
-            color: #c4b5fd;
-          }
-
-          .cta-button {
-            width: 100%;
-            padding: 18px 32px;
-            border: none;
-            border-radius: 14px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 32px;
-          }
-
-          .cta-button.primary {
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-            color: white;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
-          }
-
-          .cta-button.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.5);
-          }
-
-          .cta-button.secondary {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-          }
-
-          .cta-button.secondary:hover {
-            background: rgba(255,255,255,0.15);
-          }
-
-          .cta-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-          }
-
-          .features-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-          }
-
-          .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.95rem;
-          }
-
-          .feature-item:last-child {
-            border-bottom: none;
-          }
-
-          .feature-item.included {
-            color: rgba(255,255,255,0.9);
-          }
-
-          .feature-item.excluded {
-            color: rgba(255,255,255,0.3);
-          }
-
-          .feature-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-          }
-
-          .feature-icon.check {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-          }
-
-          .feature-icon.x {
-            background: rgba(255,255,255,0.05);
-            color: rgba(255,255,255,0.3);
-          }
-
-          .trust-section {
-            padding: 60px 0;
-            border-top: 1px solid rgba(255,255,255,0.05);
-          }
-
-          .trust-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 40px;
-            max-width: 900px;
-            margin: 0 auto 48px;
-          }
-
-          @media (max-width: 768px) {
-            .trust-grid {
-              grid-template-columns: repeat(2, 1fr);
-            }
-          }
-
-          .trust-item {
-            text-align: center;
-          }
-
-          .trust-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-          }
-
-          .trust-label {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.9rem;
-            margin-top: 4px;
-          }
-
-          .trust-badges {
-            display: flex;
-            justify-content: center;
-            gap: 32px;
-            flex-wrap: wrap;
-          }
-
-          .trust-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: rgba(255,255,255,0.4);
-            font-size: 0.9rem;
-          }
-
-          .faq-section {
-            padding: 60px 0 80px;
-            max-width: 800px;
-            margin: 0 auto;
-          }
-
-          .faq-title {
-            text-align: center;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 40px;
-          }
-
-          .faq-item {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px;
-            padding: 24px 28px;
-            margin-bottom: 16px;
-            transition: all 0.3s ease;
-          }
-
-          .faq-item:hover {
-            border-color: rgba(255,255,255,0.15);
-          }
-
-          .faq-question {
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 12px;
-            color: white;
-          }
-
-          .faq-answer {
-            color: rgba(255,255,255,0.6);
-            line-height: 1.6;
-          }
-
-          .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: inline-block;
-            margin-right: 8px;
-          }
-
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
+          .container { position: relative; max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+          .header { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; }
+          .logo { display: flex; align-items: center; gap: 12px; }
+          .logo-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #8b5cf6, #6366f1); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+          .logo-text { font-size: 1.5rem; font-weight: 700; }
+          .sign-out { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+          .sign-out:hover { background: rgba(255,255,255,0.15); color: white; }
+          .hero { text-align: center; padding: 60px 0 40px; }
+          .promo { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 100px; margin-bottom: 32px; }
+          .promo-dot { width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; animation: blink 1.5s infinite; }
+          .promo-text { color: #fcd34d; font-size: 0.9rem; }
+          .promo-code { background: rgba(251, 191, 36, 0.3); padding: 4px 10px; border-radius: 6px; font-family: monospace; font-weight: 700; }
+          .title { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
+          .subtitle { font-size: 1.25rem; color: rgba(255,255,255,0.6); max-width: 600px; margin: 0 auto 48px; }
+          .toggle { display: inline-flex; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 6px; }
+          .toggle-btn { padding: 14px 32px; border-radius: 12px; border: none; background: transparent; color: rgba(255,255,255,0.6); font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+          .toggle-btn.active { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; }
+          .save-badge { background: linear-gradient(135deg, #10b981, #059669); padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 700; }
+          .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; padding: 60px 0; max-width: 1200px; margin: 0 auto; }
+          .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 40px 32px; position: relative; transition: all 0.3s; }
+          .card:hover { transform: translateY(-8px); border-color: rgba(139, 92, 246, 0.3); }
+          .card.popular { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1)); border-color: rgba(139, 92, 246, 0.4); }
+          .popular-badge { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #8b5cf6, #6366f1); padding: 8px 24px; border-radius: 0 0 12px 12px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+          .plan-name { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+          .plan-desc { color: rgba(255,255,255,0.5); font-size: 0.95rem; margin-bottom: 32px; }
+          .price { font-size: 4rem; font-weight: 800; line-height: 1; }
+          .price-period { font-size: 1.1rem; color: rgba(255,255,255,0.5); }
+          .price-annual { color: #10b981; font-size: 0.9rem; margin-top: 4px; }
+          .credits { display: inline-flex; align-items: center; gap: 8px; background: rgba(139, 92, 246, 0.15); padding: 10px 16px; border-radius: 10px; margin: 24px 0; font-weight: 600; color: #c4b5fd; }
+          .cta { width: 100%; padding: 18px; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-bottom: 32px; }
+          .cta.primary { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; }
+          .cta.secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+          .cta:disabled { opacity: 0.6; cursor: not-allowed; }
+          .features { list-style: none; padding: 0; margin: 0; }
+          .feature { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.95rem; }
+          .feature:last-child { border-bottom: none; }
+          .feature.included { color: rgba(255,255,255,0.9); }
+          .feature.excluded { color: rgba(255,255,255,0.3); }
+          .feature-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+          .feature-icon.check { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+          .feature-icon.x { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); }
+          .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; margin-right: 8px; }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         `}</style>
 
-        <div className="pricing-container">
-          {/* Header */}
-          <header className="pricing-header">
+        <div className="container">
+          <header className="header">
             <div className="logo">
               <div className="logo-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                 </svg>
               </div>
               <span className="logo-text">Kynex AI</span>
             </div>
-            <button className="sign-out-btn" onClick={() => signOut({ callbackUrl: "/login" })}>
+            <button className="sign-out" onClick={() => signOut({ callbackUrl: "/login" })}>
               Sign out
             </button>
           </header>
 
-          {/* Hero Section */}
-          <section className="hero-section">
-            <div className="promo-badge">
+          <section className="hero">
+            <div className="promo">
               <span className="promo-dot" />
               <span className="promo-text">
-                Early Adopter Special: Use code <span className="promo-code">EARLY50</span> for 50% off forever!
+                Early Adopter: Use <span className="promo-code">EARLY50</span> for 50% off forever!
               </span>
             </div>
-
-            <h1 className="hero-title">
-              Choose the perfect plan<br />for your content needs
-            </h1>
-            <p className="hero-subtitle">
+            <h1 className="title">Choose your plan</h1>
+            <p className="subtitle">
               Generate SEO-optimized blogs, research keywords, and create stunning images with AI.
-              Scale your content production effortlessly.
             </p>
-
-            <div className="billing-toggle">
-              <button
-                className={`toggle-btn ${billingPeriod === "monthly" ? "active" : ""}`}
-                onClick={() => setBillingPeriod("monthly")}
-              >
+            <div className="toggle">
+              <button className={`toggle-btn ${billingPeriod === "monthly" ? "active" : ""}`} onClick={() => setBillingPeriod("monthly")}>
                 Monthly
               </button>
-              <button
-                className={`toggle-btn ${billingPeriod === "annual" ? "active" : ""}`}
-                onClick={() => setBillingPeriod("annual")}
-              >
-                Annual
-                <span className="save-badge">Save 17%</span>
+              <button className={`toggle-btn ${billingPeriod === "annual" ? "active" : ""}`} onClick={() => setBillingPeriod("annual")}>
+                Annual <span className="save-badge">Save 17%</span>
               </button>
             </div>
           </section>
 
-          {/* Pricing Cards */}
-          <section className="pricing-grid">
+          <section className="grid">
             {PLANS.map((plan) => {
               const price = isAnnual ? Math.round(plan.annualPrice / 12) : plan.monthlyPrice;
-
               return (
-                <div
-                  key={plan.id}
-                  className={`pricing-card ${plan.popular ? "popular" : ""}`}
-                  onMouseEnter={() => setHoveredPlan(plan.id)}
-                  onMouseLeave={() => setHoveredPlan(null)}
-                >
+                <div key={plan.id} className={`card ${plan.popular ? "popular" : ""}`}>
                   {plan.popular && <div className="popular-badge">Most Popular</div>}
-
-                  <div className="plan-header">
-                    <h3 className="plan-name">{plan.name}</h3>
-                    <p className="plan-description">{plan.description}</p>
-                  </div>
-
-                  <div className="plan-price">
-                    <span className="price-amount">${price}</span>
+                  <h3 className="plan-name">{plan.name}</h3>
+                  <p className="plan-desc">{plan.description}</p>
+                  <div>
+                    <span className="price">${price}</span>
                     <span className="price-period">/month</span>
-                    {isAnnual && (
-                      <p className="price-annual">
-                        ${plan.annualPrice} billed annually (2 months free)
-                      </p>
-                    )}
+                    {isAnnual && <p className="price-annual">${plan.annualPrice} billed annually</p>}
                   </div>
-
-                  <div className="credits-info">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 6v6l4 2" />
-                    </svg>
-                    {plan.credits.toLocaleString()} credits/month
-                  </div>
-
+                  <div className="credits">{plan.credits.toLocaleString()} credits/month</div>
                   <button
-                    className={`cta-button ${plan.popular ? "primary" : "secondary"}`}
+                    className={`cta ${plan.popular ? "primary" : "secondary"}`}
                     onClick={() => handleUpgrade(plan.id)}
                     disabled={upgrading === plan.id}
                   >
-                    {upgrading === plan.id ? (
-                      <>
-                        <span className="spinner" />
-                        Processing...
-                      </>
-                    ) : (
-                      "Get Started"
-                    )}
+                    {upgrading === plan.id ? <><span className="spinner" />Processing...</> : "Get Started"}
                   </button>
-
-                  <ul className="features-list">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className={`feature-item ${feature.included ? "included" : "excluded"}`}>
-                        <span className={`feature-icon ${feature.included ? "check" : "x"}`}>
-                          {feature.included ? (
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                              <path d="M20 6L9 17l-5-5" />
-                            </svg>
-                          ) : (
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                              <path d="M18 6L6 18M6 6l12 12" />
-                            </svg>
-                          )}
+                  <ul className="features">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className={`feature ${f.included ? "included" : "excluded"}`}>
+                        <span className={`feature-icon ${f.included ? "check" : "x"}`}>
+                          {f.included ? "✓" : "×"}
                         </span>
-                        {feature.text}
+                        {f.text}
                       </li>
                     ))}
                   </ul>
@@ -883,284 +408,386 @@ export default function BillingPage() {
               );
             })}
           </section>
-
-          {/* Trust Section */}
-          <section className="trust-section">
-            <div className="trust-grid">
-              <div className="trust-item">
-                <div className="trust-number">10K+</div>
-                <div className="trust-label">Blogs Generated</div>
-              </div>
-              <div className="trust-item">
-                <div className="trust-number">500+</div>
-                <div className="trust-label">Happy Users</div>
-              </div>
-              <div className="trust-item">
-                <div className="trust-number">98%</div>
-                <div className="trust-label">Satisfaction</div>
-              </div>
-              <div className="trust-item">
-                <div className="trust-number">24/7</div>
-                <div className="trust-label">AI Available</div>
-              </div>
-            </div>
-
-            <div className="trust-badges">
-              <div className="trust-badge">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                Secure Payments
-              </div>
-              <div className="trust-badge">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                  <line x1="1" y1="10" x2="23" y2="10" />
-                </svg>
-                Cancel Anytime
-              </div>
-              <div className="trust-badge">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
-                </svg>
-                Priority Support
-              </div>
-            </div>
-          </section>
-
-          {/* FAQ Section */}
-          <section className="faq-section">
-            <h2 className="faq-title">Frequently Asked Questions</h2>
-
-            <div className="faq-item">
-              <h3 className="faq-question">What are credits and how do they work?</h3>
-              <p className="faq-answer">
-                Credits are used to generate content. Each blog post uses approximately 10-20 credits
-                depending on length and complexity. Unused credits roll over for 30 days, so you never lose them.
-              </p>
-            </div>
-
-            <div className="faq-item">
-              <h3 className="faq-question">Can I upgrade or downgrade my plan?</h3>
-              <p className="faq-answer">
-                Yes! You can change your plan at any time through the Stripe billing portal.
-                Upgrades take effect immediately, and downgrades apply at the end of your billing cycle.
-              </p>
-            </div>
-
-            <div className="faq-item">
-              <h3 className="faq-question">What happens if I run out of credits?</h3>
-              <p className="faq-answer">
-                You can purchase additional credit packs anytime, or upgrade to a higher tier plan
-                for more monthly credits. We also offer overage packs starting at just $10.
-              </p>
-            </div>
-
-            <div className="faq-item">
-              <h3 className="faq-question">Is there a free trial?</h3>
-              <p className="faq-answer">
-                We offer a 50% discount for early adopters using code EARLY50. This discount
-                applies forever, not just the first month! It&apos;s better than a trial.
-              </p>
-            </div>
-          </section>
         </div>
       </div>
     );
   }
 
-  // Show dashboard for existing subscribers
-  const TIER_DETAILS: Record<string, { name: string; priceMonthly: number }> = {
-    free: { name: "Free", priceMonthly: 0 },
-    starter: { name: "Starter", priceMonthly: 39 },
-    pro: { name: "Pro", priceMonthly: 99 },
-    agency: { name: "Agency", priceMonthly: 299 },
+  // Billing Dashboard for subscribers
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   };
 
-  const tierDetails = TIER_DETAILS[currentTier] || TIER_DETAILS.free;
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active": return { bg: "#dcfce7", text: "#166534" };
+      case "trialing": return { bg: "#dbeafe", text: "#1e40af" };
+      case "past_due": return { bg: "#fef3c7", text: "#92400e" };
+      case "canceled": return { bg: "#fee2e2", text: "#991b1b" };
+      default: return { bg: "#f3f4f6", text: "#374151" };
+    }
+  };
+
+  const statusColors = getStatusColor(subscriptionDetails?.status || "");
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       <Head>
-        <title>Billing & Credits | Settings</title>
+        <title>Billing | Kynex AI</title>
       </Head>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Link href="/settings" className="text-indigo-600 hover:text-indigo-500 text-sm mb-2 inline-block">
-            &larr; Back to Settings
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
+        {/* Header */}
+        <div style={{ marginBottom: 32 }}>
+          <Link href="/" style={{ color: "#6366f1", fontSize: "0.875rem", textDecoration: "none", display: "inline-block", marginBottom: 8 }}>
+            ← Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Billing & Credits</h1>
-          <p className="text-gray-600 mt-1">Manage your subscription and credit balance</p>
+          <h1 style={{ fontSize: "2rem", fontWeight: 700, color: "#111827", margin: 0 }}>Billing</h1>
+          <p style={{ color: "#6b7280", marginTop: 4 }}>Manage your subscription and payment methods</p>
         </div>
 
+        {/* Success message */}
         {router.query.success && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-800">Your subscription has been updated successfully!</p>
+          <div style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: 12, padding: 16, marginBottom: 24 }}>
+            <p style={{ color: "#166534", margin: 0 }}>✓ Your subscription has been updated successfully!</p>
           </div>
         )}
 
+        {/* Error message */}
         {apiError && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800"><strong>Error:</strong> {apiError}</p>
+          <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 12, padding: 16, marginBottom: 24 }}>
+            <p style={{ color: "#991b1b", margin: 0 }}>Error: {apiError}</p>
           </div>
         )}
 
-        {creditInfo?.lowCreditWarning && (
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-yellow-800">
-              <strong>Low Credits:</strong> You&apos;re running low. Consider purchasing more or upgrading.
-            </p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Plan</h2>
-
-            <div className="flex items-center justify-between mb-6 pb-6 border-b">
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{tierDetails.name}</p>
-                <p className="text-gray-500">
-                  {tierDetails.priceMonthly > 0 ? `$${tierDetails.priceMonthly}/month` : "No active subscription"}
-                </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Status: <span className={`capitalize ${creditInfo?.subscription.status === "active" ? "text-green-600" : "text-yellow-600"}`}>
-                    {creditInfo?.subscription.status || "none"}
-                  </span>
-                </p>
-              </div>
-              <button
-                onClick={handleManageBilling}
-                className="px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-600 rounded-md hover:bg-indigo-50"
-              >
-                Manage Billing
-              </button>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Credit Usage</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500">Monthly</p>
-                  <p className="text-2xl font-bold text-gray-900">{creditInfo?.credits.monthly || 0}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500">Used</p>
-                  <p className="text-2xl font-bold text-gray-900">{creditInfo?.credits.used || 0}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500">Rollover</p>
-                  <p className="text-2xl font-bold text-gray-900">{creditInfo?.credits.rollover || 0}</p>
-                </div>
-                <div className="bg-indigo-50 rounded-lg p-4">
-                  <p className="text-sm text-indigo-600">Remaining</p>
-                  <p className="text-2xl font-bold text-indigo-600">{creditInfo?.credits.remaining || 0}</p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Need More Credits?</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border rounded-lg p-4 hover:border-indigo-300 transition-colors">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-gray-900">40 Credits</p>
-                      <p className="text-sm text-gray-500">$10.00 - Expires in 30 days</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyOverage("small")}
-                      disabled={buyingOverage === "small"}
-                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                      {buyingOverage === "small" ? "..." : "Buy"}
-                    </button>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: 24 }}>
+          {/* Main Content */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            {/* Current Plan Card */}
+            <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+                <div>
+                  <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#111827", margin: "0 0 4px 0" }}>Current Plan</h2>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
+                    <span style={{ fontSize: "1.75rem", fontWeight: 700, color: "#111827" }}>
+                      {subscriptionDetails?.tierName || creditInfo?.subscription.tierName || "—"}
+                    </span>
+                    <span style={{
+                      padding: "4px 12px",
+                      borderRadius: 100,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      background: statusColors.bg,
+                      color: statusColors.text,
+                    }}>
+                      {subscriptionDetails?.status || creditInfo?.subscription.status || "—"}
+                    </span>
                   </div>
                 </div>
-                <div className="border rounded-lg p-4 hover:border-indigo-300 transition-colors relative">
-                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">Best Value</span>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-gray-900">100 Credits</p>
-                      <p className="text-sm text-gray-500">$20.00 - Expires in 30 days</p>
-                    </div>
-                    <button
-                      onClick={() => handleBuyOverage("large")}
-                      disabled={buyingOverage === "large"}
-                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                      {buyingOverage === "large" ? "..." : "Buy"}
-                    </button>
-                  </div>
+                <button
+                  onClick={handleManageBilling}
+                  disabled={portalLoading}
+                  style={{
+                    padding: "10px 20px",
+                    background: "#6366f1",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    cursor: portalLoading ? "not-allowed" : "pointer",
+                    opacity: portalLoading ? 0.7 : 1,
+                  }}
+                >
+                  {portalLoading ? "Loading..." : "Manage Subscription"}
+                </button>
+              </div>
+
+              {subscriptionDetails?.cancelAtPeriodEnd && (
+                <div style={{ background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <p style={{ color: "#92400e", margin: 0, fontSize: "0.875rem" }}>
+                    ⚠️ Your subscription will cancel at the end of the billing period.
+                  </p>
+                </div>
+              )}
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+                <div style={{ background: "#f9fafb", borderRadius: 12, padding: 16 }}>
+                  <p style={{ color: "#6b7280", fontSize: "0.875rem", margin: "0 0 4px 0" }}>Next billing date</p>
+                  <p style={{ color: "#111827", fontWeight: 600, fontSize: "1.125rem", margin: 0 }}>
+                    {formatDate(subscriptionDetails?.currentPeriodEnd || null)}
+                  </p>
+                </div>
+                <div style={{ background: "#f9fafb", borderRadius: 12, padding: 16 }}>
+                  <p style={{ color: "#6b7280", fontSize: "0.875rem", margin: "0 0 4px 0" }}>Amount</p>
+                  <p style={{ color: "#111827", fontWeight: 600, fontSize: "1.125rem", margin: 0 }}>
+                    {subscriptionDetails?.monthlyPrice ? formatCurrency(subscriptionDetails.monthlyPrice) : "—"}/mo
+                  </p>
+                </div>
+                <div style={{ background: "#f9fafb", borderRadius: 12, padding: 16 }}>
+                  <p style={{ color: "#6b7280", fontSize: "0.875rem", margin: "0 0 4px 0" }}>Billing period</p>
+                  <p style={{ color: "#111827", fontWeight: 600, fontSize: "1.125rem", margin: 0, textTransform: "capitalize" }}>
+                    {subscriptionDetails?.billingPeriod || "—"}
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <button
-                onClick={handleManageBilling}
-                className="w-full py-3 px-4 text-left rounded-lg border hover:bg-gray-50 transition-colors"
-              >
-                <p className="font-medium text-gray-900">Manage Subscription</p>
-                <p className="text-sm text-gray-500">Update payment, change plan</p>
-              </button>
-              <Link href="/settings/team" className="block w-full py-3 px-4 text-left rounded-lg border hover:bg-gray-50 transition-colors">
-                <p className="font-medium text-gray-900">Team Settings</p>
-                <p className="text-sm text-gray-500">Invite members, manage access</p>
-              </Link>
-              <Link href="/" className="block w-full py-3 px-4 text-left rounded-lg border hover:bg-gray-50 transition-colors">
-                <p className="font-medium text-gray-900">Generate Content</p>
-                <p className="text-sm text-gray-500">Start creating with AI</p>
-              </Link>
+            {/* Payment Method Card */}
+            <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#111827", margin: 0 }}>Payment Method</h2>
+                <button
+                  onClick={handleManageBilling}
+                  style={{
+                    padding: "8px 16px",
+                    background: "transparent",
+                    color: "#6366f1",
+                    border: "1px solid #6366f1",
+                    borderRadius: 8,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Update
+                </button>
+              </div>
+
+              {subscriptionDetails?.paymentMethod ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{
+                    width: 48,
+                    height: 32,
+                    background: "#f3f4f6",
+                    borderRadius: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    color: "#374151",
+                    textTransform: "uppercase",
+                  }}>
+                    {subscriptionDetails.paymentMethod.brand}
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500, color: "#111827" }}>
+                      •••• •••• •••• {subscriptionDetails.paymentMethod.last4}
+                    </p>
+                    <p style={{ margin: "2px 0 0 0", fontSize: "0.875rem", color: "#6b7280" }}>
+                      Expires {subscriptionDetails.paymentMethod.expMonth}/{subscriptionDetails.paymentMethod.expYear}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280", margin: 0 }}>No payment method on file</p>
+              )}
             </div>
-          </div>
-        </div>
 
-        <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Transactions</h2>
-          {transactions.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No transactions yet</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {transactions.map((tx) => (
-                    <tr key={tx.id}>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                          tx.type === "generation" ? "bg-blue-100 text-blue-800" :
-                          tx.type === "purchase" ? "bg-green-100 text-green-800" :
-                          tx.type === "monthly_allocation" ? "bg-purple-100 text-purple-800" :
-                          "bg-gray-100 text-gray-800"
-                        }`}>
-                          {tx.type.replace("_", " ")}
+            {/* Invoice History */}
+            <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24 }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#111827", margin: "0 0 16px 0" }}>Invoice History</h2>
+
+              {subscriptionDetails?.invoices && subscriptionDetails.invoices.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {subscriptionDetails.invoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: 12,
+                        borderRadius: 8,
+                        background: "#f9fafb",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <span style={{ color: "#6b7280", fontSize: "0.875rem", minWidth: 100 }}>
+                          {formatDate(invoice.date)}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{tx.description || "-"}</td>
-                      <td className={`px-4 py-3 text-sm text-right font-medium ${tx.amount > 0 ? "text-green-600" : "text-red-600"}`}>
-                        {tx.amount > 0 ? "+" : ""}{tx.amount}
-                      </td>
-                    </tr>
+                        <span style={{
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          fontSize: "0.75rem",
+                          fontWeight: 500,
+                          textTransform: "capitalize",
+                          background: invoice.status === "paid" ? "#dcfce7" : "#f3f4f6",
+                          color: invoice.status === "paid" ? "#166534" : "#374151",
+                        }}>
+                          {invoice.status}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <span style={{ fontWeight: 600, color: "#111827" }}>
+                          ${invoice.amount.toFixed(2)}
+                        </span>
+                        {invoice.pdfUrl && (
+                          <a
+                            href={invoice.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#6366f1", fontSize: "0.875rem", textDecoration: "none" }}
+                          >
+                            Download
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              ) : (
+                <p style={{ color: "#6b7280", margin: 0, textAlign: "center", padding: 24 }}>No invoices yet</p>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Sidebar */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            {/* Credits Card */}
+            <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24 }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#111827", margin: "0 0 16px 0" }}>Credits</h2>
+
+              <div style={{ textAlign: "center", padding: "16px 0", marginBottom: 16 }}>
+                <p style={{ fontSize: "3rem", fontWeight: 700, color: "#6366f1", margin: 0 }}>
+                  {creditInfo?.credits.remaining || 0}
+                </p>
+                <p style={{ color: "#6b7280", fontSize: "0.875rem", margin: "4px 0 0 0" }}>credits remaining</p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+                <div style={{ background: "#f9fafb", borderRadius: 8, padding: 12, textAlign: "center" }}>
+                  <p style={{ color: "#6b7280", fontSize: "0.75rem", margin: 0 }}>Monthly</p>
+                  <p style={{ fontWeight: 600, color: "#111827", margin: "4px 0 0 0" }}>{creditInfo?.credits.monthly || 0}</p>
+                </div>
+                <div style={{ background: "#f9fafb", borderRadius: 8, padding: 12, textAlign: "center" }}>
+                  <p style={{ color: "#6b7280", fontSize: "0.75rem", margin: 0 }}>Used</p>
+                  <p style={{ fontWeight: 600, color: "#111827", margin: "4px 0 0 0" }}>{creditInfo?.credits.used || 0}</p>
+                </div>
+                <div style={{ background: "#f9fafb", borderRadius: 8, padding: 12, textAlign: "center" }}>
+                  <p style={{ color: "#6b7280", fontSize: "0.75rem", margin: 0 }}>Rollover</p>
+                  <p style={{ fontWeight: 600, color: "#111827", margin: "4px 0 0 0" }}>{creditInfo?.credits.rollover || 0}</p>
+                </div>
+                <div style={{ background: "#f9fafb", borderRadius: 8, padding: 12, textAlign: "center" }}>
+                  <p style={{ color: "#6b7280", fontSize: "0.75rem", margin: 0 }}>Overage</p>
+                  <p style={{ fontWeight: 600, color: "#111827", margin: "4px 0 0 0" }}>{creditInfo?.credits.overage || 0}</p>
+                </div>
+              </div>
+
+              {creditInfo?.lowCreditWarning && (
+                <div style={{ background: "#fef3c7", borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <p style={{ color: "#92400e", fontSize: "0.875rem", margin: 0 }}>⚠️ Running low on credits</p>
+                </div>
+              )}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button
+                  onClick={() => handleBuyOverage("small")}
+                  disabled={buyingOverage === "small"}
+                  style={{
+                    padding: 12,
+                    background: "#f9fafb",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>40 Credits</p>
+                    <p style={{ margin: "2px 0 0 0", fontSize: "0.875rem", color: "#6b7280" }}>$10.00</p>
+                  </div>
+                  <span style={{ color: "#6366f1", fontWeight: 500 }}>
+                    {buyingOverage === "small" ? "..." : "Buy"}
+                  </span>
+                </button>
+                <button
+                  onClick={() => handleBuyOverage("large")}
+                  disabled={buyingOverage === "large"}
+                  style={{
+                    padding: 12,
+                    background: "#f0f9ff",
+                    border: "1px solid #bae6fd",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>100 Credits <span style={{ fontSize: "0.75rem", color: "#0369a1" }}>Best value</span></p>
+                    <p style={{ margin: "2px 0 0 0", fontSize: "0.875rem", color: "#6b7280" }}>$20.00</p>
+                  </div>
+                  <span style={{ color: "#6366f1", fontWeight: 500 }}>
+                    {buyingOverage === "large" ? "..." : "Buy"}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Upgrade Options */}
+            <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24 }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#111827", margin: "0 0 16px 0" }}>Change Plan</h2>
+              <p style={{ color: "#6b7280", fontSize: "0.875rem", marginBottom: 16 }}>
+                Upgrade or downgrade your subscription
+              </p>
+              <button
+                onClick={handleManageBilling}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                View Plans
+              </button>
+            </div>
+
+            {/* Quick Links */}
+            <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24 }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#111827", margin: "0 0 16px 0" }}>Quick Links</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <Link href="/settings/team" style={{
+                  padding: 12,
+                  borderRadius: 8,
+                  border: "1px solid #e5e7eb",
+                  textDecoration: "none",
+                  color: "#111827",
+                  display: "block",
+                }}>
+                  <p style={{ margin: 0, fontWeight: 500 }}>Team Settings</p>
+                  <p style={{ margin: "2px 0 0 0", fontSize: "0.875rem", color: "#6b7280" }}>Manage members</p>
+                </Link>
+                <Link href="/" style={{
+                  padding: 12,
+                  borderRadius: 8,
+                  border: "1px solid #e5e7eb",
+                  textDecoration: "none",
+                  color: "#111827",
+                  display: "block",
+                }}>
+                  <p style={{ margin: 0, fontWeight: 500 }}>Generate Content</p>
+                  <p style={{ margin: "2px 0 0 0", fontSize: "0.875rem", color: "#6b7280" }}>Start creating</p>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
