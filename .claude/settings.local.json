@@ -23,7 +23,8 @@
       "Bash(npx tsc:*)",
       "Bash(git push:*)",
       "Bash(curl -X POST https://app.kynex.ai/api/setup/promote-superadmin )",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(xxd:*)"
     ],
     "deny": [],
     "ask": []

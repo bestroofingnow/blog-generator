@@ -30,9 +30,149 @@ export const users = pgTable("users", {
   emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
   password: text("password"), // For credentials auth
-  role: text("role").default("user").notNull(), // admin | user
+  role: text("role").default("user").notNull(), // superadmin | admin | user
+  // Organization/Team fields
+  organizationId: uuid("organization_id"), // Which organization they belong to
+  memberRole: text("member_role"), // owner | editor | viewer (for team members)
+  status: text("status").default("active"), // active | pending | inactive
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Organization roles
+export type MemberRole = "owner" | "editor" | "viewer";
+export type UserStatus = "active" | "pending" | "inactive";
+
+// ============ ORGANIZATION & SUBSCRIPTION TABLES ============
+
+// Organizations (multi-user accounts)
+export const organizations = pgTable("organizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  ownerId: uuid("owner_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // Subscription info
+  subscriptionTier: text("subscription_tier").default("starter"), // starter | pro | agency | free
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status").default("trialing"), // active | trialing | past_due | canceled | unpaid
+  // Credit tracking
+  monthlyCredits: integer("monthly_credits").default(200), // Based on tier
+  creditsUsed: integer("credits_used").default(0), // Current month usage
+  rolloverCredits: integer("rollover_credits").default(0), // Unused from previous month (max 30 days)
+  overageCredits: integer("overage_credits").default(0), // Purchased overage credits
+  billingCycleStart: timestamp("billing_cycle_start").defaultNow(),
+  // Team limits
+  maxTeamMembers: integer("max_team_members").default(3), // 3 for starter/pro, unlimited for agency
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Subscription tiers
+export type SubscriptionTier = "free" | "starter" | "pro" | "agency";
+export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled" | "unpaid";
+
+// Credit transactions - track all credit changes
+export const creditTransactions = pgTable("credit_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "set null" }), // Who triggered this
+  amount: integer("amount").notNull(), // Positive = added, negative = used
+  type: text("type").notNull(), // generation | purchase | refund | expiration | monthly_allocation | rollover
+  description: text("description"),
+  // Balance tracking
+  balanceBefore: integer("balance_before"),
+  balanceAfter: integer("balance_after"),
+  // For overage credits
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CreditTransactionType =
+  | "generation"
+  | "purchase"
+  | "refund"
+  | "expiration"
+  | "monthly_allocation"
+  | "rollover"
+  | "admin_adjustment";
+
+// Overage purchases - track individual overage credit packs
+export const overagePurchases = pgTable("overage_purchases", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "set null" }), // Who purchased
+  // Purchase details
+  creditsPurchased: integer("credits_purchased").notNull(),
+  creditsRemaining: integer("credits_remaining").notNull(),
+  pricePaid: integer("price_paid").notNull(), // In cents
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  // Expiration
+  expiresAt: timestamp("expires_at").notNull(), // 30 days from purchase
+  status: text("status").default("active"), // active | expired | depleted
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type OverageStatus = "active" | "expired" | "depleted";
+
+// Team invitations
+export const teamInvitations = pgTable("team_invitations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  invitedBy: uuid("invited_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  role: text("role").notNull(), // editor | viewer
+  token: text("token").notNull().unique(), // Unique invitation token
+  status: text("status").default("pending"), // pending | accepted | expired | revoked
+  expiresAt: timestamp("expires_at").notNull(), // 7 days from creation
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type InvitationStatus = "pending" | "accepted" | "expired" | "revoked";
+
+// Audit logs - track all admin and important actions
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // Who performed the action
+  actorId: uuid("actor_id")
+    .references(() => users.id, { onDelete: "set null" }),
+  actorEmail: text("actor_email"), // Store email in case user is deleted
+  actorRole: text("actor_role"),
+  // What was affected
+  targetType: text("target_type").notNull(), // user | organization | subscription | credits
+  targetId: uuid("target_id"),
+  targetEmail: text("target_email"), // For user targets
+  // Action details
+  action: text("action").notNull(), // create | update | delete | login | password_reset | credit_adjustment | tier_change | invitation_sent
+  details: jsonb("details"), // Additional context
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AuditAction =
+  | "create"
+  | "update"
+  | "delete"
+  | "login"
+  | "password_reset"
+  | "credit_adjustment"
+  | "tier_change"
+  | "invitation_sent"
+  | "invitation_accepted"
+  | "team_member_removed";
 
 // User role types
 export type UserRole = "superadmin" | "admin" | "user";
@@ -412,6 +552,36 @@ export const googleConnections = pgTable("google_connections", {
 export type GoogleConnection = typeof googleConnections.$inferSelect;
 export type NewGoogleConnection = typeof googleConnections.$inferInsert;
 
+// Search Ads 360 connections - per user OAuth tokens for ad management
+export const adsConnections = pgTable("ads_connections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique() // One connection per user
+    .references(() => users.id, { onDelete: "cascade" }),
+  // OAuth tokens
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at"),
+  tokenType: text("token_type").default("Bearer"),
+  scope: text("scope"),
+  // Connected properties
+  advertiserId: text("advertiser_id"), // Selected SA360 advertiser
+  advertiserName: text("advertiser_name"),
+  // Connection metadata
+  connectedEmail: text("connected_email"), // Email of the Google account connected
+  connectedAt: timestamp("connected_at").defaultNow(),
+  lastRefreshedAt: timestamp("last_refreshed_at"),
+  // Status
+  isActive: boolean("is_active").default(true),
+  errorMessage: text("error_message"), // If token refresh failed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type AdsConnection = typeof adsConnections.$inferSelect;
+export type NewAdsConnection = typeof adsConnections.$inferInsert;
+
 // ============ CONVERSATIONAL AI CHAT TABLES ============
 
 // Conversations - chat sessions
@@ -456,6 +626,18 @@ export type PasswordResetAttempt = typeof passwordResetAttempts.$inferSelect;
 export type KnowledgeBaseEntry = typeof knowledgeBase.$inferSelect;
 export type NewKnowledgeBaseEntry = typeof knowledgeBase.$inferInsert;
 export type KnowledgeBaseHistoryEntry = typeof knowledgeBaseHistory.$inferSelect;
+
+// Organization & Subscription types
+export type Organization = typeof organizations.$inferSelect;
+export type NewOrganization = typeof organizations.$inferInsert;
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
+export type NewCreditTransaction = typeof creditTransactions.$inferInsert;
+export type OveragePurchase = typeof overagePurchases.$inferSelect;
+export type NewOveragePurchase = typeof overagePurchases.$inferInsert;
+export type TeamInvitation = typeof teamInvitations.$inferSelect;
+export type NewTeamInvitation = typeof teamInvitations.$inferInsert;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;
 
 // Automation types
 export type DailyUsage = typeof dailyUsage.$inferSelect;

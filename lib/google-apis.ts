@@ -4,7 +4,7 @@
 // Now with per-user OAuth support for multi-tenant SaaS
 
 import { google, Auth } from "googleapis";
-import { db, googleConnections, eq } from "./db";
+import { db, googleConnections, adsConnections, eq } from "./db";
 
 // ============================================
 // USER TOKEN MANAGEMENT
@@ -134,6 +134,142 @@ function createUserOAuth2Client(tokens: UserTokens): Auth.OAuth2Client {
   });
 
   return oauth2Client;
+}
+
+// ============================================
+// USER ADS TOKEN MANAGEMENT
+// ============================================
+
+// Get user's Ads connection from database
+export async function getUserAdsConnection(userId: string): Promise<UserTokens | null> {
+  try {
+    const connection = await db
+      .select()
+      .from(adsConnections)
+      .where(eq(adsConnections.userId, userId))
+      .limit(1);
+
+    if (connection.length === 0 || !connection[0].isActive) {
+      return null;
+    }
+
+    const conn = connection[0];
+
+    // Check if token is expired and needs refresh
+    if (conn.expiresAt && new Date(conn.expiresAt) < new Date()) {
+      // Token expired, try to refresh
+      const refreshed = await refreshUserAdsToken(userId, conn.refreshToken);
+      if (refreshed) {
+        return refreshed;
+      }
+      return null;
+    }
+
+    return {
+      accessToken: conn.accessToken,
+      refreshToken: conn.refreshToken,
+      expiresAt: conn.expiresAt,
+    };
+  } catch (error) {
+    console.error("[Google APIs] Error getting user ads connection:", error);
+    return null;
+  }
+}
+
+// Refresh user's ads access token
+async function refreshUserAdsToken(userId: string, refreshToken: string | null): Promise<UserTokens | null> {
+  if (!refreshToken) {
+    console.log("[Google APIs] No refresh token available for ads user:", userId);
+    // Mark connection as inactive
+    await db
+      .update(adsConnections)
+      .set({ isActive: false, errorMessage: "No refresh token - please reconnect" })
+      .where(eq(adsConnections.userId, userId));
+    return null;
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.error("[Google APIs] Missing OAuth credentials for ads refresh");
+    return null;
+  }
+
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("[Google APIs] Ads token refresh failed:", error);
+      await db
+        .update(adsConnections)
+        .set({ isActive: false, errorMessage: "Token refresh failed - please reconnect" })
+        .where(eq(adsConnections.userId, userId));
+      return null;
+    }
+
+    const data = await response.json();
+    const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+
+    // Update token in database
+    await db
+      .update(adsConnections)
+      .set({
+        accessToken: data.access_token,
+        expiresAt,
+        lastRefreshedAt: new Date(),
+        isActive: true,
+        errorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(adsConnections.userId, userId));
+
+    return {
+      accessToken: data.access_token,
+      refreshToken,
+      expiresAt,
+    };
+  } catch (error) {
+    console.error("[Google APIs] Error refreshing ads token:", error);
+    return null;
+  }
+}
+
+// Get user's ads connection details (for connection status check)
+export async function getUserAdsConnectionDetails(userId: string) {
+  try {
+    const connection = await db
+      .select()
+      .from(adsConnections)
+      .where(eq(adsConnections.userId, userId))
+      .limit(1);
+
+    if (connection.length === 0) {
+      return { connected: false };
+    }
+
+    const conn = connection[0];
+    return {
+      connected: conn.isActive,
+      connectedEmail: conn.connectedEmail,
+      advertiserId: conn.advertiserId,
+      advertiserName: conn.advertiserName,
+      error: conn.errorMessage,
+    };
+  } catch (error) {
+    console.error("[Google APIs] Error checking ads connection:", error);
+    return { connected: false };
+  }
 }
 
 // Legacy: Initialize Google Auth for service account (for backwards compatibility)
@@ -484,22 +620,33 @@ export async function requestUserIndexing(
 
 export interface PageSpeedData {
   url: string;
+  strategy: "mobile" | "desktop";
   performanceScore: number;
   accessibilityScore: number;
   bestPracticesScore: number;
   seoScore: number;
   coreWebVitals: {
-    lcp: { value: number; rating: string }; // Largest Contentful Paint
-    fid: { value: number; rating: string }; // First Input Delay
-    cls: { value: number; rating: string }; // Cumulative Layout Shift
-    fcp: { value: number; rating: string }; // First Contentful Paint
-    ttfb: { value: number; rating: string }; // Time to First Byte
+    lcp: { value: number; rating: string; displayValue: string }; // Largest Contentful Paint
+    fid: { value: number; rating: string; displayValue: string }; // First Input Delay / INP
+    cls: { value: number; rating: string; displayValue: string }; // Cumulative Layout Shift
+    fcp: { value: number; rating: string; displayValue: string }; // First Contentful Paint
+    ttfb: { value: number; rating: string; displayValue: string }; // Time to First Byte
+    si: { value: number; rating: string; displayValue: string }; // Speed Index
+    tbt: { value: number; rating: string; displayValue: string }; // Total Blocking Time
   };
+  diagnostics: Array<{
+    id: string;
+    title: string;
+    description: string;
+    score: number | null;
+    displayValue?: string;
+  }>;
   opportunities: Array<{
     title: string;
     description: string;
     savings: string;
   }>;
+  fetchTime: string;
 }
 
 export async function getPageSpeedInsights(
@@ -535,18 +682,31 @@ export async function getPageSpeedInsights(
     const categories = lighthouse?.categories || {};
     const audits = lighthouse?.audits || {};
 
-    // Extract Core Web Vitals
+    // Rating helper functions
     const getLcpRating = (ms: number) => ms <= 2500 ? "good" : ms <= 4000 ? "needs-improvement" : "poor";
     const getFidRating = (ms: number) => ms <= 100 ? "good" : ms <= 300 ? "needs-improvement" : "poor";
     const getClsRating = (score: number) => score <= 0.1 ? "good" : score <= 0.25 ? "needs-improvement" : "poor";
     const getFcpRating = (ms: number) => ms <= 1800 ? "good" : ms <= 3000 ? "needs-improvement" : "poor";
     const getTtfbRating = (ms: number) => ms <= 800 ? "good" : ms <= 1800 ? "needs-improvement" : "poor";
+    const getSiRating = (ms: number) => ms <= 3400 ? "good" : ms <= 5800 ? "needs-improvement" : "poor";
+    const getTbtRating = (ms: number) => ms <= 200 ? "good" : ms <= 600 ? "needs-improvement" : "poor";
 
-    const lcpValue = audits["largest-contentful-paint"]?.numericValue || 0;
-    const fidValue = audits["max-potential-fid"]?.numericValue || 0;
-    const clsValue = audits["cumulative-layout-shift"]?.numericValue || 0;
-    const fcpValue = audits["first-contentful-paint"]?.numericValue || 0;
-    const ttfbValue = audits["server-response-time"]?.numericValue || 0;
+    // Extract metric values and display values
+    const lcpAudit = audits["largest-contentful-paint"] || {};
+    const fidAudit = audits["max-potential-fid"] || {};
+    const clsAudit = audits["cumulative-layout-shift"] || {};
+    const fcpAudit = audits["first-contentful-paint"] || {};
+    const ttfbAudit = audits["server-response-time"] || {};
+    const siAudit = audits["speed-index"] || {};
+    const tbtAudit = audits["total-blocking-time"] || {};
+
+    const lcpValue = lcpAudit.numericValue || 0;
+    const fidValue = fidAudit.numericValue || 0;
+    const clsValue = clsAudit.numericValue || 0;
+    const fcpValue = fcpAudit.numericValue || 0;
+    const ttfbValue = ttfbAudit.numericValue || 0;
+    const siValue = siAudit.numericValue || 0;
+    const tbtValue = tbtAudit.numericValue || 0;
 
     // Extract opportunities
     const opportunities: PageSpeedData["opportunities"] = [];
@@ -557,11 +717,20 @@ export async function getPageSpeedInsights(
       "modern-image-formats",
       "efficiently-encode-images",
       "defer-offscreen-images",
+      "uses-responsive-images",
+      "offscreen-images",
+      "unminified-css",
+      "unminified-javascript",
+      "uses-text-compression",
+      "uses-rel-preconnect",
+      "server-response-time",
+      "redirects",
+      "uses-optimized-images",
     ];
 
     for (const auditId of opportunityAudits) {
       const audit = audits[auditId];
-      if (audit && audit.score !== null && audit.score < 1) {
+      if (audit && audit.score !== null && audit.score < 1 && audit.details?.overallSavingsMs) {
         opportunities.push({
           title: audit.title || auditId,
           description: audit.description || "",
@@ -570,20 +739,86 @@ export async function getPageSpeedInsights(
       }
     }
 
+    // Extract diagnostics (audits with details)
+    const diagnostics: PageSpeedData["diagnostics"] = [];
+    const diagnosticAudits = [
+      "dom-size",
+      "critical-request-chains",
+      "largest-contentful-paint-element",
+      "layout-shift-elements",
+      "long-tasks",
+      "non-composited-animations",
+      "unsized-images",
+      "viewport",
+      "font-display",
+      "third-party-summary",
+      "mainthread-work-breakdown",
+      "bootup-time",
+      "uses-passive-event-listeners",
+      "no-document-write",
+      "js-libraries",
+    ];
+
+    for (const auditId of diagnosticAudits) {
+      const audit = audits[auditId];
+      if (audit && audit.title) {
+        diagnostics.push({
+          id: auditId,
+          title: audit.title,
+          description: audit.description || "",
+          score: audit.score,
+          displayValue: audit.displayValue,
+        });
+      }
+    }
+
     return {
       url,
+      strategy,
       performanceScore: Math.round((categories.performance?.score || 0) * 100),
       accessibilityScore: Math.round((categories.accessibility?.score || 0) * 100),
       bestPracticesScore: Math.round((categories["best-practices"]?.score || 0) * 100),
       seoScore: Math.round((categories.seo?.score || 0) * 100),
       coreWebVitals: {
-        lcp: { value: Math.round(lcpValue), rating: getLcpRating(lcpValue) },
-        fid: { value: Math.round(fidValue), rating: getFidRating(fidValue) },
-        cls: { value: Math.round(clsValue * 1000) / 1000, rating: getClsRating(clsValue) },
-        fcp: { value: Math.round(fcpValue), rating: getFcpRating(fcpValue) },
-        ttfb: { value: Math.round(ttfbValue), rating: getTtfbRating(ttfbValue) },
+        lcp: {
+          value: Math.round(lcpValue),
+          rating: getLcpRating(lcpValue),
+          displayValue: lcpAudit.displayValue || `${(lcpValue / 1000).toFixed(1)} s`
+        },
+        fid: {
+          value: Math.round(fidValue),
+          rating: getFidRating(fidValue),
+          displayValue: fidAudit.displayValue || `${Math.round(fidValue)} ms`
+        },
+        cls: {
+          value: Math.round(clsValue * 1000) / 1000,
+          rating: getClsRating(clsValue),
+          displayValue: clsAudit.displayValue || clsValue.toFixed(3)
+        },
+        fcp: {
+          value: Math.round(fcpValue),
+          rating: getFcpRating(fcpValue),
+          displayValue: fcpAudit.displayValue || `${(fcpValue / 1000).toFixed(1)} s`
+        },
+        ttfb: {
+          value: Math.round(ttfbValue),
+          rating: getTtfbRating(ttfbValue),
+          displayValue: ttfbAudit.displayValue || `${Math.round(ttfbValue)} ms`
+        },
+        si: {
+          value: Math.round(siValue),
+          rating: getSiRating(siValue),
+          displayValue: siAudit.displayValue || `${(siValue / 1000).toFixed(1)} s`
+        },
+        tbt: {
+          value: Math.round(tbtValue),
+          rating: getTbtRating(tbtValue),
+          displayValue: tbtAudit.displayValue || `${Math.round(tbtValue)} ms`
+        },
       },
-      opportunities: opportunities.slice(0, 5),
+      diagnostics: diagnostics.filter(d => d.score !== null && d.score < 1).slice(0, 10),
+      opportunities: opportunities.slice(0, 8),
+      fetchTime: lighthouse?.fetchTime || new Date().toISOString(),
     };
   } catch (error) {
     console.error("[PageSpeed] Error:", error);

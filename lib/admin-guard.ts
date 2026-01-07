@@ -53,6 +53,26 @@ export async function requireAdmin(
   return { authorized: true, session: session as { user: SessionUser } };
 }
 
+// API route guard - returns 403 if not superadmin
+export async function requireSuperAdmin(
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<{ authorized: boolean; session: { user: SessionUser } | null }> {
+  const session = await getServerSession(req, res, authOptions);
+
+  if (!session?.user) {
+    res.status(401).json({ error: "Unauthorized - Not logged in" });
+    return { authorized: false, session: null };
+  }
+
+  if (session.user.role !== "superadmin") {
+    res.status(403).json({ error: "Forbidden - Super Admin access required" });
+    return { authorized: false, session: null };
+  }
+
+  return { authorized: true, session: session as { user: SessionUser } };
+}
+
 // API route guard - returns 401 if not authenticated
 export async function requireAuth(
   req: NextApiRequest,

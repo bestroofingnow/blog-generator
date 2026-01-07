@@ -54,7 +54,11 @@ export default async function handler(
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = `${process.env.NEXTAUTH_URL}/api/seo/callback`;
+    const baseUrl = process.env.NEXTAUTH_URL?.trim();
+    const redirectUri = `${baseUrl}/api/seo/callback`;
+
+    console.log("[SEO Callback] Processing OAuth callback");
+    console.log("[SEO Callback] Redirect URI for token exchange:", redirectUri);
 
     if (!clientId || !clientSecret) {
       throw new Error("Google OAuth not configured");

@@ -1,14 +1,14 @@
-// pages/api/seo/connect.ts
-// Initiates OAuth flow for Google Search Console connection
+// pages/api/seo/ads-connect.ts
+// Initiates OAuth flow for Search Ads 360 connection
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 
-// Scopes needed for SEO features
+// Scopes needed for Search Ads 360
+// See: https://developers.google.com/search-ads/v2/authorization
 const SCOPES = [
-  "https://www.googleapis.com/auth/webmasters.readonly", // Search Console read
-  "https://www.googleapis.com/auth/indexing", // URL indexing
+  "https://www.googleapis.com/auth/doubleclicksearch", // Search Ads 360 access
   "https://www.googleapis.com/auth/userinfo.email", // Get user's email
 ].join(" ");
 
@@ -27,19 +27,17 @@ export default async function handler(
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const baseUrl = process.env.NEXTAUTH_URL?.trim(); // Trim any whitespace/newlines
-  const redirectUri = `${baseUrl}/api/seo/callback`;
+  const baseUrl = process.env.NEXTAUTH_URL?.trim();
+  const redirectUri = `${baseUrl}/api/seo/ads-callback`;
 
-  console.log("[SEO Connect] NEXTAUTH_URL:", JSON.stringify(baseUrl));
-  console.log("[SEO Connect] Redirect URI:", redirectUri);
-  console.log("[SEO Connect] Client ID configured:", !!clientId);
+  console.log("[Ads Connect] Initiating OAuth flow");
+  console.log("[Ads Connect] Redirect URI:", redirectUri);
 
   if (!clientId) {
     return res.status(500).json({ error: "Google OAuth not configured" });
   }
 
   if (!baseUrl) {
-    console.error("[SEO Connect] NEXTAUTH_URL is not set!");
     return res.status(500).json({ error: "NEXTAUTH_URL not configured" });
   }
 
@@ -47,6 +45,7 @@ export default async function handler(
   const state = Buffer.from(JSON.stringify({
     userId: session.user.id,
     returnUrl: req.query.returnUrl || "/seo-tools",
+    connectionType: "ads", // Differentiate from search console
   })).toString("base64");
 
   // Build OAuth URL
@@ -59,8 +58,7 @@ export default async function handler(
   authUrl.searchParams.set("prompt", "consent"); // Force consent to get refresh token
   authUrl.searchParams.set("state", state);
 
-  console.log("[SEO Connect] Redirecting to Google OAuth...");
-  console.log("[SEO Connect] Full auth URL:", authUrl.toString());
+  console.log("[Ads Connect] Redirecting to Google OAuth...");
 
   // Redirect to Google
   res.redirect(authUrl.toString());
