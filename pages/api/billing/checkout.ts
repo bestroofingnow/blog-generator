@@ -57,9 +57,21 @@ export default async function handler(
 
   const tierConfig = SUBSCRIPTION_TIERS[tier];
   const isAnnual = billingPeriod === "annual";
-  const priceId = isAnnual ? tierConfig.stripeAnnualPriceId : tierConfig.stripePriceId;
 
-  console.log(`[Checkout] Using priceId: ${priceId}`);
+  // Get price ID directly from env vars as fallback since module-level vars may be empty
+  let priceId = isAnnual ? tierConfig.stripeAnnualPriceId : tierConfig.stripePriceId;
+
+  // Fallback to direct env var lookup if module-level is empty
+  if (!priceId) {
+    const envVarName = isAnnual
+      ? `STRIPE_${tier.toUpperCase()}_ANNUAL_PRICE_ID`
+      : `STRIPE_${tier.toUpperCase()}_PRICE_ID`;
+    priceId = process.env[envVarName] || "";
+    console.log(`[Checkout] Module priceId was empty, using env var ${envVarName}: ${priceId ? "found" : "not found"}`);
+  }
+
+  console.log(`[Checkout] Using priceId: ${priceId ? priceId.substring(0, 20) + "..." : "EMPTY"}`);
+  console.log(`[Checkout] All env vars starting with STRIPE: ${Object.keys(process.env).filter(k => k.startsWith('STRIPE')).join(', ')}`);
 
   if (!priceId) {
     console.error(`[Checkout] No price ID configured for tier ${tier}, isAnnual: ${isAnnual}`);
@@ -217,6 +229,16 @@ export default async function handler(
     });
   } catch (error) {
     console.error("[Checkout] Error:", error);
+    // Log full error details for Stripe errors
+    if (error && typeof error === "object") {
+      const stripeError = error as { type?: string; code?: string; message?: string; raw?: unknown };
+      console.error("[Checkout] Error type:", stripeError.type);
+      console.error("[Checkout] Error code:", stripeError.code);
+      console.error("[Checkout] Error message:", stripeError.message);
+      if (stripeError.raw) {
+        console.error("[Checkout] Raw error:", JSON.stringify(stripeError.raw, null, 2));
+      }
+    }
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Failed to create checkout session",
