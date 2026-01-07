@@ -66,7 +66,7 @@ export default async function handler(
     const envVarName = isAnnual
       ? `STRIPE_${tier.toUpperCase()}_ANNUAL_PRICE_ID`
       : `STRIPE_${tier.toUpperCase()}_PRICE_ID`;
-    priceId = process.env[envVarName] || "";
+    priceId = (process.env[envVarName] || "").trim(); // Trim to handle newlines
     console.log(`[Checkout] Module priceId was empty, using env var ${envVarName}: ${priceId ? "found" : "not found"}`);
   }
 

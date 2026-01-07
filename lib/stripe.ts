@@ -9,6 +9,9 @@ export const stripe = new Stripe((process.env.STRIPE_SECRET_KEY || "").trim(), {
   typescript: true,
 });
 
+// Helper to safely get and trim env vars (handles newlines from Vercel)
+const getEnv = (key: string): string => (process.env[key] || "").trim();
+
 // Subscription tier configurations
 export const SUBSCRIPTION_TIERS = {
   starter: {
@@ -17,8 +20,8 @@ export const SUBSCRIPTION_TIERS = {
     priceMonthly: 3900, // $39.00 in cents
     priceAnnual: 39000, // $390.00 in cents (2 months free)
     maxTeamMembers: 3,
-    stripePriceId: process.env.STRIPE_STARTER_PRICE_ID || "",
-    stripeAnnualPriceId: process.env.STRIPE_STARTER_ANNUAL_PRICE_ID || "",
+    stripePriceId: getEnv("STRIPE_STARTER_PRICE_ID"),
+    stripeAnnualPriceId: getEnv("STRIPE_STARTER_ANNUAL_PRICE_ID"),
     features: [
       "200 credits per month",
       "Blog generation",
@@ -34,8 +37,8 @@ export const SUBSCRIPTION_TIERS = {
     priceMonthly: 9900, // $99.00 in cents
     priceAnnual: 99000, // $990.00 in cents (2 months free)
     maxTeamMembers: 3,
-    stripePriceId: process.env.STRIPE_PRO_PRICE_ID || "",
-    stripeAnnualPriceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || "",
+    stripePriceId: getEnv("STRIPE_PRO_PRICE_ID"),
+    stripeAnnualPriceId: getEnv("STRIPE_PRO_ANNUAL_PRICE_ID"),
     features: [
       "600 credits per month",
       "Everything in Starter",
@@ -51,8 +54,8 @@ export const SUBSCRIPTION_TIERS = {
     priceMonthly: 29900, // $299.00 in cents
     priceAnnual: 299000, // $2,990.00 in cents (2 months free)
     maxTeamMembers: -1, // Unlimited
-    stripePriceId: process.env.STRIPE_AGENCY_PRICE_ID || "",
-    stripeAnnualPriceId: process.env.STRIPE_AGENCY_ANNUAL_PRICE_ID || "",
+    stripePriceId: getEnv("STRIPE_AGENCY_PRICE_ID"),
+    stripeAnnualPriceId: getEnv("STRIPE_AGENCY_ANNUAL_PRICE_ID"),
     features: [
       "2,000 credits per month",
       "Everything in Pro",
@@ -71,12 +74,12 @@ export const OVERAGE_PACKAGES = {
   small: {
     credits: 40,
     priceInCents: 1000, // $10.00
-    stripePriceId: process.env.STRIPE_OVERAGE_SMALL_PRICE_ID || "",
+    stripePriceId: getEnv("STRIPE_OVERAGE_SMALL_PRICE_ID"),
   },
   large: {
     credits: 100,
     priceInCents: 2000, // $20.00
-    stripePriceId: process.env.STRIPE_OVERAGE_LARGE_PRICE_ID || "",
+    stripePriceId: getEnv("STRIPE_OVERAGE_LARGE_PRICE_ID"),
   },
 } as const;
 
@@ -245,6 +248,6 @@ export function constructWebhookEvent(payload: Buffer, signature: string) {
   return stripe.webhooks.constructEvent(
     payload,
     signature,
-    process.env.STRIPE_WEBHOOK_SECRET!
+    getEnv("STRIPE_WEBHOOK_SECRET")
   );
 }
