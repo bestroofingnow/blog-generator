@@ -24,17 +24,44 @@ export default async function handler(
   }
 
   // Test Stripe API
-  let stripeApiTest = { working: false, error: "" };
+  let stripeApiTest: { working: boolean; error: string; errorType?: string; statusCode?: number } = {
+    working: false,
+    error: ""
+  };
   try {
     const customers = await stripe.customers.list({ limit: 1 });
     stripeApiTest = { working: true, error: "" };
-  } catch (err) {
-    stripeApiTest.error = err instanceof Error ? err.message : "Unknown Stripe error";
+  } catch (err: unknown) {
+    const stripeErr = err as {
+      message?: string;
+      type?: string;
+      statusCode?: number;
+      code?: string;
+      raw?: { message?: string };
+    };
+    stripeApiTest.error = stripeErr.message || "Unknown Stripe error";
+    stripeApiTest.errorType = stripeErr.type || stripeErr.code;
+    stripeApiTest.statusCode = stripeErr.statusCode;
+    console.error("[Debug] Stripe error:", JSON.stringify(stripeErr, null, 2));
   }
+
+  // Check for key format issues
+  const stripeKey = process.env.STRIPE_SECRET_KEY || "";
+  const keyDiagnostics = {
+    length: stripeKey.length,
+    prefix: stripeKey.substring(0, 7),
+    suffix: stripeKey.substring(stripeKey.length - 4),
+    hasNewline: stripeKey.includes('\n'),
+    hasCarriageReturn: stripeKey.includes('\r'),
+    hasLeadingSpace: stripeKey.startsWith(' '),
+    hasTrailingSpace: stripeKey.endsWith(' '),
+    hasQuotes: stripeKey.includes('"') || stripeKey.includes("'"),
+  };
 
   const config = {
     stripeKeyConfigured: !!process.env.STRIPE_SECRET_KEY,
     stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 7) || "NOT_SET",
+    keyDiagnostics,
     webhookSecretConfigured: !!process.env.STRIPE_WEBHOOK_SECRET,
     envVarsWithStripe: Object.keys(process.env).filter(k => k.startsWith('STRIPE')),
     tiers: {
