@@ -2953,6 +2953,23 @@ export default function Home() {
             <span className={styles.tooltip}>SEO Heatmap & Research</span>
           </button>
 
+          <button
+            type="button"
+            className={styles.sidebarItem}
+            onClick={() => router.push("/seo-tools")}
+            title="SEO Tools"
+          >
+            <span className={styles.sidebarIcon}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+                <path d="M8 11h6M11 8v6"/>
+              </svg>
+            </span>
+            <span className={styles.sidebarLabel}>SEO Tools</span>
+            <span className={styles.tooltip}>Google Search Console & Analytics</span>
+          </button>
+
           <div className={styles.sidebarDivider} />
 
           {/* Automation Group */}

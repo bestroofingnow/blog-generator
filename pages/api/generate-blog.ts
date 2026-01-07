@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+import { getUserTopQueries } from "../../lib/google-apis";
+import { db, googleConnections, eq } from "../../lib/db";
 
 interface BlogGeneratorRequest {
   topic: string;
@@ -86,8 +88,20 @@ interface GeneratedContent {
   seoData: SEOData;
 }
 
+interface SearchConsoleQuery {
+  query: string;
+  clicks: number;
+  impressions: number;
+  position: number;
+}
+
+interface SearchConsoleDataParam {
+  topQueries: SearchConsoleQuery[];
+}
+
 async function generateBlogContent(
-  request: BlogGeneratorRequest
+  request: BlogGeneratorRequest,
+  searchConsoleData?: SearchConsoleDataParam | null
 ): Promise<GeneratedContent> {
   const {
     topic,
@@ -97,6 +111,33 @@ async function generateBlogContent(
     tone = "professional yet friendly",
   } = request;
 
+  // Build SEO context from Search Console data if available
+  let seoContext = "";
+  if (searchConsoleData && searchConsoleData.topQueries.length > 0) {
+    const relevantQueries = searchConsoleData.topQueries
+      .filter(q => {
+        const lowerQuery = q.query.toLowerCase();
+        const lowerTopic = topic.toLowerCase();
+        const lowerLocation = location.toLowerCase();
+        // Find queries relevant to the topic or location
+        return lowerQuery.includes(lowerTopic.split(" ")[0]) ||
+               lowerQuery.includes(lowerLocation.split(",")[0].toLowerCase()) ||
+               lowerTopic.includes(lowerQuery.split(" ")[0]);
+      })
+      .slice(0, 10);
+
+    if (relevantQueries.length > 0) {
+      seoContext = `
+SEO OPTIMIZATION DATA (from Google Search Console):
+Your website is already ranking for these related queries. Use this data to optimize the content:
+
+${relevantQueries.map(q => `- "${q.query}" - Position: ${q.position.toFixed(1)}, Clicks: ${q.clicks}, Impressions: ${q.impressions}`).join("\n")}
+
+IMPORTANT: Naturally incorporate these ranking keywords and related phrases into the content where relevant. This helps improve existing rankings while targeting new opportunities.
+`;
+    }
+  }
+
   const userPrompt = `Generate a professional blog post about landscape lighting for Charlotte, NC area with these specifications:
 
 TOPIC: ${topic}
@@ -104,7 +145,7 @@ LOCATION: ${location}
 BLOG TYPE: ${blogType}
 NUMBER OF SECTIONS: ${numberOfSections}
 TONE: ${tone}
-
+${seoContext}
 CONTENT REQUIREMENTS:
 
 1. HEADLINE: Create an H1 title that mentions both ${location} and ${topic}, designed to appeal to homeowners considering lighting upgrades
@@ -250,7 +291,33 @@ export default async function handler(
       });
     }
 
-    const { htmlContent, seoData } = await generateBlogContent(request);
+    // Fetch SEO data from Google Search Console if connected
+    let searchConsoleData: { topQueries: Array<{ query: string; clicks: number; impressions: number; position: number }> } | null = null;
+    try {
+      const userId = session.user.id;
+      // Get user's connected site
+      const connection = await db
+        .select()
+        .from(googleConnections)
+        .where(eq(googleConnections.userId, userId))
+        .limit(1);
+
+      if (connection.length > 0 && connection[0].connectedSiteUrl) {
+        const siteUrl = connection[0].connectedSiteUrl;
+        // Fetch top queries from the last 28 days
+        const queries = await getUserTopQueries(userId, siteUrl, 28);
+        if (queries && queries.length > 0) {
+          // Take top 20 queries
+          searchConsoleData = { topQueries: queries.slice(0, 20) };
+          console.log(`[Blog Gen] Using ${Math.min(queries.length, 20)} Search Console queries for SEO optimization`);
+        }
+      }
+    } catch (seoError) {
+      // Non-fatal - continue without SEO data
+      console.log("[Blog Gen] Could not fetch Search Console data:", seoError);
+    }
+
+    const { htmlContent, seoData } = await generateBlogContent(request, searchConsoleData);
 
     return res.status(200).json({
       success: true,

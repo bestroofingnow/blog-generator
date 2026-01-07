@@ -12,6 +12,7 @@ import {
   UploadedImage,
   WordPressPost,
 } from "../../lib/wordpress";
+import { requestUserIndexing } from "../../lib/google-apis";
 
 interface UploadRequest {
   action: "test" | "upload" | "uploadMultiple" | "createPost" | "getCategories";
@@ -49,6 +50,8 @@ interface UploadResponse {
   images?: UploadedImage[];
   post?: WordPressPost;
   categories?: Array<{ id: number; name: string; slug: string }>;
+  indexingRequested?: boolean;
+  indexingError?: string;
 }
 
 export default async function handler(
@@ -135,9 +138,30 @@ export default async function handler(
           excerpt: request.post.excerpt,
         });
 
+        // Auto-index published posts
+        let indexingRequested = false;
+        let indexingError: string | undefined;
+
+        if (request.post.status === "publish" && post.link && session.user.id) {
+          try {
+            const indexResult = await requestUserIndexing(session.user.id, post.link, "URL_UPDATED");
+            indexingRequested = indexResult.success;
+            if (!indexResult.success) {
+              indexingError = indexResult.error;
+            }
+            console.log(`[WordPress] Auto-indexing ${indexingRequested ? "requested" : "failed"} for: ${post.link}`);
+          } catch (indexErr) {
+            // Non-fatal - post was still created successfully
+            console.log("[WordPress] Auto-indexing error:", indexErr);
+            indexingError = indexErr instanceof Error ? indexErr.message : "Indexing request failed";
+          }
+        }
+
         return res.status(200).json({
           success: true,
           post,
+          indexingRequested,
+          indexingError,
         });
       }
 
