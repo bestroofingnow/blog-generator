@@ -18,6 +18,7 @@ import {
 import { put } from "@vercel/blob";
 import { loadUserProfile } from "../../lib/database";
 import { BrightData, isBrightDataConfigured, SERPData } from "../../lib/brightdata";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 
 interface SEOData {
   primaryKeyword: string;
@@ -287,6 +288,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user) {
     return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
+
+  const userId = session.user.id;
+
+  // Credit check - ensure user has enough credits BEFORE starting SSE
+  const canGenerate = await hasEnoughCredits(userId, "blog_generation");
+  if (!canGenerate) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
   }
 
   // Validate required fields before setting up SSE
@@ -891,6 +903,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log("[Orchestrate] Final Step: Inserting images into content...");
     const htmlContent = insertImagesIntoContent(rawContent, imageUrls, seoData);
     console.log("[Orchestrate] Final HTML content length:", htmlContent.length);
+
+    // Deduct credit after successful generation
+    const creditResult = await deductCredits(
+      userId,
+      "blog_generation",
+      `Blog: ${topic} - ${location}`
+    );
+    if (!creditResult.success) {
+      console.error("[Orchestrate] Credit deduction failed:", creditResult.error);
+    } else {
+      console.log("[Orchestrate] Credit deducted. Remaining:", creditResult.remainingCredits);
+    }
 
     console.log("[Orchestrate] Sending complete response...");
     sendComplete(res, {

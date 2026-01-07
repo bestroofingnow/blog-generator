@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
 import { getUserTopQueries } from "../../lib/google-apis";
 import { db, googleConnections, eq } from "../../lib/db";
+import { hasEnoughCredits, deductCredits } from "../../lib/credits";
 
 interface BlogGeneratorRequest {
   topic: string;
@@ -280,6 +281,17 @@ export default async function handler(
     return res.status(401).json({ success: false, error: "Unauthorized" });
   }
 
+  const userId = session.user.id;
+
+  // Credit check - ensure user has enough credits
+  const canGenerate = await hasEnoughCredits(userId, "blog_generation");
+  if (!canGenerate) {
+    return res.status(402).json({
+      success: false,
+      error: "Insufficient credits. Please purchase more credits or upgrade your plan.",
+    });
+  }
+
   try {
     const request = req.body as BlogGeneratorRequest;
 
@@ -294,7 +306,6 @@ export default async function handler(
     // Fetch SEO data from Google Search Console if connected
     let searchConsoleData: { topQueries: Array<{ query: string; clicks: number; impressions: number; position: number }> } | null = null;
     try {
-      const userId = session.user.id;
       // Get user's connected site
       const connection = await db
         .select()
@@ -318,6 +329,18 @@ export default async function handler(
     }
 
     const { htmlContent, seoData } = await generateBlogContent(request, searchConsoleData);
+
+    // Deduct credit after successful generation
+    const creditResult = await deductCredits(
+      userId,
+      "blog_generation",
+      `Blog: ${request.topic} - ${request.location}`
+    );
+
+    if (!creditResult.success) {
+      console.error("[Blog Gen] Credit deduction failed:", creditResult.error);
+      // Still return the content but log the issue
+    }
 
     return res.status(200).json({
       success: true,
