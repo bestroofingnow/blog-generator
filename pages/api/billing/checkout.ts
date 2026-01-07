@@ -33,9 +33,14 @@ export default async function handler(
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
+  console.log("[Checkout] Starting checkout request");
+
   const session = await getServerSession(req, res, authOptions);
+  console.log("[Checkout] Session:", session ? `Found user ${session.user?.id}` : "No session");
+
   if (!session?.user?.id) {
-    return res.status(401).json({ success: false, error: "Unauthorized" });
+    console.error("[Checkout] No session found - returning 401");
+    return res.status(401).json({ success: false, error: "Unauthorized - please log in again" });
   }
 
   const { tier, billingPeriod = "monthly", promoCode } = req.body as {
@@ -43,6 +48,8 @@ export default async function handler(
     billingPeriod?: BillingPeriod;
     promoCode?: string;
   };
+
+  console.log(`[Checkout] Request params - tier: ${tier}, billingPeriod: ${billingPeriod}`);
 
   if (!tier || !SUBSCRIPTION_TIERS[tier]) {
     return res.status(400).json({ success: false, error: "Invalid subscription tier" });
@@ -52,17 +59,27 @@ export default async function handler(
   const isAnnual = billingPeriod === "annual";
   const priceId = isAnnual ? tierConfig.stripeAnnualPriceId : tierConfig.stripePriceId;
 
+  console.log(`[Checkout] Using priceId: ${priceId}`);
+
   if (!priceId) {
+    console.error(`[Checkout] No price ID configured for tier ${tier}, isAnnual: ${isAnnual}`);
     return res.status(500).json({
       success: false,
       error: "Stripe price not configured for this tier. Please contact support.",
     });
   }
 
+  // Verify Stripe is configured
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error("[Checkout] STRIPE_SECRET_KEY is not configured");
+    return res.status(500).json({ success: false, error: "Payment system not configured" });
+  }
+
   try {
     const userId = session.user.id;
 
     // Get or create user's organization
+    console.log(`[Checkout] Looking up user ${userId}`);
     const user = await db
       .select()
       .from(users)
@@ -70,8 +87,10 @@ export default async function handler(
       .limit(1);
 
     if (!user[0]) {
+      console.error(`[Checkout] User not found in database: ${userId}`);
       return res.status(404).json({ success: false, error: "User not found" });
     }
+    console.log(`[Checkout] Found user: ${user[0].email}`);
 
     let organizationId = user[0].organizationId;
     let org;
