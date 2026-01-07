@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -179,18 +180,21 @@ export default function SubscriptionGuard({ children }: SubscriptionGuardProps) 
               View Plans & Subscribe
             </Link>
 
-            <Link
-              href="/login"
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
               style={{
                 display: "block",
+                width: "100%",
+                background: "transparent",
+                border: "none",
                 color: "#64748b",
                 padding: "0.5rem",
-                textDecoration: "none",
+                cursor: "pointer",
                 fontSize: "0.875rem",
               }}
             >
               Sign in with a different account
-            </Link>
+            </button>
           </div>
         </div>
       </div>
