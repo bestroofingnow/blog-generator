@@ -24,7 +24,21 @@
       "Bash(git push:*)",
       "Bash(curl -X POST https://app.kynex.ai/api/setup/promote-superadmin )",
       "Bash(grep:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(curl:*)",
+      "Bash(printf:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git restore:*)",
+      "Bash(npm ls:*)",
+      "Bash(timeout 10 vercel logs:*)",
+      "Bash(npm info:*)",
+      "Bash(timeout 5 vercel logs:*)",
+      "Bash(while read line)",
+      "Bash(do echo \"$line\")",
+      "Bash(done)",
+      "Bash(taskkill:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
