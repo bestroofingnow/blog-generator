@@ -381,6 +381,37 @@ export const imageQaLogs = pgTable("image_qa_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ============ GOOGLE INTEGRATIONS (Per-User OAuth) ============
+
+// Google Search Console connections - per user OAuth tokens
+export const googleConnections = pgTable("google_connections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique() // One connection per user
+    .references(() => users.id, { onDelete: "cascade" }),
+  // OAuth tokens
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at"),
+  tokenType: text("token_type").default("Bearer"),
+  scope: text("scope"),
+  // Connected properties
+  connectedSiteUrl: text("connected_site_url"), // The Search Console property they selected
+  // Connection metadata
+  googleEmail: text("google_email"), // Email of the Google account connected
+  connectedAt: timestamp("connected_at").defaultNow(),
+  lastRefreshedAt: timestamp("last_refreshed_at"),
+  // Status
+  isActive: boolean("is_active").default(true),
+  errorMessage: text("error_message"), // If token refresh failed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type GoogleConnection = typeof googleConnections.$inferSelect;
+export type NewGoogleConnection = typeof googleConnections.$inferInsert;
+
 // ============ CONVERSATIONAL AI CHAT TABLES ============
 
 // Conversations - chat sessions

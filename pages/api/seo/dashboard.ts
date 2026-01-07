@@ -1,13 +1,14 @@
 // pages/api/seo/dashboard.ts
 // Combined SEO Dashboard API - Aggregates all SEO data sources
+// Uses per-user OAuth for Search Console data
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
-import { loadUserProfile } from "../../../lib/database";
+import { db, googleConnections, eq } from "../../../lib/db";
 import {
-  getTopQueries,
-  getTopPages,
+  getUserTopQueries,
+  getUserTopPages,
   getPageSpeedInsights,
   TopQuery,
   TopPage,
@@ -47,6 +48,8 @@ interface DashboardResponse {
   success: boolean;
   data?: SEODashboardData;
   error?: string;
+  needsConnection?: boolean;
+  needsSiteSelection?: boolean;
 }
 
 export default async function handler(
@@ -64,45 +67,64 @@ export default async function handler(
   }
 
   try {
-    const userId = (session.user as { id?: string }).id || session.user?.email || "";
-    const userProfile = await loadUserProfile(userId);
-    let siteUrl = userProfile?.companyProfile?.website || "";
+    const userId = session.user.id;
 
-    if (!siteUrl) {
+    // Get user's Google connection
+    const connection = await db
+      .select()
+      .from(googleConnections)
+      .where(eq(googleConnections.userId, userId))
+      .limit(1);
+
+    const googleConnection = connection[0];
+    let siteUrl = googleConnection?.connectedSiteUrl || "";
+
+    // If no site URL configured, check if they have a connection
+    if (!siteUrl && googleConnection) {
       return res.status(400).json({
         success: false,
-        error: "No website URL configured in company profile",
+        error: "Please select a website in your Google Search Console connection settings",
+        needsSiteSelection: true,
       });
     }
 
-    // Ensure URL has protocol
-    if (!siteUrl.startsWith("http://") && !siteUrl.startsWith("https://")) {
-      siteUrl = "https://" + siteUrl;
+    if (!googleConnection) {
+      return res.status(400).json({
+        success: false,
+        error: "Google Search Console not connected. Please connect your account in Settings.",
+        needsConnection: true,
+      });
     }
 
-    console.log(`[SEO Dashboard] Fetching data for ${siteUrl}`);
+    // Ensure URL has protocol for PageSpeed
+    let pageSpeedUrl = siteUrl;
+    if (pageSpeedUrl && !pageSpeedUrl.startsWith("http://") && !pageSpeedUrl.startsWith("https://")) {
+      pageSpeedUrl = "https://" + pageSpeedUrl.replace("sc-domain:", "");
+    }
+
+    console.log(`[SEO Dashboard] Fetching data for ${siteUrl} (user: ${userId})`);
 
     const days = 28;
     const dashboardData: SEODashboardData = { siteUrl };
 
-    // Fetch all data in parallel
+    // Fetch all data in parallel - using user's OAuth for Search Console
     const [topQueries, topPages, mobilePageSpeed, desktopPageSpeed] = await Promise.all([
-      getTopQueries(siteUrl, days).catch((e) => {
+      getUserTopQueries(userId, siteUrl, days).catch((e) => {
         console.log("[SEO Dashboard] Search Console not available:", e.message);
         return [] as TopQuery[];
       }),
-      getTopPages(siteUrl, days).catch((e) => {
+      getUserTopPages(userId, siteUrl, days).catch((e) => {
         console.log("[SEO Dashboard] Search Console pages not available:", e.message);
         return [] as TopPage[];
       }),
-      getPageSpeedInsights(siteUrl, "mobile").catch((e) => {
+      pageSpeedUrl ? getPageSpeedInsights(pageSpeedUrl, "mobile").catch((e) => {
         console.log("[SEO Dashboard] Mobile PageSpeed not available:", e.message);
         return null;
-      }),
-      getPageSpeedInsights(siteUrl, "desktop").catch((e) => {
+      }) : Promise.resolve(null),
+      pageSpeedUrl ? getPageSpeedInsights(pageSpeedUrl, "desktop").catch((e) => {
         console.log("[SEO Dashboard] Desktop PageSpeed not available:", e.message);
         return null;
-      }),
+      }) : Promise.resolve(null),
     ]);
 
     // Search Console data

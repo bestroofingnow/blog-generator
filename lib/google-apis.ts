@@ -1,10 +1,142 @@
 // lib/google-apis.ts
 // Google API integrations for SEO features
-// Supports: Search Console, PageSpeed Insights, Web Indexing, Search Ads 360
+// Supports: Search Console, PageSpeed Insights, Web Indexing
+// Now with per-user OAuth support for multi-tenant SaaS
 
-import { google } from "googleapis";
+import { google, Auth } from "googleapis";
+import { db, googleConnections, eq } from "./db";
 
-// Initialize Google Auth for service account
+// ============================================
+// USER TOKEN MANAGEMENT
+// ============================================
+
+interface UserTokens {
+  accessToken: string;
+  refreshToken?: string | null;
+  expiresAt?: Date | null;
+}
+
+// Get user's Google connection from database
+export async function getUserGoogleConnection(userId: string): Promise<UserTokens | null> {
+  try {
+    const connection = await db
+      .select()
+      .from(googleConnections)
+      .where(eq(googleConnections.userId, userId))
+      .limit(1);
+
+    if (connection.length === 0 || !connection[0].isActive) {
+      return null;
+    }
+
+    const conn = connection[0];
+
+    // Check if token is expired and needs refresh
+    if (conn.expiresAt && new Date(conn.expiresAt) < new Date()) {
+      // Token expired, try to refresh
+      const refreshed = await refreshUserToken(userId, conn.refreshToken);
+      if (refreshed) {
+        return refreshed;
+      }
+      return null;
+    }
+
+    return {
+      accessToken: conn.accessToken,
+      refreshToken: conn.refreshToken,
+      expiresAt: conn.expiresAt,
+    };
+  } catch (error) {
+    console.error("[Google APIs] Error getting user connection:", error);
+    return null;
+  }
+}
+
+// Refresh user's access token
+async function refreshUserToken(userId: string, refreshToken: string | null): Promise<UserTokens | null> {
+  if (!refreshToken) {
+    console.log("[Google APIs] No refresh token available for user:", userId);
+    // Mark connection as inactive
+    await db
+      .update(googleConnections)
+      .set({ isActive: false, errorMessage: "No refresh token - please reconnect" })
+      .where(eq(googleConnections.userId, userId));
+    return null;
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.error("[Google APIs] Missing OAuth credentials");
+    return null;
+  }
+
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("[Google APIs] Token refresh failed:", error);
+      await db
+        .update(googleConnections)
+        .set({ isActive: false, errorMessage: "Token refresh failed - please reconnect" })
+        .where(eq(googleConnections.userId, userId));
+      return null;
+    }
+
+    const data = await response.json();
+    const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+
+    // Update token in database
+    await db
+      .update(googleConnections)
+      .set({
+        accessToken: data.access_token,
+        expiresAt,
+        lastRefreshedAt: new Date(),
+        isActive: true,
+        errorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(googleConnections.userId, userId));
+
+    return {
+      accessToken: data.access_token,
+      refreshToken,
+      expiresAt,
+    };
+  } catch (error) {
+    console.error("[Google APIs] Error refreshing token:", error);
+    return null;
+  }
+}
+
+// Create OAuth2 client from user tokens
+function createUserOAuth2Client(tokens: UserTokens): Auth.OAuth2Client {
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET
+  );
+
+  oauth2Client.setCredentials({
+    access_token: tokens.accessToken,
+    refresh_token: tokens.refreshToken || undefined,
+  });
+
+  return oauth2Client;
+}
+
+// Legacy: Initialize Google Auth for service account (for backwards compatibility)
 function getGoogleAuth() {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -164,6 +296,186 @@ export async function getTopPages(
       position: row.position,
     }))
     .sort((a, b) => b.clicks - a.clicks);
+}
+
+// ============================================
+// PER-USER SEARCH CONSOLE API (OAuth)
+// ============================================
+
+// Get Search Console data using user's OAuth token
+export async function getUserSearchConsoleData(
+  userId: string,
+  siteUrl: string,
+  startDate: string,
+  endDate: string,
+  dimensions: string[] = ["query"]
+): Promise<SearchConsoleData | null> {
+  const tokens = await getUserGoogleConnection(userId);
+  if (!tokens) {
+    console.log("[Search Console] User not connected:", userId);
+    return null;
+  }
+
+  try {
+    const auth = createUserOAuth2Client(tokens);
+    const searchconsole = google.searchconsole({ version: "v1", auth });
+
+    const response = await searchconsole.searchanalytics.query({
+      siteUrl,
+      requestBody: {
+        startDate,
+        endDate,
+        dimensions,
+        rowLimit: 25,
+        startRow: 0,
+      },
+    });
+
+    const rows = response.data.rows || [];
+    const totals = rows.reduce(
+      (acc: { clicks: number; impressions: number; ctr: number; position: number }, row) => ({
+        clicks: acc.clicks + (row.clicks || 0),
+        impressions: acc.impressions + (row.impressions || 0),
+        ctr: 0,
+        position: acc.position + (row.position || 0),
+      }),
+      { clicks: 0, impressions: 0, ctr: 0, position: 0 }
+    );
+
+    if (rows.length > 0) {
+      totals.ctr = totals.clicks / totals.impressions;
+      totals.position = totals.position / rows.length;
+    }
+
+    return {
+      rows: rows.map((row) => ({
+        keys: row.keys || [],
+        clicks: row.clicks || 0,
+        impressions: row.impressions || 0,
+        ctr: row.ctr || 0,
+        position: row.position || 0,
+      })),
+      totals,
+    };
+  } catch (error) {
+    console.error("[Search Console] User API error:", error);
+    return null;
+  }
+}
+
+// Get top queries for a user's site
+export async function getUserTopQueries(
+  userId: string,
+  siteUrl: string,
+  days: number = 28
+): Promise<TopQuery[]> {
+  const endDate = new Date().toISOString().split("T")[0];
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+
+  const data = await getUserSearchConsoleData(userId, siteUrl, startDate, endDate, ["query"]);
+  if (!data) return [];
+
+  return data.rows
+    .map((row) => ({
+      query: row.keys[0] || "",
+      clicks: row.clicks,
+      impressions: row.impressions,
+      ctr: row.ctr,
+      position: row.position,
+    }))
+    .sort((a, b) => b.clicks - a.clicks);
+}
+
+// Get top pages for a user's site
+export async function getUserTopPages(
+  userId: string,
+  siteUrl: string,
+  days: number = 28
+): Promise<TopPage[]> {
+  const endDate = new Date().toISOString().split("T")[0];
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+
+  const data = await getUserSearchConsoleData(userId, siteUrl, startDate, endDate, ["page"]);
+  if (!data) return [];
+
+  return data.rows
+    .map((row) => ({
+      page: row.keys[0] || "",
+      clicks: row.clicks,
+      impressions: row.impressions,
+      ctr: row.ctr,
+      position: row.position,
+    }))
+    .sort((a, b) => b.clicks - a.clicks);
+}
+
+// Get list of Search Console sites the user has access to
+export async function getUserSearchConsoleSites(
+  userId: string
+): Promise<Array<{ siteUrl: string; permissionLevel: string }> | null> {
+  const tokens = await getUserGoogleConnection(userId);
+  if (!tokens) {
+    return null;
+  }
+
+  try {
+    const auth = createUserOAuth2Client(tokens);
+    const searchconsole = google.searchconsole({ version: "v1", auth });
+
+    const response = await searchconsole.sites.list();
+    const sites = response.data.siteEntry || [];
+
+    return sites.map((site) => ({
+      siteUrl: site.siteUrl || "",
+      permissionLevel: site.permissionLevel || "unknown",
+    }));
+  } catch (error) {
+    console.error("[Search Console] Error fetching user sites:", error);
+    return null;
+  }
+}
+
+// Request indexing for a user's URL
+export async function requestUserIndexing(
+  userId: string,
+  url: string,
+  type: "URL_UPDATED" | "URL_DELETED" = "URL_UPDATED"
+): Promise<IndexingResult> {
+  const tokens = await getUserGoogleConnection(userId);
+  if (!tokens) {
+    return {
+      url,
+      type,
+      success: false,
+      error: "Google account not connected",
+    };
+  }
+
+  try {
+    const auth = createUserOAuth2Client(tokens);
+    const indexing = google.indexing({ version: "v3", auth });
+
+    await indexing.urlNotifications.publish({
+      requestBody: {
+        url,
+        type,
+      },
+    });
+
+    return { url, type, success: true };
+  } catch (error) {
+    console.error("[Indexing] User API error:", error);
+    return {
+      url,
+      type,
+      success: false,
+      error: error instanceof Error ? error.message : "Indexing request failed",
+    };
+  }
 }
 
 // ============================================
