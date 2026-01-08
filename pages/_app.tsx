@@ -11,15 +11,19 @@ import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
 import CommandPalette from "../components/CommandPalette";
 import "../styles/globals.css";
 
-// Pages that don't require authentication
+// Pages that don't require authentication (prefix match)
 const publicPages = ["/login", "/api/auth"];
+// Public pages that need exact match (pricing/landing pages)
+const publicPagesExact = ["/", "/pricing"];
 
 // Pages that require auth but NOT a subscription (so users can subscribe)
-const noSubscriptionRequired = ["/settings/billing", "/settings/team"];
+const noSubscriptionRequired = ["/settings/billing", "/settings/team", "/invite"];
 
 export default function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const router = useRouter();
-  const isPublicPage = publicPages.some((page) => router.pathname.startsWith(page));
+  const isPublicPage =
+    publicPagesExact.includes(router.pathname) ||
+    publicPages.some((page) => router.pathname.startsWith(page));
   const skipSubscriptionCheck = noSubscriptionRequired.some((page) => router.pathname.startsWith(page));
 
   return (

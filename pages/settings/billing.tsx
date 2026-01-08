@@ -356,7 +356,7 @@ export default function BillingPage() {
             <div className="promo">
               <span className="promo-dot" />
               <span className="promo-text">
-                Early Adopter: Use <span className="promo-code">EARLY50</span> for 50% off forever!
+                Early Adopter: Use <span className="promo-code">FOUNDBLOGGER</span> for 70% off + 1 month free!
               </span>
             </div>
             <h1 className="title">Choose your plan</h1>
