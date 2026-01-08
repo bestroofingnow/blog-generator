@@ -38,7 +38,9 @@
       "Bash(do echo \"$line\")",
       "Bash(done)",
       "Bash(taskkill:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []

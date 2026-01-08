@@ -444,7 +444,7 @@ export default function BillingPage() {
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <Link href="/" style={{ color: "#6366f1", fontSize: "0.875rem", textDecoration: "none", display: "inline-block", marginBottom: 8 }}>
+          <Link href="/app" style={{ color: "#6366f1", fontSize: "0.875rem", textDecoration: "none", display: "inline-block", marginBottom: 8 }}>
             ← Back to Dashboard
           </Link>
           <h1 style={{ fontSize: "2rem", fontWeight: 700, color: "#111827", margin: 0 }}>Billing</h1>
@@ -774,7 +774,7 @@ export default function BillingPage() {
                   <p style={{ margin: 0, fontWeight: 500 }}>Team Settings</p>
                   <p style={{ margin: "2px 0 0 0", fontSize: "0.875rem", color: "#6b7280" }}>Manage members</p>
                 </Link>
-                <Link href="/" style={{
+                <Link href="/app" style={{
                   padding: 12,
                   borderRadius: 8,
                   border: "1px solid #e5e7eb",

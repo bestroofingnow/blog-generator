@@ -118,7 +118,7 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/"
+            href="/app"
             className="text-indigo-600 hover:text-indigo-500 text-sm mb-2 inline-block"
           >
             &larr; Back to Dashboard

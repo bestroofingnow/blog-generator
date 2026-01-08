@@ -211,8 +211,25 @@ export default async function handler(
           limit: 1,
         });
         if (promoCodes.data.length > 0) {
-          checkoutOptions.discounts = [{ promotion_code: promoCodes.data[0].id }];
+          const promoCodeData = promoCodes.data[0];
+          checkoutOptions.discounts = [{ promotion_code: promoCodeData.id }];
           delete checkoutOptions.allow_promotion_codes; // Can't use both
+
+          // Check for trial period in promo code metadata
+          const trialDays = promoCodeData.metadata?.trial_days;
+          if (trialDays && checkoutOptions.subscription_data) {
+            checkoutOptions.subscription_data.trial_period_days = parseInt(trialDays, 10);
+            console.log(`[Checkout] Applied ${trialDays}-day trial from promo code ${promoCode}`);
+          }
+
+          // Special handling for known promo codes with trials
+          const upperCode = promoCode.toUpperCase();
+          if ((upperCode === "KYXTRIAL" || upperCode === "FOUNDBLOGGER") && checkoutOptions.subscription_data) {
+            if (!checkoutOptions.subscription_data.trial_period_days) {
+              checkoutOptions.subscription_data.trial_period_days = 30;
+              console.log(`[Checkout] Applied 30-day trial for ${upperCode}`);
+            }
+          }
         }
       } catch (promoError) {
         console.log(`[Checkout] Promo code ${promoCode} not found, allowing manual entry`);

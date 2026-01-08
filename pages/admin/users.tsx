@@ -244,7 +244,7 @@ export default function AdminUsersPage() {
             </svg>
             User Management
           </h1>
-          <Link href="/" className={styles.backLink}>
+          <Link href="/app" className={styles.backLink}>
             <svg
               width="16"
               height="16"
