@@ -11,6 +11,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./api/auth/[...nextauth]";
 import { isSuperAdminEmail } from "../lib/super-admin";
 
+// Super admin emails that always have access
+const SUPER_ADMIN_EMAILS = ["james@bestroofingnow.com"];
+
 export default function IndexPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -25,9 +28,19 @@ export default function IndexPage() {
       }
 
       if (status === "authenticated") {
+        // Quick check: Super admin email gets immediate redirect
+        const userEmail = session?.user?.email?.toLowerCase();
+        if (userEmail && SUPER_ADMIN_EMAILS.includes(userEmail)) {
+          console.log("[IndexPage] Super admin detected, redirecting to /app");
+          setHasActiveSubscription(true);
+          router.replace("/app");
+          return;
+        }
+
         try {
           const res = await fetch("/api/billing/credits");
           const data = await res.json();
+          console.log("[IndexPage] Credits API response:", data);
           if (data.success && data.data) {
             const tier = data.data.subscription?.tier;
             const subStatus = data.data.subscription?.status;
@@ -50,7 +63,7 @@ export default function IndexPage() {
     if (status !== "loading") {
       checkSubscription();
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   // Show loading while checking
   if (status === "loading" || checkingSubscription) {
