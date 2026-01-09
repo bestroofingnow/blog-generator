@@ -31,10 +31,10 @@ export default function LoginPage() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
 
-  // Redirect if already logged in
+  // Redirect if already logged in - go directly to app
   useEffect(() => {
     if (user && !isLoading) {
-      router.push("/");
+      router.push("/app");
     }
   }, [user, isLoading, router]);
 
@@ -60,7 +60,7 @@ export default function LoginPage() {
         if (error) {
           setError(error.message);
         } else {
-          router.push("/");
+          router.push("/app");
         }
       } else if (mode === "signup") {
         if (password !== confirmPassword) {
@@ -77,7 +77,7 @@ export default function LoginPage() {
         if (error) {
           setError(error.message);
         } else {
-          router.push("/");
+          router.push("/app");
         }
       } else if (mode === "forgot") {
         await handleForgotPassword();

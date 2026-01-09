@@ -28,6 +28,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
+    email: string;
     role: UserRole;
   }
 }
@@ -99,6 +100,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email!;
         token.role = user.role || "user";
       }
       // Refresh role from database on session update
@@ -117,6 +119,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
+        session.user.email = token.email;
         session.user.role = token.role;
       }
       return session;
