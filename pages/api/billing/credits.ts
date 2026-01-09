@@ -63,10 +63,20 @@ export default async function handler(
 
   try {
     const userId = session.user.id;
-    const userEmail = session.user.email;
 
-    // Super admins get unlimited access - return unlimited credits
-    if (isSuperAdminEmail(userEmail)) {
+    // Get user from database to check email
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user[0]) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    // Super admins get unlimited access - check email from database
+    if (isSuperAdminEmail(user[0].email)) {
       return res.status(200).json({
         success: true,
         data: {
@@ -87,17 +97,6 @@ export default async function handler(
           lowCreditWarning: false,
         },
       });
-    }
-
-    // Get user and their organization
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    if (!user[0]) {
-      return res.status(404).json({ success: false, error: "User not found" });
     }
 
     // If user has no organization, return default state
