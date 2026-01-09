@@ -6,6 +6,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import PricingPage from "./pricing";
+import { GetServerSideProps } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
+import { isSuperAdminEmail } from "../lib/super-admin";
 
 export default function IndexPage() {
   const { data: session, status } = useSession();
@@ -27,7 +31,10 @@ export default function IndexPage() {
           if (data.success && data.data) {
             const tier = data.data.subscription?.tier;
             const subStatus = data.data.subscription?.status;
-            if (tier && tier !== "free" && subStatus === "active") {
+            // Super admins or active paid subscribers go to app
+            const isSuperAdmin = tier === "superadmin";
+            const isActiveSubscriber = tier && tier !== "free" && subStatus === "active";
+            if (isSuperAdmin || isActiveSubscriber) {
               setHasActiveSubscription(true);
               router.replace("/app");
               return;
@@ -107,3 +114,20 @@ export default function IndexPage() {
   // Show pricing page for non-subscribers
   return <PricingPage />;
 }
+
+// Server-side redirect for super admins - they should go directly to the app
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getServerSession(context.req, context.res, authOptions);
+
+  // If user is logged in and is a super admin, redirect to app
+  if (session?.user?.email && isSuperAdminEmail(session.user.email)) {
+    return {
+      redirect: {
+        destination: "/app",
+        permanent: false,
+      },
+    };
+  }
+
+  return { props: {} };
+};

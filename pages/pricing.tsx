@@ -6,6 +6,10 @@ import { useSession, signOut, signIn } from "next-auth/react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
+import { GetServerSideProps } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]";
+import { isSuperAdminEmail } from "../lib/super-admin";
 
 interface CreditInfo {
   credits: {
@@ -365,3 +369,20 @@ export default function PricingPage() {
     </div>
   );
 }
+
+// Server-side redirect for super admins - they should go directly to the app
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getServerSession(context.req, context.res, authOptions);
+
+  // If user is logged in and is a super admin, redirect to app
+  if (session?.user?.email && isSuperAdminEmail(session.user.email)) {
+    return {
+      redirect: {
+        destination: "/app",
+        permanent: false,
+      },
+    };
+  }
+
+  return { props: {} };
+};
