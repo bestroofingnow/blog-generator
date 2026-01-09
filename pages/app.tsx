@@ -5967,7 +5967,7 @@ export default function Home() {
                   <p>Loading SEO Heatmap...</p>
                 </div>
               }>
-                <SEOHeatmap />
+                <SEOHeatmap companyProfile={companyProfile} />
               </Suspense>
             </div>
           )}
