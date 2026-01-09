@@ -13,6 +13,7 @@ import {
   primaryKey,
   integer,
   uniqueIndex,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { eq, desc, and, or, isNull, ne } from "drizzle-orm";
 
@@ -612,6 +613,127 @@ export const conversationMessages = pgTable("conversation_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ============ GEO-GRID RANK TRACKER TABLES ============
+
+// Grid Configurations - user's saved grid setups
+export const geoGridConfigs = pgTable("geo_grid_configs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  centerLat: decimal("center_lat", { precision: 10, scale: 7 }).notNull(),
+  centerLng: decimal("center_lng", { precision: 10, scale: 7 }).notNull(),
+  centerCity: text("center_city"),
+  centerState: text("center_state"),
+  gridSize: integer("grid_size").notNull(), // 3, 5, or 7
+  radiusMiles: decimal("radius_miles", { precision: 5, scale: 2 }).notNull(),
+  targetDomain: text("target_domain").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tracked Keywords - keywords being tracked per grid config
+export const geoGridKeywords = pgTable("geo_grid_keywords", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  configId: uuid("config_id")
+    .notNull()
+    .references(() => geoGridConfigs.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  keyword: text("keyword").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Scan History - each scan run
+export const geoGridScans = pgTable("geo_grid_scans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  configId: uuid("config_id")
+    .notNull()
+    .references(() => geoGridConfigs.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").default("pending"), // pending | running | completed | failed
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  gridSize: integer("grid_size").notNull(),
+  radiusMiles: decimal("radius_miles", { precision: 5, scale: 2 }).notNull(),
+  centerLat: decimal("center_lat", { precision: 10, scale: 7 }).notNull(),
+  centerLng: decimal("center_lng", { precision: 10, scale: 7 }).notNull(),
+  totalPoints: integer("total_points").notNull(),
+  pointsCompleted: integer("points_completed").default(0),
+  apiCallsMade: integer("api_calls_made").default(0),
+  creditsUsed: integer("credits_used").default(0),
+  errorCount: integer("error_count").default(0),
+  errorMessages: jsonb("error_messages"),
+  weekNumber: integer("week_number"),
+  year: integer("year"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Rank Snapshots - individual point results from each scan
+export const geoGridRankSnapshots = pgTable("geo_grid_rank_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  scanId: uuid("scan_id")
+    .notNull()
+    .references(() => geoGridScans.id, { onDelete: "cascade" }),
+  keywordId: uuid("keyword_id")
+    .notNull()
+    .references(() => geoGridKeywords.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  gridRow: integer("grid_row").notNull(),
+  gridCol: integer("grid_col").notNull(),
+  pointLat: decimal("point_lat", { precision: 10, scale: 7 }).notNull(),
+  pointLng: decimal("point_lng", { precision: 10, scale: 7 }).notNull(),
+  rankPosition: integer("rank_position"), // NULL if not found
+  serpUrl: text("serp_url"),
+  serpTitle: text("serp_title"),
+  serpSnippet: text("serp_snippet"),
+  localPackPosition: integer("local_pack_position"),
+  isInLocalPack: boolean("is_in_local_pack").default(false),
+  top3Competitors: jsonb("top_3_competitors"),
+  serpFeatures: jsonb("serp_features"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Weekly Stats - pre-computed stats for fast chart rendering
+export const geoGridWeeklyStats = pgTable("geo_grid_weekly_stats", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  configId: uuid("config_id")
+    .notNull()
+    .references(() => geoGridConfigs.id, { onDelete: "cascade" }),
+  keywordId: uuid("keyword_id")
+    .notNull()
+    .references(() => geoGridKeywords.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  scanId: uuid("scan_id").references(() => geoGridScans.id, { onDelete: "set null" }),
+  weekNumber: integer("week_number").notNull(),
+  year: integer("year").notNull(),
+  avgRank: decimal("avg_rank", { precision: 5, scale: 2 }),
+  bestRank: integer("best_rank"),
+  worstRank: integer("worst_rank"),
+  pointsRanking: integer("points_ranking"),
+  pointsTop3: integer("points_top_3"),
+  pointsTop10: integer("points_top_10"),
+  pointsTop20: integer("points_top_20"),
+  pointsNotFound: integer("points_not_found"),
+  totalPoints: integer("total_points"),
+  pointsInLocalPack: integer("points_in_local_pack"),
+  avgLocalPackPosition: decimal("avg_local_pack_position", { precision: 5, scale: 2 }),
+  rankChange: decimal("rank_change", { precision: 5, scale: 2 }),
+  visibilityScore: decimal("visibility_score", { precision: 5, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ============ TYPE EXPORTS ============
 
 export type User = typeof users.$inferSelect;
@@ -669,6 +791,19 @@ export type AutoCreateMode = "automatic" | "queue_for_review";
 // Conversation status types
 export type ConversationStatus = "active" | "archived";
 export type MessageRole = "user" | "assistant" | "system" | "tool";
+
+// Geo-Grid Rank Tracker types
+export type GeoGridConfig = typeof geoGridConfigs.$inferSelect;
+export type NewGeoGridConfig = typeof geoGridConfigs.$inferInsert;
+export type GeoGridKeyword = typeof geoGridKeywords.$inferSelect;
+export type NewGeoGridKeyword = typeof geoGridKeywords.$inferInsert;
+export type GeoGridScan = typeof geoGridScans.$inferSelect;
+export type NewGeoGridScan = typeof geoGridScans.$inferInsert;
+export type GeoGridRankSnapshot = typeof geoGridRankSnapshots.$inferSelect;
+export type NewGeoGridRankSnapshot = typeof geoGridRankSnapshots.$inferInsert;
+export type GeoGridWeeklyStat = typeof geoGridWeeklyStats.$inferSelect;
+export type NewGeoGridWeeklyStat = typeof geoGridWeeklyStats.$inferInsert;
+export type GeoGridScanStatus = "pending" | "running" | "completed" | "failed";
 
 // Workflow status types
 export type WorkflowStatus = "pending" | "running" | "paused" | "completed" | "failed";

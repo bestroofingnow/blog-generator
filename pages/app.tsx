@@ -24,7 +24,7 @@ import { SEOAnalysisSidebar, SEOSidebarToggle } from "../components/seo/SEOAnaly
 import { analyzeContent, type SEOScore } from "../lib/seo-analyzer";
 
 // SEO Tools
-const SEOHeatmap = lazy(() => import("../components/seo/SEOHeatmap").then(m => ({ default: m.SEOHeatmap })));
+const GeoGridRankTracker = lazy(() => import("../components/seo/GeoGridRankTracker").then(m => ({ default: m.GeoGridRankTracker })));
 
 import { INDUSTRIES, getIndustryOptions, getDefaultServices, getDefaultUSPs } from "../lib/industries";
 import {
@@ -569,7 +569,7 @@ export default function Home() {
   const [editedContent, setEditedContent] = useState<string>("");
 
   // Sidebar navigation state
-  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "knowledge" | "schedule" | "seo-heatmap" | "automation";
+  type SidebarSection = "create" | "setup" | "profile" | "research" | "library" | "knowledge" | "schedule" | "seo-tools" | "automation";
   const [activeSection, setActiveSection] = useState<SidebarSection>("create");
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
     if (typeof window !== "undefined") {
@@ -2937,9 +2937,9 @@ export default function Home() {
 
           <button
             type="button"
-            className={`${styles.sidebarItem} ${activeSection === "seo-heatmap" ? styles.active : ""}`}
-            onClick={() => setActiveSection("seo-heatmap")}
-            title="SEO Heatmap"
+            className={`${styles.sidebarItem} ${activeSection === "seo-tools" ? styles.active : ""}`}
+            onClick={() => setActiveSection("seo-tools")}
+            title="SEO Tools"
           >
             <span className={styles.sidebarIcon}>
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2949,8 +2949,8 @@ export default function Home() {
                 <rect x="17" y="5" width="3" height="11" fill="currentColor" opacity="0.7"/>
               </svg>
             </span>
-            <span className={styles.sidebarLabel}>SEO Heatmap</span>
-            <span className={styles.tooltip}>SEO Heatmap & Research</span>
+            <span className={styles.sidebarLabel}>SEO Tools</span>
+            <span className={styles.tooltip}>Geo-Grid Rank Tracker</span>
           </button>
 
           <button
@@ -5958,16 +5958,16 @@ export default function Home() {
             </div>
           )}
 
-          {/* SEO Heatmap Section */}
-          {activeSection === "seo-heatmap" && (
+          {/* SEO Tools Section */}
+          {activeSection === "seo-tools" && (
             <div className={styles.sectionContent}>
               <Suspense fallback={
                 <div className={styles.loadingSpinner}>
                   <div className={styles.spinner} />
-                  <p>Loading SEO Heatmap...</p>
+                  <p>Loading SEO Tools...</p>
                 </div>
               }>
-                <SEOHeatmap companyProfile={companyProfile} />
+                <GeoGridRankTracker />
               </Suspense>
             </div>
           )}
