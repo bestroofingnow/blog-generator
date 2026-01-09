@@ -126,6 +126,13 @@ export default function PricingPage() {
     }
   }, [router.query, fetchCreditInfo]);
 
+  // Redirect super admins directly to the app - they should not see pricing
+  useEffect(() => {
+    if (creditInfo?.subscription?.tier === "superadmin") {
+      router.push("/app");
+    }
+  }, [creditInfo, router]);
+
   const handleUpgrade = async (tier: string) => {
     if (status !== "authenticated") {
       // Redirect to login first

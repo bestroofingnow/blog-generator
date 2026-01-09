@@ -12,6 +12,7 @@ import {
   Organization,
 } from "./db";
 import { SUBSCRIPTION_TIERS, getTierConfig } from "./stripe";
+import { isSuperAdminEmail } from "./super-admin";
 
 // Credit operation types
 export type CreditOperation =
@@ -67,6 +68,17 @@ export async function getUserOrganization(userId: string): Promise<Organization 
   return org[0] || null;
 }
 
+// Check if user is a super admin (has unlimited access)
+export async function isUserSuperAdmin(userId: string): Promise<boolean> {
+  const user = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  return isSuperAdminEmail(user[0]?.email);
+}
+
 // Get available credits for an organization
 export async function getAvailableCredits(organizationId: string): Promise<{
   monthly: number;
@@ -109,6 +121,11 @@ export async function hasEnoughCredits(
   userId: string,
   operation: CreditOperation
 ): Promise<boolean> {
+  // Super admins always have unlimited credits
+  if (await isUserSuperAdmin(userId)) {
+    return true;
+  }
+
   const org = await getUserOrganization(userId);
   if (!org) return false;
 
@@ -128,6 +145,14 @@ export async function deductCredits(
   error?: string;
   remainingCredits?: number;
 }> {
+  // Super admins have unlimited credits - no deduction needed
+  if (await isUserSuperAdmin(userId)) {
+    return {
+      success: true,
+      remainingCredits: Infinity,
+    };
+  }
+
   const org = await getUserOrganization(userId);
   if (!org) {
     return { success: false, error: "User has no organization" };

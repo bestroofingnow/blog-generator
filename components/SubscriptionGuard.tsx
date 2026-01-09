@@ -22,6 +22,11 @@ export default function SubscriptionGuard({ children }: SubscriptionGuardProps) 
 
         if (data.success && data.data?.subscription) {
           const sub = data.data.subscription;
+          // Super admins always have access
+          if (sub.tier === "superadmin") {
+            setHasSubscription(true);
+            return;
+          }
           // Check if user has an active paid subscription
           const isActive = sub.status === "active" || sub.status === "trialing";
           const isPaid = sub.tier !== "free" && sub.tier !== "none";

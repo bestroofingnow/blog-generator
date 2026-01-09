@@ -6,6 +6,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { db, users, accounts, eq, UserRole } from "../../../lib/db";
 import bcrypt from "bcryptjs";
+import { isSuperAdminEmail } from "../../../lib/super-admin";
 
 // Extend the built-in types
 declare module "next-auth" {
@@ -65,12 +66,22 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
+        // Auto-promote super admin emails to superadmin role
+        let role = (user.role as UserRole) || "user";
+        if (isSuperAdminEmail(user.email) && role !== "superadmin") {
+          await db
+            .update(users)
+            .set({ role: "superadmin", updatedAt: new Date() })
+            .where(eq(users.id, user.id));
+          role = "superadmin";
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
-          role: (user.role as UserRole) || "user",
+          role,
         };
       },
     }),
@@ -120,7 +131,8 @@ export const authOptions: NextAuthOptions = {
           .limit(1);
 
         if (existingUser.length === 0) {
-          // Create new user with default role
+          // Create new user - super admin emails get superadmin role
+          const newRole = isSuperAdminEmail(user.email!) ? "superadmin" : "user";
           const newUser = await db
             .insert(users)
             .values({
@@ -128,12 +140,12 @@ export const authOptions: NextAuthOptions = {
               name: user.name,
               image: user.image,
               emailVerified: new Date(),
-              role: "user", // Default role for new users
+              role: newRole,
             })
             .returning();
 
           // Set role on user object for JWT
-          user.role = "user";
+          user.role = newRole;
 
           // Link account
           await db.insert(accounts).values({
@@ -151,7 +163,17 @@ export const authOptions: NextAuthOptions = {
         } else {
           // Set role from existing user for JWT
           user.id = existingUser[0].id;
-          user.role = (existingUser[0].role as UserRole) || "user";
+          let role = (existingUser[0].role as UserRole) || "user";
+
+          // Auto-promote super admin emails to superadmin role
+          if (isSuperAdminEmail(user.email!) && role !== "superadmin") {
+            await db
+              .update(users)
+              .set({ role: "superadmin", updatedAt: new Date() })
+              .where(eq(users.id, existingUser[0].id));
+            role = "superadmin";
+          }
+          user.role = role;
 
           // Update existing user's OAuth account if needed
           const existingAccount = await db

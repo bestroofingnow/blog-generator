@@ -16,6 +16,7 @@ import {
   shouldShowLowCreditWarning,
 } from "../../../lib/credits";
 import { getTierConfig } from "../../../lib/stripe";
+import { isSuperAdminEmail } from "../../../lib/super-admin";
 
 interface CreditsResponse {
   success: boolean;
@@ -62,6 +63,31 @@ export default async function handler(
 
   try {
     const userId = session.user.id;
+    const userEmail = session.user.email;
+
+    // Super admins get unlimited access - return unlimited credits
+    if (isSuperAdminEmail(userEmail)) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          credits: {
+            monthly: 999999,
+            rollover: 0,
+            overage: 0,
+            total: 999999,
+            used: 0,
+            remaining: 999999,
+          },
+          subscription: {
+            tier: "superadmin",
+            tierName: "Super Admin (Unlimited)",
+            status: "active",
+            billingCycleStart: new Date().toISOString(),
+          },
+          lowCreditWarning: false,
+        },
+      });
+    }
 
     // Get user and their organization
     const user = await db
