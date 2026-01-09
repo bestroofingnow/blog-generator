@@ -72,7 +72,7 @@ export const authOptions: NextAuthOptions = {
         if (isSuperAdminEmail(user.email) && role !== "superadmin") {
           await db
             .update(users)
-            .set({ role: "superadmin", updatedAt: new Date() })
+            .set({ role: "superadmin" })
             .where(eq(users.id, user.id));
           role = "superadmin";
         }
@@ -172,7 +172,7 @@ export const authOptions: NextAuthOptions = {
           if (isSuperAdminEmail(user.email!) && role !== "superadmin") {
             await db
               .update(users)
-              .set({ role: "superadmin", updatedAt: new Date() })
+              .set({ role: "superadmin" })
               .where(eq(users.id, existingUser[0].id));
             role = "superadmin";
           }
