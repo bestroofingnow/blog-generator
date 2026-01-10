@@ -94,6 +94,13 @@
   gap: 32px;
 }
 
+/* Full-width content (no sidebar) */
+.fullContent {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
 /* ============ Sidebar Navigation ============ */
 .sidebar {
   width: 240px;

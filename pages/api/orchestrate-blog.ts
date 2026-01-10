@@ -33,6 +33,9 @@ interface OrchestrateRequest {
   imageThemes?: string[];
   wordpress?: WordPressCredentials;
   enableQualityReview?: boolean; // Whether to use Gemini 3 Pro for image quality review
+  // Deep Research Integration
+  enableDeepResearch?: boolean; // Whether to run deep research before blog generation
+  researchDepth?: "light" | "standard" | "deep"; // Research intensity level
 }
 
 interface SEOData {
@@ -42,13 +45,50 @@ interface SEOData {
   metaDescription: string;
 }
 
+// Deep Research result interface (matches research-deep.ts response)
+interface DeepResearchData {
+  aiResearch: {
+    keywords: {
+      primary: Array<{ keyword: string; volume: string; difficulty: string; intent: string }>;
+      longTail: string[];
+      questions: string[];
+      local: string[];
+    };
+    competitors: Array<{ name: string; website: string; strategy: string; gaps: string[] }>;
+    contentStrategy: {
+      formats: string[];
+      uniqueAngles: string[];
+      statistics: Array<{ stat: string; source: string }>;
+      expertSources: string[];
+    };
+    recommendations: string[];
+  };
+  brightData?: {
+    serp?: {
+      results: Array<{ position: number; title: string; url: string; domain: string; snippet: string }>;
+      paaQuestions?: string[];
+      relatedSearches?: string[];
+    };
+    competitors?: Array<{ url: string; title?: string; description?: string }>;
+    reviews?: { rating: number; reviewCount: number };
+  };
+  insights: {
+    topOpportunities: string[];
+    contentGaps: string[];
+    competitorWeaknesses: string[];
+    quickWins: string[];
+  };
+}
+
 interface OrchestrateResponse {
   success: boolean;
   htmlContent?: string;
   seoData?: SEOData;
   featuredImageId?: number; // WordPress media ID for the hero/featured image
+  researchData?: DeepResearchData; // Research data used for the blog
   error?: string;
   steps?: {
+    research: boolean;
     outline: boolean;
     images: boolean;
     upload: boolean;
@@ -104,6 +144,7 @@ export default async function handler(
   }
 
   const steps = {
+    research: false,
     outline: false,
     images: false,
     upload: false,
@@ -152,6 +193,67 @@ export default async function handler(
     const companyName = request.companyName || companyProfile?.name;
     const tone = request.tone || companyProfile?.brandVoice || "professional yet friendly";
 
+    // STEP 0: Deep Research (if enabled)
+    let researchData: DeepResearchData | undefined;
+    let serpData: {
+      topCompetitors?: string[];
+      paaQuestions?: string[];
+      relatedSearches?: string[];
+      statistics?: Array<{ stat: string; source: string }>;
+      contentGaps?: string[];
+      quickWins?: string[];
+    } | undefined;
+
+    if (request.enableDeepResearch) {
+      console.log(`Step 0: Running deep research (${request.researchDepth || "standard"})...`);
+      try {
+        // Call internal research API
+        const researchResponse = await callInternalApi("/api/research-deep", {
+          topic: request.topic,
+          industry: companyProfile?.industryType || "general",
+          location: request.location,
+          companyName: companyName,
+          competitorUrls: companyProfile?.competitorWebsites || [],
+          includeSerp: true,
+          includeSocial: false, // Skip social for speed
+          includeCompetitors: true,
+        }) as { success: boolean; data?: DeepResearchData; error?: string };
+
+        if (researchResponse.success && researchResponse.data) {
+          researchData = researchResponse.data;
+          steps.research = true;
+          console.log("Deep research completed successfully");
+
+          // Transform research data into serpData format for AI models
+          serpData = {
+            topCompetitors: researchData.aiResearch?.competitors?.map(c => c.website).filter(Boolean) || [],
+            paaQuestions: [
+              ...(researchData.brightData?.serp?.paaQuestions || []),
+              ...(researchData.aiResearch?.keywords?.questions || []),
+            ].slice(0, 10),
+            relatedSearches: [
+              ...(researchData.brightData?.serp?.relatedSearches || []),
+              ...(researchData.aiResearch?.keywords?.longTail || []),
+            ].slice(0, 10),
+            statistics: researchData.aiResearch?.contentStrategy?.statistics || [],
+            contentGaps: researchData.insights?.contentGaps || [],
+            quickWins: researchData.insights?.quickWins || [],
+          };
+
+          // Enhance secondary keywords with research-discovered keywords
+          if (!request.secondaryKeywords?.length && researchData.aiResearch?.keywords) {
+            request.secondaryKeywords = [
+              ...(researchData.aiResearch.keywords.primary?.map(k => k.keyword) || []),
+              ...(researchData.aiResearch.keywords.local || []),
+            ].slice(0, 5);
+          }
+        }
+      } catch (error) {
+        console.error("Deep research failed, continuing without research:", error);
+        // Continue without research - don't fail the whole blog generation
+      }
+    }
+
     // STEP 1: Generate outline
     console.log("Step 1: Designing the blog structure...");
     let outline: BlogOutline;
@@ -169,6 +271,8 @@ export default async function handler(
         imageThemes: request.imageThemes,
         // Pass profile context for more targeted outlines
         profileContext: profileContext || undefined,
+        // Pass research-enhanced SERP data if available
+        serpData: serpData,
       });
       steps.outline = true;
       console.log("Outline generated successfully");
@@ -386,6 +490,8 @@ export default async function handler(
       companyName: companyName,
       // Pass profile context for more personalized content
       profileContext: profileContext || undefined,
+      // Pass research-enhanced SERP data if available
+      serpData: serpData,
     });
     steps.content = true;
 
@@ -400,6 +506,7 @@ export default async function handler(
       htmlContent,
       seoData,
       featuredImageId: uploadedImageIds[0], // First image (hero) as featured image
+      researchData: researchData, // Include research data for transparency
       steps,
     });
   } catch (error) {

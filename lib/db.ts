@@ -734,6 +734,325 @@ export const geoGridWeeklyStats = pgTable("geo_grid_weekly_stats", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ============ AI VISIBILITY TRACKER TABLES ============
+
+// AI Platform Configurations - which platforms to track for AEO
+export const aiVisibilityConfigs = pgTable("ai_visibility_configs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  brandName: text("brand_name").notNull(),
+  brandDomain: text("brand_domain").notNull(),
+  alternateNames: jsonb("alternate_names").$type<string[]>().default([]),
+  platforms: jsonb("platforms").$type<string[]>().default([
+    "chatgpt", "perplexity", "google_aio", "claude", "gemini"
+  ]),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tracking Queries - questions to ask AI platforms
+export const aiVisibilityQueries = pgTable("ai_visibility_queries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  configId: uuid("config_id")
+    .notNull()
+    .references(() => aiVisibilityConfigs.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  queryText: text("query_text").notNull(),
+  queryCategory: text("query_category"), // product, service, comparison, best_of, how_to
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// AI Visibility Scan History
+export const aiVisibilityScans = pgTable("ai_visibility_scans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  configId: uuid("config_id")
+    .notNull()
+    .references(() => aiVisibilityConfigs.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").default("pending"), // pending | running | completed | failed
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  totalQueries: integer("total_queries").default(0),
+  completedQueries: integer("completed_queries").default(0),
+  errorCount: integer("error_count").default(0),
+  creditsUsed: integer("credits_used").default(0),
+  weekNumber: integer("week_number"),
+  year: integer("year"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Individual Results - per query per platform
+export const aiVisibilityResults = pgTable("ai_visibility_results", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  scanId: uuid("scan_id")
+    .notNull()
+    .references(() => aiVisibilityScans.id, { onDelete: "cascade" }),
+  queryId: uuid("query_id")
+    .notNull()
+    .references(() => aiVisibilityQueries.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull(), // chatgpt | perplexity | google_aio | claude | gemini
+  // Visibility metrics
+  isMentioned: boolean("is_mentioned").default(false),
+  mentionPosition: integer("mention_position"), // 1st, 2nd, 3rd mention in response
+  mentionContext: text("mention_context"), // text around mention
+  sentimentScore: decimal("sentiment_score", { precision: 3, scale: 2 }), // -1 to 1
+  // Citation analysis
+  hasCitation: boolean("has_citation").default(false),
+  citationUrl: text("citation_url"),
+  citationPosition: integer("citation_position"),
+  // Hallucination detection
+  hasHallucination: boolean("has_hallucination").default(false),
+  hallucinationDetails: text("hallucination_details"),
+  // Full response storage
+  aiResponse: text("ai_response"),
+  responseWordCount: integer("response_word_count"),
+  // Competitor mentions
+  competitorsMentioned: jsonb("competitors_mentioned").$type<string[]>(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Weekly aggregated stats for AI visibility
+export const aiVisibilityWeeklyStats = pgTable("ai_visibility_weekly_stats", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  configId: uuid("config_id")
+    .notNull()
+    .references(() => aiVisibilityConfigs.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull(),
+  weekNumber: integer("week_number").notNull(),
+  year: integer("year").notNull(),
+  // Aggregated metrics
+  totalQueries: integer("total_queries").default(0),
+  mentionCount: integer("mention_count").default(0),
+  mentionRate: decimal("mention_rate", { precision: 5, scale: 2 }), // percentage
+  avgMentionPosition: decimal("avg_mention_position", { precision: 4, scale: 2 }),
+  citationCount: integer("citation_count").default(0),
+  citationRate: decimal("citation_rate", { precision: 5, scale: 2 }),
+  hallucinationCount: integer("hallucination_count").default(0),
+  avgSentiment: decimal("avg_sentiment", { precision: 3, scale: 2 }),
+  visibilityScore: decimal("visibility_score", { precision: 5, scale: 2 }), // 0-100
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============ DEEP RESEARCH TABLES ============
+
+// Research Cache - store research results for reuse
+export const researchCache = pgTable("research_cache", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  cacheKey: text("cache_key").notNull(), // hash of topic + location + keywords
+  topic: text("topic").notNull(),
+  location: text("location"),
+  keywords: jsonb("keywords").$type<string[]>(),
+  // Research data
+  serpResults: jsonb("serp_results"),
+  scrapedSources: jsonb("scraped_sources"),
+  extractedFacts: jsonb("extracted_facts"),
+  competitorAnalysis: jsonb("competitor_analysis"),
+  suggestedTopics: jsonb("suggested_topics").$type<string[]>(),
+  suggestedKeywords: jsonb("suggested_keywords").$type<string[]>(),
+  // Metadata
+  expiresAt: timestamp("expires_at").notNull(), // 7 day expiry
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Research usage tracking - for analytics
+export const researchUsage = pgTable("research_usage", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  draftId: uuid("draft_id").references(() => drafts.id, { onDelete: "set null" }),
+  researchCacheId: uuid("research_cache_id").references(() => researchCache.id, { onDelete: "set null" }),
+  // What was used
+  sourcesUsed: integer("sources_used").default(0),
+  factsExtracted: integer("facts_extracted").default(0),
+  competitorsAnalyzed: integer("competitors_analyzed").default(0),
+  // Costs
+  serpQueries: integer("serp_queries").default(0),
+  pagesScraped: integer("pages_scraped").default(0),
+  creditsUsed: integer("credits_used").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============ COMPETITOR INTELLIGENCE TABLES ============
+
+// Competitor Profiles
+export const competitorProfiles = pgTable("competitor_profiles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  domain: text("domain").notNull(),
+  description: text("description"),
+  industry: text("industry"),
+  // Social links (discovered or provided)
+  socialLinks: jsonb("social_links").$type<Record<string, string>>(),
+  // Contact info
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  // Classification
+  competitorType: text("competitor_type"), // direct | indirect | aspirational
+  priority: integer("priority").default(5), // 1-10
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Content Analysis Snapshots
+export const competitorContentSnapshots = pgTable("competitor_content_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  competitorId: uuid("competitor_id")
+    .notNull()
+    .references(() => competitorProfiles.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // Website analysis
+  pageTitle: text("page_title"),
+  metaDescription: text("meta_description"),
+  wordCount: integer("word_count"),
+  headingStructure: jsonb("heading_structure").$type<string[]>(),
+  mainKeywords: jsonb("main_keywords").$type<string[]>(),
+  contentTopics: jsonb("content_topics").$type<string[]>(),
+  // Technical SEO
+  hasSchema: boolean("has_schema").default(false),
+  schemaTypes: jsonb("schema_types").$type<string[]>(),
+  loadSpeed: decimal("load_speed", { precision: 5, scale: 2 }),
+  mobileFriendly: boolean("mobile_friendly"),
+  // Blog/Content analysis
+  blogPostCount: integer("blog_post_count"),
+  recentPosts: jsonb("recent_posts").$type<Array<{
+    title: string;
+    url: string;
+    date: string;
+    wordCount: number;
+  }>>(),
+  postingFrequency: text("posting_frequency"), // daily, weekly, monthly
+  snapshotDate: timestamp("snapshot_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Social Media Snapshots
+export const competitorSocialSnapshots = pgTable("competitor_social_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  competitorId: uuid("competitor_id")
+    .notNull()
+    .references(() => competitorProfiles.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull(), // instagram, linkedin, youtube, tiktok, facebook
+  // Profile metrics
+  followers: integer("followers"),
+  following: integer("following"),
+  posts: integer("posts"),
+  engagementRate: decimal("engagement_rate", { precision: 5, scale: 2 }),
+  // Recent content
+  recentContent: jsonb("recent_content").$type<Array<{
+    text: string;
+    likes: number;
+    comments: number;
+    shares?: number;
+    date: string;
+  }>>(),
+  // Analysis
+  postingFrequency: text("posting_frequency"),
+  topPerformingContent: jsonb("top_performing_content").$type<string[]>(),
+  contentThemes: jsonb("content_themes").$type<string[]>(),
+  snapshotDate: timestamp("snapshot_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Review Snapshots
+export const competitorReviewSnapshots = pgTable("competitor_review_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  competitorId: uuid("competitor_id")
+    .notNull()
+    .references(() => competitorProfiles.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  source: text("source").notNull(), // google, yelp, facebook, trustpilot
+  // Metrics
+  rating: decimal("rating", { precision: 3, scale: 2 }),
+  reviewCount: integer("review_count"),
+  // Recent reviews
+  recentReviews: jsonb("recent_reviews").$type<Array<{
+    author: string;
+    rating: number;
+    text: string;
+    date: string;
+    helpful?: number;
+  }>>(),
+  // Sentiment analysis
+  positiveThemes: jsonb("positive_themes").$type<string[]>(),
+  negativeThemes: jsonb("negative_themes").$type<string[]>(),
+  avgSentiment: decimal("avg_sentiment", { precision: 3, scale: 2 }),
+  snapshotDate: timestamp("snapshot_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Competitor Intelligence Scans
+export const competitorScans = pgTable("competitor_scans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  competitorIds: jsonb("competitor_ids").$type<string[]>().notNull(),
+  scanType: text("scan_type").notNull(), // full | website | social | reviews
+  status: text("status").default("pending"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  competitorsScanned: integer("competitors_scanned").default(0),
+  totalCompetitors: integer("total_competitors").default(0),
+  errorCount: integer("error_count").default(0),
+  creditsUsed: integer("credits_used").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Weekly comparison metrics
+export const competitorWeeklyMetrics = pgTable("competitor_weekly_metrics", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  competitorId: uuid("competitor_id")
+    .notNull()
+    .references(() => competitorProfiles.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  weekNumber: integer("week_number").notNull(),
+  year: integer("year").notNull(),
+  // Aggregated metrics
+  totalSocialFollowers: integer("total_social_followers"),
+  avgEngagementRate: decimal("avg_engagement_rate", { precision: 5, scale: 2 }),
+  avgReviewRating: decimal("avg_review_rating", { precision: 3, scale: 2 }),
+  totalReviews: integer("total_reviews"),
+  blogPosts: integer("blog_posts"),
+  // Change tracking
+  followersChange: integer("followers_change"),
+  reviewsChange: integer("reviews_change"),
+  ratingChange: decimal("rating_change", { precision: 3, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ============ TYPE EXPORTS ============
 
 export type User = typeof users.$inferSelect;
@@ -804,6 +1123,43 @@ export type NewGeoGridRankSnapshot = typeof geoGridRankSnapshots.$inferInsert;
 export type GeoGridWeeklyStat = typeof geoGridWeeklyStats.$inferSelect;
 export type NewGeoGridWeeklyStat = typeof geoGridWeeklyStats.$inferInsert;
 export type GeoGridScanStatus = "pending" | "running" | "completed" | "failed";
+
+// AI Visibility Tracker types
+export type AIVisibilityConfig = typeof aiVisibilityConfigs.$inferSelect;
+export type NewAIVisibilityConfig = typeof aiVisibilityConfigs.$inferInsert;
+export type AIVisibilityQuery = typeof aiVisibilityQueries.$inferSelect;
+export type NewAIVisibilityQuery = typeof aiVisibilityQueries.$inferInsert;
+export type AIVisibilityScan = typeof aiVisibilityScans.$inferSelect;
+export type NewAIVisibilityScan = typeof aiVisibilityScans.$inferInsert;
+export type AIVisibilityResult = typeof aiVisibilityResults.$inferSelect;
+export type NewAIVisibilityResult = typeof aiVisibilityResults.$inferInsert;
+export type AIVisibilityWeeklyStat = typeof aiVisibilityWeeklyStats.$inferSelect;
+export type NewAIVisibilityWeeklyStat = typeof aiVisibilityWeeklyStats.$inferInsert;
+export type AIVisibilityScanStatus = "pending" | "running" | "completed" | "failed";
+export type AIPlatform = "chatgpt" | "perplexity" | "google_aio" | "claude" | "gemini";
+
+// Deep Research types
+export type ResearchCacheEntry = typeof researchCache.$inferSelect;
+export type NewResearchCacheEntry = typeof researchCache.$inferInsert;
+export type ResearchUsageEntry = typeof researchUsage.$inferSelect;
+export type NewResearchUsageEntry = typeof researchUsage.$inferInsert;
+export type ResearchDepth = "light" | "standard" | "deep";
+
+// Competitor Intelligence types
+export type CompetitorProfile = typeof competitorProfiles.$inferSelect;
+export type NewCompetitorProfile = typeof competitorProfiles.$inferInsert;
+export type CompetitorContentSnapshot = typeof competitorContentSnapshots.$inferSelect;
+export type NewCompetitorContentSnapshot = typeof competitorContentSnapshots.$inferInsert;
+export type CompetitorSocialSnapshot = typeof competitorSocialSnapshots.$inferSelect;
+export type NewCompetitorSocialSnapshot = typeof competitorSocialSnapshots.$inferInsert;
+export type CompetitorReviewSnapshot = typeof competitorReviewSnapshots.$inferSelect;
+export type NewCompetitorReviewSnapshot = typeof competitorReviewSnapshots.$inferInsert;
+export type CompetitorScan = typeof competitorScans.$inferSelect;
+export type NewCompetitorScan = typeof competitorScans.$inferInsert;
+export type CompetitorWeeklyMetric = typeof competitorWeeklyMetrics.$inferSelect;
+export type NewCompetitorWeeklyMetric = typeof competitorWeeklyMetrics.$inferInsert;
+export type CompetitorType = "direct" | "indirect" | "aspirational";
+export type CompetitorScanType = "full" | "website" | "social" | "reviews";
 
 // Workflow status types
 export type WorkflowStatus = "pending" | "running" | "paused" | "completed" | "failed";

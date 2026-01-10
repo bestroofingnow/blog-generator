@@ -139,11 +139,14 @@ export async function generateOutline(params: {
     email?: string;
     website?: string;
   };
-  // Real SERP data from Bright Data
+  // Real SERP data from Bright Data (enhanced with deep research)
   serpData?: {
     topCompetitors?: string[];
     paaQuestions?: string[];
     relatedSearches?: string[];
+    statistics?: Array<{ stat: string; source: string }>;
+    contentGaps?: string[];
+    quickWins?: string[];
   };
 }): Promise<BlogOutline> {
   const {
@@ -259,6 +262,19 @@ ${serpData.paaQuestions.slice(0, 8).map((q, i) => `${i + 1}. ${q}`).join("\n")}`
     if (serpData.relatedSearches && serpData.relatedSearches.length > 0) {
       serpContext += `\n\nRELATED SEARCHES (incorporate these keywords naturally):
 ${serpData.relatedSearches.slice(0, 10).join(", ")}`;
+    }
+    // Enhanced research data
+    if (serpData.statistics && serpData.statistics.length > 0) {
+      serpContext += `\n\nRESEARCHED STATISTICS (cite these facts in your content for credibility):
+${serpData.statistics.slice(0, 5).map((s, i) => `${i + 1}. "${s.stat}" - Source: ${s.source}`).join("\n")}`;
+    }
+    if (serpData.contentGaps && serpData.contentGaps.length > 0) {
+      serpContext += `\n\nCONTENT GAPS TO FILL (areas competitors are missing):
+${serpData.contentGaps.slice(0, 5).map((g, i) => `${i + 1}. ${g}`).join("\n")}`;
+    }
+    if (serpData.quickWins && serpData.quickWins.length > 0) {
+      serpContext += `\n\nQUICK WIN OPPORTUNITIES (prioritize these in your outline):
+${serpData.quickWins.slice(0, 3).map((w, i) => `${i + 1}. ${w}`).join("\n")}`;
     }
   }
 
@@ -660,11 +676,14 @@ export async function generateContent(params: {
     email?: string;
     website?: string;
   };
-  // Real SERP data from Bright Data
+  // Real SERP data from Bright Data (enhanced with deep research)
   serpData?: {
     topCompetitors?: string[];
     paaQuestions?: string[];
     relatedSearches?: string[];
+    statistics?: Array<{ stat: string; source: string }>;
+    contentGaps?: string[];
+    quickWins?: string[];
   };
 }): Promise<string> {
   const {
@@ -779,6 +798,20 @@ ${serpData.relatedSearches.slice(0, 10).join(", ")}`;
     if (serpData.topCompetitors && serpData.topCompetitors.length > 0) {
       serpSection += `\n\nCOMPETITOR CONTENT - Differentiate and outperform:
 ${serpData.topCompetitors.slice(0, 3).map((c, i) => `${i + 1}. ${c}`).join("\n")}`;
+    }
+    // Enhanced research data for fact-based content
+    if (serpData.statistics && serpData.statistics.length > 0) {
+      serpSection += `\n\nRESEARCHED STATISTICS (MUST cite these in your content):
+${serpData.statistics.slice(0, 5).map((s, i) => `${i + 1}. "${s.stat}" - Source: ${s.source}`).join("\n")}
+IMPORTANT: Include at least 2-3 of these statistics naturally in your content to build credibility.`;
+    }
+    if (serpData.contentGaps && serpData.contentGaps.length > 0) {
+      serpSection += `\n\nCONTENT GAPS (address these to outperform competitors):
+${serpData.contentGaps.slice(0, 5).map((g, i) => `${i + 1}. ${g}`).join("\n")}`;
+    }
+    if (serpData.quickWins && serpData.quickWins.length > 0) {
+      serpSection += `\n\nQUICK WIN TIPS (prioritize in your content):
+${serpData.quickWins.slice(0, 3).map((w, i) => `${i + 1}. ${w}`).join("\n")}`;
     }
   }
 

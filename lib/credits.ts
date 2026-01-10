@@ -25,7 +25,9 @@ export type CreditOperation =
   | "seo_plan"
   | "site_builder_research"
   | "kb_enrichment"
-  | "chat_response";
+  | "chat_response"
+  | "competitor_scan"
+  | "ai_visibility_scan";
 
 // Credit costs per operation
 // Fractional credits are supported (e.g., 0.5 credits)
@@ -40,6 +42,8 @@ const CREDIT_COSTS: Record<CreditOperation, number> = {
   site_builder_research: 1,
   kb_enrichment: 1,
   chat_response: 0.5,
+  competitor_scan: 2,
+  ai_visibility_scan: 3,
 };
 
 // Get credit cost for an operation (exported for UI display)
