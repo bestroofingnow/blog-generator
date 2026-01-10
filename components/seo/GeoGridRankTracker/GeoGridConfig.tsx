@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import styles from "./GeoGridRankTracker.module.css";
 import type { GridConfiguration, Keyword, Scan } from "./index";
+import { LocationPicker } from "./LocationPicker";
 
 interface GeoGridConfigProps {
   configs: GridConfiguration[];
@@ -140,52 +141,6 @@ export function GeoGridConfig({
 
             <div className={styles.formRowDouble}>
               <label>
-                Center Latitude
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.centerLat}
-                  onChange={e => setFormData(prev => ({ ...prev, centerLat: e.target.value }))}
-                  placeholder="33.4484"
-                  required
-                />
-              </label>
-              <label>
-                Center Longitude
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.centerLng}
-                  onChange={e => setFormData(prev => ({ ...prev, centerLng: e.target.value }))}
-                  placeholder="-112.0740"
-                  required
-                />
-              </label>
-            </div>
-
-            <div className={styles.formRowDouble}>
-              <label>
-                City (optional)
-                <input
-                  type="text"
-                  value={formData.centerCity}
-                  onChange={e => setFormData(prev => ({ ...prev, centerCity: e.target.value }))}
-                  placeholder="Phoenix"
-                />
-              </label>
-              <label>
-                State (optional)
-                <input
-                  type="text"
-                  value={formData.centerState}
-                  onChange={e => setFormData(prev => ({ ...prev, centerState: e.target.value }))}
-                  placeholder="AZ"
-                />
-              </label>
-            </div>
-
-            <div className={styles.formRowDouble}>
-              <label>
                 Grid Size
                 <select
                   value={formData.gridSize}
@@ -213,7 +168,33 @@ export function GeoGridConfig({
               </label>
             </div>
 
-            <button type="submit" className={styles.btnPrimary} disabled={loading}>
+            {/* Location Picker Map */}
+            <LocationPicker
+              lat={formData.centerLat ? parseFloat(formData.centerLat) : null}
+              lng={formData.centerLng ? parseFloat(formData.centerLng) : null}
+              radiusMiles={formData.radiusMiles}
+              onLocationSelect={(lat, lng, city, state) => {
+                setFormData(prev => ({
+                  ...prev,
+                  centerLat: lat.toString(),
+                  centerLng: lng.toString(),
+                  centerCity: city || prev.centerCity,
+                  centerState: state || prev.centerState
+                }));
+              }}
+            />
+
+            {formData.centerCity && (
+              <div className={styles.selectedLocationInfo}>
+                <strong>{formData.centerCity}{formData.centerState ? `, ${formData.centerState}` : ""}</strong>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className={styles.btnPrimary}
+              disabled={loading || !formData.centerLat || !formData.centerLng}
+            >
               Create Configuration
             </button>
           </form>
